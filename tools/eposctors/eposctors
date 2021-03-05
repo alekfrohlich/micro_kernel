@@ -13,11 +13,13 @@ FINI_ARRAY_SIZE=`objdump -h $ELF|grep "\.fini_array"|sed -e "s/  */#/g"|cut -d '
 
 echo "CTOR_LIST:"
 if [ "$GDB" = "" ] ; then
-    LIST=`hexdump -s 0x$INIT_ARRAY_OFFSET -n 0x$INIT_ARRAY_SIZE -v -e '1/4 "%08x\n"' $ELF`
+    LIST=`hexdump -s $INIT_ARRAY_OFFSET -n $INIT_ARRAY_SIZE -v -e '1/4 "%08x\n"' $ELF`
+
     for item in $LIST; do
+        # echo $item
         sym=`nm $ELF|grep $item|grep GLOBAL|sed -e "s/.*_GLOBAL__sub_I_//g"|c++filt`
         echo 0x$item $sym
-    done   
+    done
 else
     hexdump -s 0x$INIT_ARRAY_OFFSET -n 0x$INIT_ARRAY_SIZE -v -e '1/4 "break *0x%08x\n"' $ELF
 fi

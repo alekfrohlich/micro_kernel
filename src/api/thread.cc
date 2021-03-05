@@ -295,7 +295,6 @@ void Thread::reschedule()
     yield();
 }
 
-
 void Thread::time_slicer(IC::Interrupt_Id i)
 {
     reschedule();

@@ -1350,7 +1350,7 @@ public:
         Element * e = head();
         if(sizeof(Object_Type) < sizeof(Element))
             for(; e && (e->size() < sizeof(Element) / sizeof(Object_Type) + s) && (e->size() != s); e = e->next());
-        else
+        else // if (e) <=> e != nullptr ? If so, does List<T,El> guarantee that the last element has e->next() = nullptr?
             for(; e && (e->size() < s); e = e->next());
         return e;
     }
@@ -1385,7 +1385,7 @@ public:
         if(e) {
             e->shrink(s);
             _grouped_size -= s;
-            if(!e->size())
+            if(!e->size()) // if the memory region is empty, remove it?
                 remove(e);
         }
 
