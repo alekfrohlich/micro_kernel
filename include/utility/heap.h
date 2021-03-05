@@ -74,7 +74,6 @@ public:
 
     static void typed_free(void * ptr) {
         int * addr = reinterpret_cast<int *>(ptr);
-<<<<<<< Updated upstream
         unsigned int bytes = *--addr;
         Heap * heap = reinterpret_cast<Heap *>(*--addr);
         heap->free(addr, bytes);
@@ -84,10 +83,6 @@ public:
         int * addr = reinterpret_cast<int *>(ptr);
         unsigned int bytes = *--addr;
         heap->free(addr, bytes);
-=======
-        unsigned int bytes = *--addr; // size is saved in the word before the object?
-        free(addr, bytes);
->>>>>>> Stashed changes
     }
 
 private:
