@@ -1,0 +1,62 @@
+Machine:
+0x00020000k -> 128mb? (tah 128MB no traits)
+
+Heap:
+tamanho inicial da Heap (HEAP_SIZE) = (MAX_THREADS=16 + 1) * STACK_SIZE=16*1024 = 278528
+Sequencia de uso da Heap de sistema (soma 4 em cada pcausa de size):
+- Alarm_Timer (20 bytes)
+% Idle
+- Thread (36 bytes)
+- Stack (STACK_SIZE)
+% Main
+- Thread (36 bytes)
+- Stack (STACK_SIZE)
+- Scheduler_Timer(20 bytes)
+Ocupado de E1: 2*20+2*36+2*16*1024+4*6 = 32904 bytes
+
+Allocs:
+MMU::free(addr=0x80004118,n=134184680) (Toda RAM, menos BOOT_STACK)
+MMU::free(addr=0x87ffc000,n=16384) (BOOT_STACK em um segundo elemento)
+MMU::alloc(bytes=278528) => 0x87fb8000 (Heap de sistema)
+Heap::free(this=0x80004064,ptr=0x87fb8000,bytes=278528) (Heap de sistema se populando)
+Heap::alloc(this=0x80004064,bytes=20 (Alarm_Timer)
+% Idle
+Heap::alloc(this=0x80004064,bytes=36 (Thread)
+Heap::alloc(this=0x80004064,bytes=16384 (Stack)
+% Main
+Heap::alloc(this=0x80004064,bytes=36 (Thread)
+Heap::alloc(this=0x80004064,bytes=16384 (Stack)
+Heap::alloc(this=0x80004064,bytes=20 (Scheduler_Timer)
+MMU::alloc(bytes=133906152) => 0x80004118 (o que tinha sobrado do primeiro elemento)
+Heap::free(this=0x80004064,ptr=0x80004118,bytes=133906152)
+MMU::alloc(bytes=16384) => 0x87ffc000 (recuperando a BOOT_STACK)
+Heap::free(this=0x80004064,ptr=0x87ffc000,bytes=16384)
+
+Conclusoes:
+Quando chegamos na main(),
+
+1) 32904 bytes eh o que de fato esta ocupado em _heap (vale lembrar que toda memoria de _free foi transferida para _heap em init_application)
+2) Ha dois elementos em _heap: head=E1; tail=E2=BOOT_STACK
+3) Nada foi deletado; ou seja, a _heap nao esta fragmentada
+4) A BOOT_STACK foi absorvida pela _heap
+5) A _free esta vazia (size=0; _grouped_size=0)
+6) So a _heap foi alocada em _free (em duas etapas)
+7) _free comeca particionada em dois elementos: tudo [&_end,BOOT_STACK-THREAD_SIZE]; stack temp [BOOT_STACK-THREAD_SIZE, BOOT_STACK]
+8) Tamanho inicial de _free=134201064
+9) sizeof(Page) = 1 e pages(x) = x  
+
+Desafios:
+A busca comeca em head e a insercao em tail?
+Aglutinacao e insert na lista?
+
+Matheus:
+explicar sequencia de inicializacao
+onde esta bootstack?
+onde eh inicializada a _free?
+quantos elementos tem _free antes de construir a heap de sistema?
+onde foram construidos?
+qnt retorna pages? (sizeof no gdb)
+algo foi alocado ah mais na MMU antes de criar a Heap?
+
+Teste:
+So precisa mostrar o algoritmo skippando um bloco que cabe?

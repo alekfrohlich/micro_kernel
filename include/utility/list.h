@@ -1348,9 +1348,9 @@ public:
 
     Element * search_size(unsigned int s) {
         Element * e = head();
-        if(sizeof(Object_Type) < sizeof(Element))
+        if(sizeof(Object_Type) < sizeof(Element)) // isnt this requiring sizeof(Element) twice?
             for(; e && (e->size() < sizeof(Element) / sizeof(Object_Type) + s) && (e->size() != s); e = e->next());
-        else // if (e) <=> e != nullptr ? If so, does List<T,El> guarantee that the last element has e->next() = nullptr?
+        else
             for(; e && (e->size() < s); e = e->next());
         return e;
     }
@@ -1381,15 +1381,42 @@ public:
         print_head();
         print_tail();
 
-        Element * e = search_size(s);
+        Element * e = find_worst(s);
         if(e) {
             e->shrink(s);
             _grouped_size -= s;
-            if(!e->size()) // if the memory region is empty, remove it?
+            if(!e->size())
                 remove(e);
         }
 
         return e;
+    }
+
+    // Used by Heap/Worst-Fit
+    // for empty lists, return 0
+    // for nonempty lists,
+    //      return 0 if there is no element big enough to fit s
+    //      return the element with biggest size otherwise
+    // precons:
+    //  1. s >= sizeof(Element) [s >= 16]
+    Element * find_worst(unsigned int s) {
+        Element * max = 0;
+        unsigned max_size = 0;
+        for(Element * e = head(); e; e = e->next()) {
+            if (e->size() > max_size) {
+                max_size = e->size();
+                max = e;
+            }
+        }
+
+        if (max_size < s)
+            return 0;
+
+        return max;
+    }
+
+    Element * find_first(unsigned int s) {
+        return search_size(s);
     }
 
 private:
