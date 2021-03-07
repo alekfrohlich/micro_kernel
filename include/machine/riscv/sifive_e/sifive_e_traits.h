@@ -105,8 +105,8 @@ template<> struct Traits<Serial_Display>: public Traits<Machine_Common>
 template<> struct Traits<Scratchpad>: public Traits<Machine_Common>
 {
     static const bool enabled = true;
-    static const unsigned int ADDRESS = 0x20000000;
-    static const unsigned int SIZE = 16*1024;
+    static const unsigned int ADDRESS = Traits<Machine>::MEM_TOP - 8*1024;
+    static const unsigned int SIZE = 1024;
 };
 
 __END_SYS
