@@ -172,6 +172,7 @@ namespace EPOS {
 #define __TSC_H                 __HEADER_ARCH(tsc)
 
 #define __UART_H                __HEADER_MACH(uart)
+#define __SCRATCHPAD_H          __HEADER_MACH(scratchpad)
 #endif
 
 

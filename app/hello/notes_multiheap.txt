@@ -1,0 +1,2 @@
+MMU::_free comeca igual
+_preheap tem Segment+Heap

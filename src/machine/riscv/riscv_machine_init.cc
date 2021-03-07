@@ -27,6 +27,12 @@ void Machine::init()
 {
     db<Init, Machine>(TRC) << "Machine::init()" << endl;
 
+#ifdef __SCRATCHPAD_H
+    if(CPU::id() == 0)
+        if (Traits<Scratchpad>::enabled)
+            Scratchpad::init();
+#endif
+
     if(Traits<Timer>::enabled)
         Timer::init();
 }
