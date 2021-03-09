@@ -46,8 +46,10 @@ Quando chegamos na main(),
 9) sizeof(Page) = 1 e pages(x) = x  
 
 Desafios:
-A busca comeca em head e a insercao em tail?
 Aglutinacao e insert na lista?
+
+Multiheap:
+Application::_heap tem 16Mb enquanto System::_heap tem 272Kb
 
 Matheus:
 explicar sequencia de inicializacao

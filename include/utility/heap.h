@@ -34,7 +34,6 @@ public:
 
     void * alloc(unsigned int bytes) {
         db<Heaps>(TRC) << "Heap::alloc(this=" << this << ",bytes=" << bytes << endl;
-        kout << "Heap::alloc(this=" << this << ",bytes=" << bytes  << ")" << endl;
         if(!bytes)
             return 0;
 
@@ -48,8 +47,8 @@ public:
         if(bytes < sizeof(Element))
             bytes = sizeof(Element);
 
-        kout << "First Fit: " << find_first(bytes) << endl;
-        kout << "Worst Fit: " << find_worst(bytes) << endl;
+        db<Heaps>(TRC) << "First Fit: " << find_first(bytes) << endl;
+        db<Heaps>(TRC) << "Worst Fit: " << find_worst(bytes) << endl;
         Element * e = search_decrementing(bytes);
         if(!e) {
             out_of_memory();
@@ -75,7 +74,6 @@ public:
             Element * m1, * m2;
             insert_merging(e, &m1, &m2);
         }
-        kout << "Heap::free(this=" << this << ",ptr=" << ptr << ",bytes=" << bytes << ")" << endl;
     }
 
     static void typed_free(void * ptr) {

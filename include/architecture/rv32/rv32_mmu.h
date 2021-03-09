@@ -105,7 +105,6 @@ public:
                 db<MMU>(ERR) << "MMU::alloc() failed!" << endl;
         }
         db<MMU>(TRC) << "MMU::alloc(bytes=" << bytes << ") => " << phy << endl;
-        kout << "MMU::alloc(bytes=" << bytes << ") => " << phy << endl;
 
         return phy;
     };
@@ -118,7 +117,6 @@ public:
 
     static void free(Phy_Addr addr, unsigned int n = 1) {
         db<MMU>(TRC) << "MMU::free(addr=" << addr << ",n=" << n << ")" << endl;
-        kout << "MMU::free(addr=" << addr << ",n=" << n << ")" << endl;
         // No unaligned addresses if the CPU doesn't support it
         assert(Traits<CPU>::unaligned_memory_access || !(addr % 4));
 

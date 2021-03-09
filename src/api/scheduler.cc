@@ -9,4 +9,6 @@ __BEGIN_SYS
 template <typename ... Tn>
 FCFS::FCFS(int p, Tn & ... an): Priority((p == IDLE) ? IDLE : Alarm::elapsed()) {}
 
+template FCFS::FCFS<>(int p);
+
 __END_SYS
