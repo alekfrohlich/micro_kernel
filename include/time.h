@@ -31,6 +31,7 @@ class Alarm
 {
     friend class System;                        // for init()
     friend class Alarm_Chronometer;             // for elapsed()
+    friend class Periodic_Thread;               // for ticks(), times(), and elapsed()
     friend class FCFS;                          // for ticks() and elapsed()
 
 private:
@@ -51,7 +52,7 @@ public:
     static void delay(const Microsecond & time);
 
 private:
-    static void init();
+    unsigned int times() const { return _times; }
 
     static volatile Tick & elapsed() { return _elapsed; }
 
@@ -62,6 +63,8 @@ private:
     static void unlock();
 
     static void handler(IC::Interrupt_Id i);
+
+    static void init();
 
 private:
     Microsecond _time;

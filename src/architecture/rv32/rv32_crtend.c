@@ -17,5 +17,3 @@ void _init()
 {
     __do_global_ctors_aux();
 }
-
-void __epos_app_entry() __attribute__ ((section(".init"), weak, alias ("_init")));

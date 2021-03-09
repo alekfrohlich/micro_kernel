@@ -43,7 +43,7 @@ public:
     typedef MMU::Flags Flags;
 
 public:
-    Segment(unsigned int bytes, const Color & color = Color::WHITE, const Flags & flags = Flags::APP);
+    Segment(unsigned int bytes, const Flags & flags = Flags::APP);
     Segment(const Phy_Addr & phy_addr, unsigned int bytes, const Flags & flags);
     ~Segment();
 
