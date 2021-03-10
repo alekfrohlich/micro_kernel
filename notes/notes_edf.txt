@@ -1,0 +1,15 @@
+Preemptive:
+Coisas que fazem reescalonar
+    1. Criacao de Thread READY com PRIO > IDLE
+    2. Thread::priority
+    3. Thread::resume
+    4. Thread::wakeup/wakeup_all (~resume)
+
+Periodic_Thread
+    wait_next() faz esperar no semaforo
+
+
+QUANTUM = 10000 us 
+FREQUENCY = 1000 Ticks/s
+PERIOD = 0.001 s => 1000 us
+1 Quantum = 10 Ticks

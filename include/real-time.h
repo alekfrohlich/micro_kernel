@@ -25,12 +25,12 @@ typedef Thread Aperiodic_Thread;
 class Periodic_Thread: public Thread
 {
 public:
-    enum {
-        SAME    = Real_Time_Scheduler_Common::SAME,
-        NOW     = Real_Time_Scheduler_Common::NOW,
-        UNKNOWN = Real_Time_Scheduler_Common::UNKNOWN,
-        ANY     = Real_Time_Scheduler_Common::ANY
-    };
+    // enum {
+    //     SAME,
+    //     NOW,
+    //     UNKNOWN,
+    //     ANY
+    // };
 
 protected:
     // Alarm Handler for periodic threads under static scheduling policies
@@ -61,33 +61,39 @@ protected:
     typedef IF<Criterion::dynamic, Dynamic_Handler, Static_Handler>::Result Handler;
 
 public:
-    struct Configuration: public Thread::Configuration {
-        Configuration(const Microsecond & p, const Microsecond & d = SAME, const Microsecond & cap = UNKNOWN, const Microsecond & act = NOW, const unsigned int n = INFINITE, const State & s = READY, const Criterion & c = NORMAL, unsigned int ss = STACK_SIZE)
-        : Thread::Configuration(s, c, ss), period(p), deadline(d == SAME ? p : d), capacity(cap), activation(act), times(n) {}
+    // struct Configuration: public Thread::Configuration {
+    //     Configuration(const Microsecond & p, const Microsecond & d = SAME, const Microsecond & cap = UNKNOWN, const Microsecond & act = NOW, const unsigned int n = INFINITE, const State & s = READY, const Criterion & c = NORMAL, unsigned int ss = STACK_SIZE)
+    //     : Thread::Configuration(s, c, ss), period(p), deadline(d == SAME ? p : d), capacity(cap), activation(act), times(n) {}
 
-        Microsecond period;
-        Microsecond deadline;
-        Microsecond capacity;
-        Microsecond activation;
-        unsigned int times;
-    };
+    //     Microsecond period;
+    //     Microsecond deadline;
+    //     Microsecond capacity;
+    //     Microsecond activation;
+    //     unsigned int times;
+    // };
 
 public:
-    template<typename ... Tn>
-    Periodic_Thread(const Microsecond & p, int (* entry)(Tn ...), Tn ... an)
-    : Thread(Thread::Configuration(SUSPENDED, Criterion(p)), entry, an ...),
-      _semaphore(0), _handler(&_semaphore, this), _alarm(p, &_handler, INFINITE) { resume(); }
+    // template<typename ... Tn>
+    // Periodic_Thread(const Microsecond & p, int (* entry)(Tn ...), Tn ... an)
+    // : Thread(Thread::Configuration(SUSPENDED, Criterion(p)), entry, an ...),
+    //   _semaphore(0), _handler(&_semaphore, this), _alarm(p, &_handler, INFINITE) { resume(); }
+    typedef Alarm::Tick Tick;
 
     template<typename ... Tn>
-    Periodic_Thread(const Configuration & conf, int (* entry)(Tn ...), Tn ... an)
-    : Thread(Thread::Configuration(SUSPENDED, (conf.criterion != NORMAL) ? conf.criterion : Criterion(conf.period), conf.stack_size), entry, an ...),
-      _semaphore(0), _handler(&_semaphore, this), _alarm(conf.period, &_handler, conf.times) {
-        if((conf.state == READY) || (conf.state == RUNNING)) {
-            _state = SUSPENDED;
-            resume();
-        } else
-            _state = conf.state;
-    }
+    Periodic_Thread(const Tick & t, int (* entry)(Tn ...), Tn ... an)
+    : Thread(Thread::Configuration(SUSPENDED, Criterion(t)), entry, an ...),
+      _semaphore(0), _handler(&_semaphore, this), _alarm(t * Alarm::timer_period(), &_handler, INFINITE) { resume(); }
+
+    // template<typename ... Tn>
+    // Periodic_Thread(const Configuration & conf, int (* entry)(Tn ...), Tn ... an)
+    // : Thread(Thread::Configuration(SUSPENDED, (conf.criterion != NORMAL) ? conf.criterion : Criterion(conf.period), conf.stack_size), entry, an ...),
+    //   _semaphore(0), _handler(&_semaphore, this), _alarm(conf.period, &_handler, conf.times) {
+    //     if((conf.state == READY) || (conf.state == RUNNING)) {
+    //         _state = SUSPENDED;
+    //         resume();
+    //     } else
+    //         _state = conf.state;
+    // }
 
     const Microsecond & period() const { return _alarm.period(); }
     void period(const Microsecond & p) { _alarm.period(p); }

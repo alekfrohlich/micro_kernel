@@ -21,7 +21,7 @@ template<> struct Traits<Build>: public Traits_Tokens
     static const bool enabled = true;
     static const bool monitored = false;
     static const bool debugged = true;
-    static const bool hysterically_debugged = false;
+    static const bool hysterically_debugged = true;
 
     // Default aspects
     typedef ALIST<> ASPECTS;
@@ -129,6 +129,8 @@ template<> struct Traits<Thread>: public Traits<Build>
     static const bool trace_idle = hysterically_debugged;
     static const bool simulate_capacity = false;
 
+    // typedef RR Criterion;
+    // typedef FCFS Criterion;
     typedef EDF Criterion;
     static const unsigned int QUANTUM = 10000; // us
 };
@@ -147,6 +149,7 @@ template<> struct Traits<Alarm>: public Traits<Build>
 {
     static const bool visible = hysterically_debugged;
 };
+
 
 
 __END_SYS

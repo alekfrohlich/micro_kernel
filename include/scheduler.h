@@ -145,6 +145,27 @@ public:
     FCFS(int p = NORMAL, Tn & ... an);
 };
 
+// Earliest Deadline First (EDF)
+class EDF: public Priority
+{
+public:
+    static const bool timed = false;
+    static const bool dynamic = true;
+    static const bool preemptive = true;
+
+    typedef int Tick;
+
+public:
+    EDF(int p = NORMAL): Priority(p), _period(p) {}
+    
+    bool update() {
+        _priority += _period;
+        return false;
+    }
+private:
+    Tick _period;
+};
+
 __END_SYS
 
 #endif

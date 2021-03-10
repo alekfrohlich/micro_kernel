@@ -48,6 +48,7 @@ public:
     void reset();
 
     static Hertz frequency() { return _timer->frequency(); }
+    static Microsecond timer_period() { return 1000000 / frequency(); }
 
     static void delay(const Microsecond & time);
 
@@ -56,7 +57,6 @@ private:
 
     static volatile Tick & elapsed() { return _elapsed; }
 
-    static Microsecond timer_period() { return 1000000 / frequency(); }
     static Tick ticks(const Microsecond & time) { return (time + timer_period() / 2) / timer_period(); }
 
     static void lock();
