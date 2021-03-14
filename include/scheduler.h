@@ -159,7 +159,10 @@ public:
     EDF(int p = NORMAL): Priority(p), _period(p) {}
     
     bool update() {
-        _priority += _period;
+        if ((_priority % 6000) < 5)
+            _priority = _period;
+        else
+            _priority += _period;
         return false;
     }
 private:

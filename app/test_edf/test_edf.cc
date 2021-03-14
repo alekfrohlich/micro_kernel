@@ -1,5 +1,4 @@
 // Description:
-// The EDF time unit is Alarm::Tick
 // In the current configuration, we have
 //  preemptive = true
 //  dynamic = true
@@ -7,46 +6,69 @@
 // We've decided to turn off timed preemptions since that increased the time
 // system spent in between job execution without any benefits.
 
-// Since letting deadline = NORMAL (the priority) with timed = true makes EDF = RR, we'll
-// be switching back to RR after this exercise (for the kernel development).
+// Test scenario:
+// Two tasks,
+//  A: cap=1000, deadline=2000
+//  B: cap=1500, deadline=3000
+// CPU_Usage = 100%; to avoid missing deadlines due to system execution, we actualy
+// have A and B execute a little bit faster than their caps.
+// The idea is to obtain the following timeline:
+//
+// 0000-1000: A runs and finishes (wait_next())
+// 1000-2000: B runs until A's alarm (50 leftover)
+// 2000-2500: 300 < 400, so B runs and finishes (wait_next())
+// 2500-3000: A runs until B's alarm (50 leftover)
+// 3000-3500: 400 < 600, so A runs and finishes (wait_next())
+// 3500-4000: B runs until A's alarm (100 leftover)
+// 4000-5000: B continues and finishes (wait_next()) // REALLY?
+// 5000-6000: A runs and finishes (wait_next())
+// Then, the system repeats 
+
+// Observations:
+// The EDF time unit is Alarm::Tick
 
 #include <utility/ostream.h>
+#include <machine/display.h>
+#include <architecture.h>
 #include <real-time.h>
 
 using namespace EPOS;
 
 OStream cout;
 
-// template <NUM_TASKS>
-// class Real_Time_System {
-//     typedef fptr Job;
-//     Job job[NUM_TASKS]
-//     Periodic_Thread * task[NUM_TASKS];
-//     void init();
-// }
-
-int work(int n) {
-
-    while (true) {
-        cout << "Task[" << n << "] did some work!" << endl;
-        Periodic_Thread::wait_next();
-    }
-}
-
 static const unsigned DEADLINE[] = {
-    150,
-    300,
+    2000,
+    3000,
 };
+
+int __attribute__((optimize("O0"))) work(int n) {
+    EPOS::S::CPU::int_enable(); // Join makes so that Task_A starts executing with interrupts disabled.
+    cout << "Begin: " << ((n == 0) ? 'A' : 'B') << ", Prio=" << Periodic_Thread::self()->priority() << " [" << Alarm::elapsed() << "]" << endl;
+    while (Alarm::elapsed() < 15000) {
+        unsigned last_time = Alarm::elapsed();
+        unsigned tot = 0;
+        while (tot < DEADLINE[n]/2 - 50) {
+            EPOS::S::CPU::int_disable();
+            if (Alarm::elapsed() - last_time < 500)
+                tot += Alarm::elapsed() - last_time;
+            last_time = Alarm::elapsed();
+            EPOS::S::CPU::int_enable();
+        }
+        cout << "End: " << ((n == 0) ? 'A' : 'B') << ", Prio=" << Periodic_Thread::self()->priority() << " [" << Alarm::elapsed() << "]" << endl;
+        Periodic_Thread::wait_next();
+        cout << "Begin: " << ((n == 0) ? 'A' : 'B') << ", Prio=" << Periodic_Thread::self()->priority() << " [" << Alarm::elapsed() << "]" << endl;
+    }
+    return 0;
+}
 
 Periodic_Thread * task[2];
 
 int main()
 {
-    // terminal output is important after the following line
-    cout << "Testing EDF..." << endl;
+    Display::clear();;
 
-    for (int i = 0; i < 2; i++)
-        task[i] = new Periodic_Thread(DEADLINE[i], &work, i);
+    task[0] = new Periodic_Thread(DEADLINE[0], &work, 0);
+    task[1] = new Periodic_Thread(DEADLINE[1], &work, 1);
 
     // main will halt forever
     for (int i = 0; i < 2; i++)

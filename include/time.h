@@ -49,13 +49,13 @@ public:
 
     static Hertz frequency() { return _timer->frequency(); }
     static Microsecond timer_period() { return 1000000 / frequency(); }
+    static volatile Tick & elapsed() { return _elapsed; }
 
     static void delay(const Microsecond & time);
 
 private:
     unsigned int times() const { return _times; }
 
-    static volatile Tick & elapsed() { return _elapsed; }
 
     static Tick ticks(const Microsecond & time) { return (time + timer_period() / 2) / timer_period(); }
 
@@ -105,8 +105,6 @@ public:
     void stop() { lap(); }
 
     Microsecond read() { return ticks() * 1000000 / frequency(); }
-
-private:
     Time_Stamp ticks() {
         if(_start == 0)
             return 0;
@@ -114,6 +112,8 @@ private:
             return tsc.time_stamp() - _start;
         return _stop - _start;
     }
+
+private:
 
 private:
     TSC tsc;
