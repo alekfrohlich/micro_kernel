@@ -20,9 +20,10 @@
 // 2500-3000: A runs until B's alarm (50 leftover)
 // 3000-3500: 400 < 600, so A runs and finishes (wait_next())
 // 3500-4000: B runs until A's alarm (100 leftover)
-// 4000-5000: B continues and finishes (wait_next()) // REALLY?
+// Here, in practice, A runs before B due to the reschedule provoked by A's alarm (choose() will insert B at tail and so A will be returned from remove_head())
+// 4000-5000: B continues and finishes (wait_next())
 // 5000-6000: A runs and finishes (wait_next())
-// Then, the system repeats 
+// Then, the system repeats (at every 6000 ticks we reset _priority = _period to avoid overflow)
 
 // Observations:
 // The EDF time unit is Alarm::Tick
@@ -47,9 +48,9 @@ int __attribute__((optimize("O0"))) work(int n) {
     while (Alarm::elapsed() < 15000) {
         unsigned last_time = Alarm::elapsed();
         unsigned tot = 0;
-        while (tot < DEADLINE[n]/2 - 50) {
+        while (tot < DEADLINE[n]/2 - 50) { // -50 to allow for system time
             EPOS::S::CPU::int_disable();
-            if (Alarm::elapsed() - last_time < 500)
+            if (Alarm::elapsed() - last_time < 500) // we might be interrupted, so only add if we werent
                 tot += Alarm::elapsed() - last_time;
             last_time = Alarm::elapsed();
             EPOS::S::CPU::int_enable();
