@@ -18,19 +18,20 @@ int __attribute__((optimize("O0"))) dummy(int n) {
 static unsigned ITERATIONS = 1000;
 int main()
 {
-    Chronometer chron;
-    unsigned chron_freq = chron.frequency();
-    unsigned alarm_freq = Alarm::frequency();
-    cout << "Chron Frequency: " << chron_freq << endl;
-    cout << "Alarm Frequency: " << alarm_freq << endl;
-    unsigned int RESCALE = chron_freq / alarm_freq;
-    chron.reset();
-    chron.start();
-    for (int i = 0; i < ITERATIONS; i++) {
-        dummy(900);
-    }
-    chron.stop();
-    unsigned avg = (chron.ticks()/ITERATIONS)/RESCALE;
-    cout << "T=" << avg << endl; 
+    // Chronometer chron;
+    // unsigned chron_freq = chron.frequency();
+    // unsigned alarm_freq = Alarm::frequency();
+    // cout << "Chron Frequency: " << chron_freq << endl;
+    // cout << "Alarm Frequency: " << alarm_freq << endl;
+    // unsigned int RESCALE = chron_freq / alarm_freq;
+    // chron.reset();
+    // chron.start();
+    // for (int i = 0; i < ITERATIONS; i++) {
+    //     dummy(900);
+    // }
+    // chron.stop();
+    // unsigned avg = (chron.ticks()/ITERATIONS)/RESCALE;
+    // cout << "T=" << avg << endl; 
+    cout << "Hello world!" << endl;
     return 0;
 }

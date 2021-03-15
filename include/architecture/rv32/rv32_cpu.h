@@ -251,14 +251,38 @@ public:
         ASM("csrs mstatus, %0" : : "r"(value) : "cc");
     }
 
+    static void mstatus_write(Reg value) {
+        ASM("csrw mstatus, %0" : : "r"(value) : "cc");
+    }
+
+    static void mstatus_clear(Reg value) {
+        ASM("csrc mstatus, %0" : : "r"(value) : "cc");
+    }
+
     static Reg mstatus() {
         Reg value;
         ASM("csrr %0, mstatus" : "=r"(value) : : );
         return value;
     }
 
+    static void mepc(Reg value) {
+        ASM("csrw mepc, %0" : : "r"(value) : "cc");
+    }
+
+    static void satp(Reg value) {
+        ASM("csrw satp, %0" : : "r"(value) : "cc");
+    }
+
+    static void mtvec(Reg value) {
+        ASM("csrw mtvec, %0" : : "r"(value) : "cc");
+    }
+
     static void mie(Reg value) {
         ASM("csrs mie, %0" : : "r"(value) : "cc");
+    }
+
+    static void mie_write(Reg value) {
+        ASM("csrw mie, %0" : : "r"(value) : "cc");
     }
 
     static void mie_clear(Reg value) {
