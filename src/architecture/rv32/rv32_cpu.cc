@@ -12,7 +12,9 @@ unsigned int CPU::_bus_clock;
 // Class methods
 void CPU::Context::save() volatile
 {
-    ASM("       la       x4,      pc            \n"
+    ASM("       csrr     x4,  sstatus           \n"
+        "       sw       x4, -120(sp)           \n"     // push st
+        "       la       x4,      pc            \n"
         "       sw       x4, -116(sp)           \n"     // push pc
         "       sw       x1, -112(sp)           \n"     // push ra
         "       sw       x5, -108(sp)           \n"     // push x5-x31
@@ -43,17 +45,18 @@ void CPU::Context::save() volatile
         "       sw      x30,   -8(sp)           \n"
         "       sw      x31,   -4(sp)           \n");
 
-    ASM("       addi     sp, sp, -116           \n"                     // complete the pushes above by adjusting the SP
+    ASM("       addi     sp, sp, -120           \n"                     // complete the pushes above by adjusting the SP
         "       sw       sp, 0(%0)              \n" : : "r"(this));     // update the this pointer to match the context saved on the stack
 }
 
+// Context load does not verify if interrupts were previously enabled by the Context's constructor
+// We are setting mstatus to MPP | MPIE, therefore, interrupts will be enabled only after mret
 void CPU::Context::load() const volatile
 {
     ASM("       mv      sp, %0                  \n"                     // load the stack pointer with the this pointer
-        "       addi    sp, sp, 116             \n" : : "r"(this));     // adjust the stack pointer to match the subsequent series of pops
+        "       addi    sp, sp, 120             \n" : : "r"(this));     // adjust the stack pointer to match the subsequent series of pops
 
-    ASM("       lw       x4, -116(sp)           \n"     // pop pc
-        "       lw       x1, -112(sp)           \n"     // pop ra
+    ASM("       lw       x1, -112(sp)           \n"     // pop ra
         "       lw       x5, -108(sp)           \n"     // pop x5-x31
         "       lw       x6, -104(sp)           \n"
         "       lw       x7, -100(sp)           \n"
@@ -81,14 +84,17 @@ void CPU::Context::load() const volatile
         "       lw      x29,  -12(sp)           \n"
         "       lw      x30,   -8(sp)           \n"
         "       lw      x31,   -4(sp)           \n"
-        "       jalr     x0,     (x4)           \n");   // jump to pc stored in x4 (jalr with x0 is equivalent to jr)
+        "       lw       x4, -120(sp)           \n"     // pop st
+        "       csrs    sstatus,   x4           \n"     // set mstatus for mret
+        "       lw       x4, -116(sp)           \n"     // pop pc
+        "       csrw     sepc,     x4           \n"     // move pc to mepc for mret
+        "       sret                            \n");
 }
 
 void CPU::switch_context(Context ** o, Context * n)
 {   
     // Push the context into the stack and update "o"
-    ASM("       la       x4,    .ret            \n"     // get the return address in a temporary
-        "       sw       x4, -116(sp)           \n"     // push the return address as pc
+    ASM("       sw       x1, -116(sp)           \n"     // push the return address as pc
         "       sw       x1, -112(sp)           \n"     // push ra
         "       sw       x5, -108(sp)           \n"     // push x5-x31
         "       sw       x6, -104(sp)           \n"
@@ -117,13 +123,16 @@ void CPU::switch_context(Context ** o, Context * n)
         "       sw      x29,  -12(sp)           \n"
         "       sw      x30,   -8(sp)           \n"
         "       sw      x31,   -4(sp)           \n"
-        "       addi     sp,      sp,   -116    \n"     // complete the pushes above by adjusting the SP
+        "       csrr    x31,  sstatus           \n"     // get mstatus
+        "       sw      x31, -120(sp)           \n"     // push st
+        "       addi     sp,      sp,   -120    \n"     // complete the pushes above by adjusting the SP
         "       sw       sp,    0(a0)           \n");   // update Context * volatile * o
 
     // Set the stack pointer to "n" and pop the context from the stack
     ASM("       mv       sp,      a1            \n"     // get Context * volatile n into SP
-        "       addi     sp,      sp,    116    \n"     // adjust stack pointer as part of the subsequent pops
-        "       lw       x4, -116(sp)           \n"     // pop pc to a temporary
+        "       addi     sp,      sp,    120    \n"     // adjust stack pointer as part of the subsequent pops
+        "       lw      x31, -116(sp)           \n"     // pop pc to a temporary
+        "       csrw    sepc, x31               \n"
         "       lw       x1, -112(sp)           \n"     // pop ra
         "       lw       x5, -108(sp)           \n"     // pop x5-x31
         "       lw       x6, -104(sp)           \n"
@@ -150,10 +159,13 @@ void CPU::switch_context(Context ** o, Context * n)
         "       lw      x27,  -20(sp)           \n"
         "       lw      x28,  -16(sp)           \n"
         "       lw      x29,  -12(sp)           \n"
+        "       lw      x31, -120(sp)           \n"     // pop st
+        "       li      x30, 0b11 << 11         \n"     // set x30 as machine mode bits on MPP
+        "       or      x31, x31, x30           \n"     // machine mode on MPP is obligatory to avoid errors on mret
+        "       csrw     sstatus, x31           \n"
         "       lw      x30,   -8(sp)           \n"
         "       lw      x31,   -4(sp)           \n"
-        "       jalr     x0,     (x4)           \n"     // return (for the thread entering the CPU)
-        ".ret:  jalr     x0,     (x1)           \n");   // return (for the thread leaving the CPU)
+        "       sret                            \n");
 }
 
 __END_SYS

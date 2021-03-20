@@ -24,7 +24,7 @@ template <> struct Traits<Machine>: public Traits<Machine_Common>
     // Physical Memory
     static const unsigned int MEM_BASE          = 0x80000000;
     static const unsigned int VECTOR_TABLE      = NOT_USED;
-    static const unsigned int PAGE_TABLES       = 0x87ffffff - 16*1024 - ((1024+1)*4*1024) - (4*1024)*1024; // lets go down a few pages
+    static const unsigned int PAGE_TABLES       = 0x87ffffff + 1 - 16*1024 - ((1024+1)*4*1024); // lets go down a few pages
     static const unsigned int MEM_TOP           = 0x87ffffff; // 128 MB
     static const unsigned int BOOT_STACK        = 0x87ffffff;
 
@@ -60,6 +60,7 @@ template <> struct Traits<Machine>: public Traits<Machine_Common>
 template <> struct Traits<IC>: public Traits<Machine_Common>
 {
     static const bool debugged = hysterically_debugged;
+    static const bool enabled = false;
 
     static const unsigned int IRQS = 1024; // PLIC
     static const unsigned int INTS = 1056; // Exceptions + Software + Local + Timer + External
@@ -68,6 +69,7 @@ template <> struct Traits<IC>: public Traits<Machine_Common>
 template <> struct Traits<Timer>: public Traits<Machine_Common>
 {
     static const bool debugged = hysterically_debugged;
+    static const bool enabled = false;
 
     static const unsigned int UNITS = 1;
 

@@ -74,9 +74,11 @@ public:
         _int_vector[i] = h;
     }
 
+    //!SMODE
     static void enable() {
         db<IC>(TRC) << "IC::enable()" << endl;
-        CPU::mie(CPU::MSI | CPU::MTI | CPU::MEI);
+        // CPU::mie(CPU::MSI | CPU::MTI | CPU::MEI);
+        // CPU::sie(CPU::SSI | CPU::STI | CPU::SEI);
     }
 
     static void enable(Interrupt_Id i) {
@@ -86,9 +88,11 @@ public:
         enable();
     }
 
+    //!SMODE
     static void disable() {
         db<IC>(TRC) << "IC::disable()" << endl;
-        CPU::mie_clear(CPU::MSI | CPU::MTI | CPU::MEI);
+        // CPU::mie_clear(CPU::MSI | CPU::MTI | CPU::MEI);
+        // CPU::sie_clear(CPU::SSI | CPU::STI | CPU::SEI);
     }
 
     static void disable(Interrupt_Id i) {
@@ -100,7 +104,7 @@ public:
 
     static Interrupt_Id int_id() {
         // Id is retrieved from mcause even if mip has the equivalent bit up, because only mcause can tell if it is an interrupt or an exception
-        Reg id = CPU::mcause();
+        Reg id = CPU::scause();
         if(id & INTERRUPT)
             return (id & INT_MASK) + HARD_INT;
         else

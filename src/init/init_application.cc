@@ -5,7 +5,7 @@
 #include <machine.h>
 #include <system.h>
 
-extern "C" { char _end; } // defined by GCC
+extern "C" char _end; // defined by GCC
 
 __BEGIN_SYS
 

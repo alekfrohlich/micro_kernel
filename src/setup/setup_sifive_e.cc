@@ -11,6 +11,7 @@ extern "C"
 {
     void _setup() __attribute__ ((used, naked, section(".init")));
     void _int_entry();
+    void _mmode_forward();
     void _start();
     void _wait() 
     { 
@@ -28,12 +29,15 @@ class PageTable
         enum
         {
             V = 1 << 0,
+            R = 1 << 1,
+            W = 1 << 2,
+            X = 1 << 3,
         };
 
         PTE ptes[1024];
 
 public:
-    __attribute__((optimize("O0"))) PageTable ()
+    PageTable ()
     {
         // this>>12 é o número da página desta tabela de páginas
         // | PNN[1] | PNN[0] | OFFSET | -> user address (32 bits)
@@ -45,7 +49,7 @@ public:
             Reg pte = (((unsigned)this - Traits<Machine>::PAGE_TABLES)>>12) - 1;
             pte = pte << 20;
             pte += ((i) << 10);
-            pte = pte | V; // R/W/X
+            pte = pte | V | R | W | X;
             ptes[i] = pte;
         }
     }
@@ -68,7 +72,7 @@ private:
         PDE pdes[1024];
 
 public:
-        __attribute__((optimize("O0"))) PageDirectory()
+        PageDirectory()
         {
             Reg page_table = (unsigned)this;
             page_table = page_table >> 12; 
@@ -103,10 +107,11 @@ static void build_page_tables()
 static void setup_supervisor_environment() 
 {
     CPU::sstatus_write( CPU::SIE | CPU::SPIE | CPU::SPP_S );
-    CPU::sie_write( CPU::SSI | CPU::STI | CPU::SEI );
-    // we need a separate handler that doesnt use M registers
+    CPU::sie_write( CPU::SSI | CPU::STI | CPU::SEI ); // only STI appears set
     CPU::stvec_write((unsigned)&_int_entry & 0xfffffffe);
     CPU::sepc_write( (unsigned)&_start);
+    Reg satp = (0x1 << 31) | (Traits<Machine>::PAGE_TABLES >> 12);
+    CPU::satp(satp);
     ASM("sret");
 }
 
@@ -114,19 +119,16 @@ static void setup_machine_environment(Reg core)
 {
     if (core == 0) {
         build_page_tables();
-        // Reg satp = (0x1 << 31) | (Traits<Machine>::PAGE_TABLES >> 12);
         CPU::satp_write(0); // paging off
         CPU::mstatus_write(CPU::MPP_S | CPU::MPIE);
         CPU::mepc((unsigned)&setup_supervisor_environment);
         
-        // was done for each hart; why?
-        CPU::mtvec((unsigned)&_int_entry & 0xfffffffe);
-        // CPU::mie_write( (0 << 3) | (1 << 7) | (0 << 11) );
+        CPU::mtvec((unsigned)&_mmode_forward & 0xfffffffe);
         CPU::mie_write(CPU::MTI);
-        CPU::mideleg_write( CPU::MTI | CPU::STI );
+        CPU::mideleg_write( CPU::MTI | CPU::STI ); // only MTI appears set
         ASM("mret");
-    } else {
-        CPU::mstatus_write(CPU::MSTATUS_DEFAULTS);
+    } else { // Not tested
+        // CPU::mstatus_write(CPU::MSTATUS_DEFAULTS);
         CPU::mie(CPU::MSI | CPU::MTI | CPU::MEI);
         CPU::mepc((unsigned)&_wait);
         ASM("mret");
@@ -134,8 +136,9 @@ static void setup_machine_environment(Reg core)
 }
 
 void _setup() {
-    CPU::int_disable();
-    Reg core = CPU::id();
+    CPU::mmode_int_disable();
+    Reg core = CPU::mhartid();
+    CPU::tp(core);
     // set stack for each core
     CPU::sp(Traits<Machine>::BOOT_STACK - Traits<Machine>::STACK_SIZE * core);
     setup_machine_environment(core);
