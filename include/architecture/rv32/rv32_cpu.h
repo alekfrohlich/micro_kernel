@@ -32,8 +32,10 @@ public:
         SIE             = 1 << 1,      // Supervisor Interrupts Enabled
         SPIE            = 1 << 5,      // Supervisor Previous Interrupts Enabled
         MPIE            = 1 << 7,      // Machine Previous Interrupts Enabled
-        MPP             = 3 << 11,     // Machine Previous Privilege
-        SPP             = 3 << 12,     // Supervisor Previous Privilege
+        MPP             = 3 << 11,     // Machine Previous Privilege=Machine
+        MPP_S           = 1 << 11,     // Machine Previous Privilege=Supervisor
+        SPP             = 3 << 12,     // Supervisor Previous Privilege=Machine
+        SPP_S           = 1 << 8       // Supervisor Previous Privilege=Supervisor
         MPRV            = 1 << 17,     // Memory Priviledge
         TVM             = 1 << 20,     // Trap Virtual Memory //not allow MMU
         MSTATUS_DEFAULTS= (MIE | MPIE | MPP)
@@ -43,8 +45,8 @@ public:
     enum {
         SSI             = 1 << 1,   // Supervisor Software Interrupt
         MSI             = 1 << 3,   // Machine Software Interrupt
-        STI             = 1 << 5,   // Supervisor Software Interrupt
-        MTI             = 1 << 7,   // Machine Software Interrupt
+        STI             = 1 << 5,   // Supervisor Timer Interrupt
+        MTI             = 1 << 7,   // Machine Timer Interrupt
         SEI             = 1 << 9,   // Supervisor External Interrupt
         MEI             = 1 << 11   // Machine External Interrupt
     };
@@ -62,8 +64,8 @@ public:
         EXC_DWFAULT     = 7,    // Store/AMO access fault
         EXC_ENVU        = 8,    // Environment call from U-mode
         EXC_ENVS        = 9,    // Environment call from S-mode
-        EXC_ENVH        = 10,   // Environment call from H-mode
-        EXC_ENVM        = 11    // Environment call from M-m
+        // EXC_ENVH        = 10,   // Environment call from H-mode
+        EXC_ENVM        = 11    // Environment call from M-mode
     };
 
     // Context
@@ -283,6 +285,30 @@ public:
 
     static void mie_write(Reg value) {
         ASM("csrw mie, %0" : : "r"(value) : "cc");
+    }
+    
+    static void mideleg_write(Reg value) {
+        ASM("csrw mideleg, %0" : : "r"(value) : "cc");
+    }
+
+    static void satp_write(Reg value) {
+        ASM("csrw satp, %0" : : "r"(value) : "cc");
+    }
+
+    static void sstatus_write(Reg value) {
+        ASM("csrw sstatus, %0" : : "r"(value) : "cc");
+    }
+
+    static void sie_write(Reg value) {
+        ASM("csrw sie, %0" : : "r"(value) : "cc");
+    }
+
+    static void stvec_write(Reg value) {
+        ASM("csrw sie, %0" : : "r"(value) : "cc");
+    }
+
+    static void sepc_write(Reg value) {
+        ASM("csrw sepc, %0" : : "r"(value) : "cc");
     }
 
     static void mie_clear(Reg value) {

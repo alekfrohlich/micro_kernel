@@ -1,3 +1,24 @@
-Desafios:
-Em que momento liga paginacao na intel?
-Como que liga paginacao no rv32?
+O modo S nao controla temporizador e interrupcao de software (eh interrupcao de software msm, guia pratico 114)
+tratamento de interrupcao e mideleg bem explicado no guia pratico mret vs sret pra carregar os mie/mip e sie/sip
+tem tratador separado pro S-mode (stvec?)
+sie e sip sao mie e mip, mas so pode acessar o que foi delegado
+
+Propositos de paginacao:
+protecao
+
+sugere-se satp(0) antes de entrar em S-mode
+
+satp.PPN nao deveria ter 20 bits?
+
+PHY_MAP:
+BOOT_STACK
+PAGE_TABLES
+.
+.
+.
+SETUP
+KERNEL
+APP1
+APP2
+...
+APPn

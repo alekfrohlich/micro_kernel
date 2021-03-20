@@ -125,6 +125,9 @@ void IC::int_not(Interrupt_Id id)
 
 void IC::exception(Interrupt_Id id)
 {
+    static unsigned exc = 0;
+    exc++;
+    // CPU::halt();
     CPU::Reg mstatus = CPU::mstatus();
     CPU::Reg mcause = CPU::mcause();
     CPU::Reg mhartid = CPU::id();
