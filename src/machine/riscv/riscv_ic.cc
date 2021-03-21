@@ -8,8 +8,9 @@ __BEGIN_SYS
 extern "C" {
     void _int_entry() __attribute__ ((alias("_ZN4EPOS1S2IC5entryEv")));
     void _mmode_forward() {
-        CPU::mip_write(0);
+        ASM("ml:");
         CPU::sip(CPU::STI);
+        // if ()
         ASM("mret");
     }
 }
@@ -20,7 +21,7 @@ IC::Interrupt_Handler IC::_int_vector[IC::INTS];
 // Class methods
 void IC::entry()
 {
-    // Handle interrupts in machine mode
+    // Handle interrupts in supervisor mode
     ASM("        .align 4                                               \n"
         "                                                               \n"
         "# Save context                                                 \n"
@@ -101,7 +102,7 @@ void IC::entry()
         "        csrw      sepc, x31                                    \n"
         "        lw         x31, 124(sp)                                \n"
         "        addi        sp, sp,    136                             \n"
-        "        mret                                                   \n" : : "i"(&dispatch));
+        "        sret                                                   \n" : : "i"(&dispatch));
 }
 
 void IC::dispatch()

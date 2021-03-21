@@ -178,7 +178,7 @@ ifeq ($(MMOD),sifive_e)
 riscv_CC_FLAGS          := -Wl, -mno-relax
 riscv_AS_FLAGS          := 
 riscv_LD_FLAGS          := --no-relax
-riscv_EMULATOR			= qemu-system-riscv32 -machine virt -cpu rv32gcsu-v1.10.0 -smp $(CPUS) -m $(MEM_SIZE)k -serial mon:stdio -bios none -nographic -no-reboot -kernel 
+riscv_EMULATOR			= qemu-system-riscv32 -d int -D log -machine virt -cpu rv32gcsu-v1.10.0 -smp $(CPUS) -m $(MEM_SIZE)k -serial mon:stdio -bios none -nographic -no-reboot -kernel 
 riscv_DEBUGGER          := $(COMP_PREFIX)gdb
 riscv_FLASHER           := 
 riscv_MAGIC             := --nmagic
@@ -218,7 +218,7 @@ MACH_LD_FLAGS           := $($(MACH)_LD_FLAGS)
 MACH_CODE_NAME          := $($(MACH)_CODE_NAME)
 MACH_DATA_NAME          := $($(MACH)_DATA_NAME)
 MACH_EMULATOR           := $($(MACH)_EMULATOR)
-MACH_DEBUGGER           := $(TERM) $($(MACH)_DEBUGGER) -ex "target remote:1235" -ex "set confirm off"
+MACH_DEBUGGER           := $(TERM) $($(MACH)_DEBUGGER) -ex "target remote:1236" -ex "set confirm off"
 MACH_FLASHER            := $($(MACH)_FLASHER)
 MACH_MAGIC              := $($(MACH)_MAGIC)
 MACH_IMGSUFF            := $($(MACH)_IMG_SUFFIX)
@@ -227,7 +227,7 @@ ifeq ($(DEBUG),1)
 MACH_CC_FLAGS		:= -g -feliminate-unused-debug-symbols $(MACH_CC_FLAGS)
 MACH_CXX_FLAGS          := -g -feliminate-unused-debug-symbols $(MACH_CXX_FLAGS)
 MACH_AS_FLAGS		:= -g $(MACH_AS_FLAGS)
-MACH_EMULATOR           := $(subst -m ,-gdb tcp::1235 -S -m ,$(MACH_EMULATOR))
+MACH_EMULATOR           := $(subst -m ,-gdb tcp::1236 -S -m ,$(MACH_EMULATOR))
 endif
 
 # Architecture specifics

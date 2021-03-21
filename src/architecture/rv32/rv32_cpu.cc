@@ -86,6 +86,9 @@ void CPU::Context::load() const volatile
         "       lw      x31,   -4(sp)           \n"
         "       lw       x4, -120(sp)           \n"     // pop st
         "       csrs    sstatus,   x4           \n"     // set mstatus for mret
+        "       li      gp, 1 << 8              \n"
+        "       csrs    sstatus, gp             \n"
+        "       li      gp, 0                   \n"
         "       lw       x4, -116(sp)           \n"     // pop pc
         "       csrw     sepc,     x4           \n"     // move pc to mepc for mret
         "       sret                            \n");

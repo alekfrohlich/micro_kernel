@@ -32,6 +32,8 @@ class PageTable
             R = 1 << 1,
             W = 1 << 2,
             X = 1 << 3,
+            A = 1 << 6,
+            D = 1 << 7,
         };
 
         PTE ptes[1024];
@@ -106,26 +108,29 @@ static void build_page_tables()
 
 static void setup_supervisor_environment() 
 {
+    ASM("sl:");
     CPU::sstatus_write( CPU::SIE | CPU::SPIE | CPU::SPP_S );
-    CPU::sie_write( CPU::SSI | CPU::STI | CPU::SEI ); // only STI appears set
+    CPU::sie_write( CPU::SSI | CPU::STI | CPU::SEI );
     CPU::stvec_write((unsigned)&_int_entry & 0xfffffffe);
-    CPU::sepc_write( (unsigned)&_start);
-    Reg satp = (0x1 << 31) | (Traits<Machine>::PAGE_TABLES >> 12);
-    CPU::satp(satp);
+    CPU::sepc_write((unsigned)&_start);
+    CPU::satp((0x1 << 31) | (Traits<Machine>::PAGE_TABLES >> 12));
     ASM("sret");
 }
 
+// tp is being used in context switching
 static void setup_machine_environment(Reg core)
 {
-    if (core == 0) {
+    if (core == 0) { // init other cores
         build_page_tables();
+        ASM("label:");
         CPU::satp_write(0); // paging off
         CPU::mstatus_write(CPU::MPP_S | CPU::MPIE);
         CPU::mepc((unsigned)&setup_supervisor_environment);
-        
         CPU::mtvec((unsigned)&_mmode_forward & 0xfffffffe);
-        CPU::mie_write(CPU::MTI);
-        CPU::mideleg_write( CPU::MTI | CPU::STI ); // only MTI appears set
+        // CPU::mie_write(CPU::MTI);
+        // forward everything
+        CPU::mideleg_write(CPU::SSI | CPU::STI | CPU::SEI);
+        CPU::medeleg_write(0xffff);
         ASM("mret");
     } else { // Not tested
         // CPU::mstatus_write(CPU::MSTATUS_DEFAULTS);

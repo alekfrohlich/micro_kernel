@@ -260,7 +260,9 @@ public:
     static void halt() { ASM("wfi"); }
 
     static unsigned int id() {
-        return tp();
+        //!SMODE
+        // return tp();
+        return 0;
     }
 
     static unsigned int mhartid() {
@@ -352,6 +354,10 @@ public:
     
     static void mideleg_write(Reg value) {
         ASM("csrw mideleg, %0" : : "r"(value) : "cc");
+    }
+
+    static void medeleg_write(Reg value) {
+        ASM("csrw medeleg, %0" : : "r"(value) : "cc");
     }
 
     static void sstatus_write(Reg value) {
