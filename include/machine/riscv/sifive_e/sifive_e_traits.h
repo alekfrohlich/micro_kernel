@@ -60,7 +60,7 @@ template <> struct Traits<Machine>: public Traits<Machine_Common>
 template <> struct Traits<IC>: public Traits<Machine_Common>
 {
     static const bool debugged = hysterically_debugged;
-    static const bool enabled = false;
+    static const bool enabled = true;
 
     static const unsigned int IRQS = 1024; // PLIC
     static const unsigned int INTS = 1056; // Exceptions + Software + Local + Timer + External

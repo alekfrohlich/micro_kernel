@@ -97,7 +97,11 @@ void IC::entry()
         "        lw         x29, 116(sp)                                \n"
         "        lw         x30, 120(sp)                                \n"
         "        lw         x31, 128(sp)                                \n"
+        // lembre-se do if nojento pro modo user
         "        csrw   sstatus, x31                                    \n"
+        "       li      gp, 1 << 8                                      \n"
+        "       csrs    sstatus, gp                                     \n"
+        "       li      gp, 0                                           \n"
         "        lw         x31, 132(sp)                                \n"
         "        csrw      sepc, x31                                    \n"
         "        lw         x31, 124(sp)                                \n"

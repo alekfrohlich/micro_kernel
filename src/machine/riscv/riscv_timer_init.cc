@@ -15,7 +15,8 @@ void Timer::init()
     if(!Traits<System>::multicore || (CPU::id() == 0))
         IC::int_vector(IC::INT_SYS_TIMER, int_handler);
 
-    config(FREQUENCY);
+    //!SMODE
+    // config(FREQUENCY);
     IC::enable(IC::INT_SYS_TIMER);
 
     CPU::int_enable();

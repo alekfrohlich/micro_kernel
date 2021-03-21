@@ -73,7 +73,7 @@ public:
     {
     public:
         // Contexts are loaded with mret, which gets pc from mepc and updates some bits of mstatus, that's why _st is initialized with MPIE and MPP
-        Context(const Log_Addr & entry, const Log_Addr & exit): _st(MPIE | MPP), _pc(entry), _x1(exit) {
+        Context(const Log_Addr & entry, const Log_Addr & exit): _st(SPIE | SPP_S), _pc(entry), _x1(exit) {
             if(Traits<Build>::hysterically_debugged || Traits<Thread>::trace_idle) {
                                                                         _x5 =  5;  _x6 =  6;  _x7 =  7;  _x8 =  8;  _x9 =  9;
                 _x10 = 10; _x11 = 11; _x12 = 12; _x13 = 13; _x14 = 14; _x15 = 15; _x16 = 16; _x17 = 17; _x18 = 18; _x19 = 19;
@@ -364,8 +364,16 @@ public:
         ASM("csrw sstatus, %0" : : "r"(value) : "cc");
     }
 
+    static void sie(Reg value) {
+        ASM("csrs sie, %0" : : "r"(value) : "cc");
+    }
+
     static void sie_write(Reg value) {
         ASM("csrw sie, %0" : : "r"(value) : "cc");
+    }
+
+    static void sie_clear(Reg value) {
+        ASM("csrc sie, %0" : : "r"(value) : "cc");
     }
 
     static void sip(Reg value) {
