@@ -17,12 +17,15 @@ class Timer: private Timer_Common, private CLINT
     friend Machine;
     friend IC;
     friend class Init_System;
-
 protected:
+    friend class Setup_SifiveE; // Timer::config will be called during setup
     static const unsigned int CHANNELS = 2;
     static const unsigned int FREQUENCY = Traits<Timer>::FREQUENCY;
-
     typedef IC_Common::Interrupt_Id Interrupt_Id;
+
+    static void config(const Hertz & frequency) {
+        reg(MTIMECMP + MTIMECMP_CORE_OFFSET * CPU::id()) = reg(MTIME) + (CLOCK / frequency);
+    }
 
 public:
     using Timer_Common::Tick;
@@ -71,10 +74,6 @@ public:
 
 private:
     static volatile CPU::Reg32 & reg(unsigned int o) { return reinterpret_cast<volatile CPU::Reg32 *>(Memory_Map::CLINT_BASE)[o / sizeof(CPU::Reg32)]; }
-
-    static void config(const Hertz & frequency) {
-        reg(MTIMECMP + MTIMECMP_CORE_OFFSET * CPU::id()) = reg(MTIME) + (CLOCK / frequency);
-    }
 
     static void int_handler(Interrupt_Id i);
 

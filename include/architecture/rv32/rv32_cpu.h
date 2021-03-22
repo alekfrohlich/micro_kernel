@@ -297,6 +297,11 @@ public:
         return value;
     }
 
+    static Reg rdtime() {
+        Reg value;
+        ASM("rdtime %0" : "=r"(value) : : );
+        return value;
+    }
 
     //================ exceptions
 

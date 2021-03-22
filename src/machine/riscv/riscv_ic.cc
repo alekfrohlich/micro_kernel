@@ -132,7 +132,7 @@ void IC::int_not(Interrupt_Id id)
         db<IC>(WRN) << endl;
 }
 
-// Always in machine mode
+//!SMODE: Always in machine mode
 void IC::exception(Interrupt_Id id)
 {
     static unsigned exc = 0;

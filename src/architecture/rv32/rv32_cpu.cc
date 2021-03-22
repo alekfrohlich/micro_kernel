@@ -167,6 +167,9 @@ void CPU::switch_context(Context ** o, Context * n)
         "       li      x30, 0b11 << 11         \n"     // set x30 as machine mode bits on MPP
         "       or      x31, x31, x30           \n"     // machine mode on MPP is obligatory to avoid errors on mret
         "       csrw     sstatus, x31           \n"
+    "       li      gp, 1 << 8              \n"
+    "       csrs    sstatus, gp             \n"
+    "       li      gp, 0                   \n"
         "       lw      x30,   -8(sp)           \n"
         "       lw      x31,   -4(sp)           \n"
         "       sret                            \n");

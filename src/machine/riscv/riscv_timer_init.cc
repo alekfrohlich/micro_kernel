@@ -9,14 +9,14 @@ __BEGIN_SYS
 void Timer::init()
 {
     db<Init, Timer>(TRC) << "Timer::init()" << endl;
+    db<Init, Timer>(TRC) << "Time=" << CPU::rdtime() << endl;
 
     CPU::int_disable();
 
     if(!Traits<System>::multicore || (CPU::id() == 0))
         IC::int_vector(IC::INT_SYS_TIMER, int_handler);
 
-    //!SMODE
-    // config(FREQUENCY);
+    config(FREQUENCY);
     IC::enable(IC::INT_SYS_TIMER);
 
     CPU::int_enable();

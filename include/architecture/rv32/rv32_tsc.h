@@ -35,7 +35,9 @@ public:
     static Hertz frequency() { return CLOCK; }
     static PPB accuracy() { return ACCURACY; }
 
-    static Time_Stamp time_stamp() { return (CPU::Reg64(reg(MTIMEH)) << 32) | reg(MTIME); }
+    //!SMODE: rdtime
+    // static Time_Stamp time_stamp() { return (CPU::Reg64(reg(MTIMEH)) << 32) | reg(MTIME); }
+    static Time_Stamp time_stamp() { return CPU::rdtime(); }
 
 private:
     static void init() {}

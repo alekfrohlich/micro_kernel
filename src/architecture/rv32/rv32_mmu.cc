@@ -6,5 +6,6 @@ __BEGIN_SYS
 
 // Class attributes
 MMU::List MMU::_free;
+MMU::Page_Directory * MMU::_master;
 
 __END_SYS

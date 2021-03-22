@@ -12,21 +12,66 @@
 
 __BEGIN_SYS
 
-class MMU: public MMU_Common<0, 0, 0>
+class MMU: public MMU_Common<10, 10, 12>
 {
     friend class CPU;
-
+    friend class Setup_SifiveE;
 private:
     typedef Grouping_List<unsigned int> List;
-
     static const unsigned int PHY_MEM = Memory_Map::PHY_MEM;
 
 public:
     // Page Flags
-    typedef MMU_Common<0, 0, 0>::Flags RV32_Flags;
+    class RV32_Flags
+    {
+    public:
+        enum {
+            VALID    = 1 << 0,
+            READ     = 1 << 1,
+            WRITE    = 1 << 2,
+            EXEC     = 1 << 3,
+            ACCESSED = 1 << 6,
+            DIRTY    = 1 << 7,
+            SYS      = VALID | READ | WRITE | EXEC,
+            USR      = VALID | READ | WRITE | EXEC,
+        };
+
+        RV32_Flags() {}
+        RV32_Flags(const RV32_Flags & f): _flags(f) {}
+        RV32_Flags(unsigned int f): _flags(f) {}
+        RV32_Flags(const Flags & f): _flags(VALID |
+                                            ((f & Flags::RW)  ? READ  : 0) |
+                                            ((f & Flags::USR) ? USR : 0)) {}
+        operator unsigned int() const { return _flags; }
+
+    private:
+        unsigned int _flags;
+
+    };
 
     // Page_Table
-    class Page_Table {};
+    class Page_Table
+    {
+    private:
+        typedef unsigned int PTE;
+        PTE ptes[1024];
+
+    public:
+        Page_Table() {}
+        void map(int from, int to, const RV32_Flags & flags) {
+            // alloc?
+        }
+
+        void remap(const RV32_Flags & flags) {
+            for(int i = 0; i < 1024; i++) {
+                unsigned int pte = (((unsigned)this - Traits<Machine>::PAGE_TABLES)>>12) - 1;
+                pte = pte << 20;
+                pte += ((i) << 10);
+                pte = pte | flags;
+                ptes[i] = pte;
+            }
+        }
+    };
 
     // Chunk (for Segment)
     class Chunk
@@ -39,7 +84,7 @@ public:
         ~Chunk() { free(_phy_addr, _bytes); }
 
         unsigned int pts() const { return 0; }
-        Flags flags() const { return _flags; }
+        Flags flags() const { return Flags(_flags); }
         Page_Table * pt() const { return 0; }
         unsigned int size() const { return _bytes; }
         Phy_Addr phy_address() const { return _phy_addr; } // always CT
@@ -74,23 +119,23 @@ public:
     };
 
     // DMA_Buffer (straightforward without paging)
-    class DMA_Buffer: public Chunk
-    {
-    public:
-        DMA_Buffer(unsigned int s): Chunk(s, Flags::CT) {
-            db<MMU>(TRC) << "MMU::DMA_Buffer() => " << *this << endl;
-        }
+    // class DMA_Buffer: public Chunk
+    // {
+    // public:
+    //     DMA_Buffer(unsigned int s): Chunk(s, Flags::CT) {
+    //         db<MMU>(TRC) << "MMU::DMA_Buffer() => " << *this << endl;
+    //     }
 
-        Log_Addr log_address() const { return phy_address(); }
+    //     Log_Addr log_address() const { return phy_address(); }
 
-        friend Debug & operator<<(Debug & db, const DMA_Buffer & b) {
-            db << "{phy=" << b.phy_address()
-               << ",log=" << b.log_address()
-               << ",size=" << b.size()
-               << ",flags=" << b.flags() << "}";
-            return db;
-        }
-    };
+    //     friend Debug & operator<<(Debug & db, const DMA_Buffer & b) {
+    //         db << "{phy=" << b.phy_address()
+    //            << ",log=" << b.log_address()
+    //            << ",size=" << b.size()
+    //            << ",flags=" << b.flags() << "}";
+    //         return db;
+    //     }
+    // };
 
 public:
     MMU() {}
@@ -144,6 +189,7 @@ private:
 
 private:
     static List _free;
+    static Page_Directory * _master;
 };
 
 __END_SYS
