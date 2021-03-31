@@ -115,9 +115,11 @@ void IC::dispatch()
     if((id != INT_SYS_TIMER) || Traits<IC>::hysterically_debugged)
         db<IC>(TRC) << "IC::dispatch(i=" << id << ")" << endl;
 
-    // IPIs must be acknowledged before calling the ISR, because in RISC-V, set bits will keep on triggering interrupts until they are cleared
     if(id == INT_RESCHEDULER)
-        IC::ipi_eoi(id);
+        CPU::sip_clear(CPU::SSI);
+
+    if(id == INT_SYS_TIMER)
+        CPU::sie_clear(CPU::STI);
 
     _int_vector[id](id);
 }

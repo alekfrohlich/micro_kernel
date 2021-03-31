@@ -59,8 +59,8 @@ public:
 
     enum {
         HARD_INT        = CPU::EXCEPTIONS,
-        INT_SYS_TIMER   = HARD_INT + IRQ_MAC_TIMER,
-        INT_RESCHEDULER = HARD_INT + IRQ_MAC_SOFT, // An IPI is mapped to the machine with mcause set to IRQ_MAC_SOFT
+        INT_SYS_TIMER   = HARD_INT + IRQ_SUP_TIMER,
+        INT_RESCHEDULER = HARD_INT + IRQ_SUP_SOFT, // An IPI is mapped to the machine with mcause set to IRQ_MAC_SOFT
         INT_MASK        = CPU::Reg32(1 << 31) - 1
     };
 

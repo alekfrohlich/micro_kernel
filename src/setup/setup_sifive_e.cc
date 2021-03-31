@@ -9,7 +9,10 @@
 
 using namespace EPOS::S;
 typedef unsigned int Reg;
-
+// ic entry ta diferente: eles n salvam tp
+// crt0.S ta diferente
+// medeleg n delega ecall
+// mideleg delega tudo
 extern "C" 
 {
     void _setup() __attribute__ ((used, naked, section(".init")));
@@ -58,34 +61,11 @@ void Setup_SifiveE::build_page_tables()
         * pte |= MMU::RV32_Flags::VALID;    
     }
 
-    // for(int i = 0; i < 1024; i++)
-    // {
-    //     Page_Table * pt = new ( (void *)(page_tables + 4*1024*(i+1))  ) Page_Table();
-    //     pt->remap(RV32_Flags::SYS);
-    // }
-    for(int i = 0; i < 512; i++)
+    for(int i = 0; i < 1024; i++)
     {
         Page_Table * pt = new ( (void *)(page_tables + 4*1024*(i+1))  ) Page_Table();
         pt->remap(RV32_Flags::SYS);
     }
-
-    ASM("bk:");
-    Page_Table * pt = new ( (void *)(page_tables + 4*1024*(512+1))  ) Page_Table();
-    pt->ptes[0] = RV32_Flags::SYS;
-    for(int i = 1; i < 1024; i++) {
-        unsigned int pte = (((unsigned)pt - Traits<Machine>::PAGE_TABLES)>>12) - 1;
-        pte = pte << 20;
-        pte += ((i) << 10);
-        pte = pte | RV32_Flags::SYS;
-        pt->ptes[i] = pte;
-    }
-
-    for(int i = 513; i < 1024; i++)
-    {
-        Page_Table * pt = new ( (void *)(page_tables + 4*1024*(i+1))  ) Page_Table();
-        pt->remap(RV32_Flags::SYS);
-    }
-
 }
 
 void Setup_SifiveE::setup_supervisor_environment() 
@@ -124,6 +104,7 @@ void Setup_SifiveE::setup_machine_environment()
     ASM("mret");
 }
 
+//!SMODE: ta entrando aqui com MPP=1 em Init_First
 extern "C" void int_m2s() {
     // saving and restoring registers since we are making more than just executing mret
     ASM("        .align 4                                               \n"
