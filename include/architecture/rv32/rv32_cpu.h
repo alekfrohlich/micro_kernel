@@ -331,8 +331,16 @@ public:
         return value;
     }
 
+    static void mip(Reg value) {
+        ASM("csrs mip, %0" : : "r"(value) : "cc");
+    }
+
     static void mip_write(Reg value) {
         ASM("csrw mip, %0" : : "r"(value) : "cc");
+    }
+
+    static void mip_clear(Reg value) {
+        ASM("csrc mip, %0" : : "r"(value) : "cc");
     }
 
     static Reg mcause() {
@@ -381,8 +389,18 @@ public:
         ASM("csrc sie, %0" : : "r"(value) : "cc");
     }
 
+    static Reg sie() {
+        Reg value;
+        ASM("csrr %0, sie" : "=r"(value) : : );
+        return value;
+    }
+
     static void sip(Reg value) {
         ASM("csrs sip, %0" : : "r"(value) : "cc");
+    }
+
+    static void sip_clear(Reg value) {
+        ASM("csrc sip, %0" : : "r"(value) : "cc");
     }
 
     static void stvec_write(Reg value) {

@@ -24,6 +24,7 @@ public:
 
         // Initialize System's heap
         db<Init>(INF) << "Initializing system's heap: " << endl;
+        //!SMODE: multiheap
         if(Traits<System>::multiheap) {
             System::_heap_segment = new (&System::_preheap[0]) Segment(HEAP_SIZE, Segment::Flags::SYS);
             if(Memory_Map::SYS_HEAP == Traits<Machine>::NOT_USED)

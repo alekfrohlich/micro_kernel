@@ -17,7 +17,7 @@ class MMU: public MMU_Common<10, 10, 12>
     friend class CPU;
     friend class Setup_SifiveE;
 private:
-    typedef Grouping_List<unsigned int> List;
+    typedef Grouping_List<Frame> List;
     static const unsigned int PHY_MEM = Memory_Map::PHY_MEM;
 
 public:
@@ -52,6 +52,9 @@ public:
     // Page_Table
     class Page_Table
     {
+
+    friend class Setup_SifiveE;
+
     private:
         typedef unsigned int PTE;
         PTE ptes[1024];
@@ -140,36 +143,31 @@ public:
 public:
     MMU() {}
 
-    static Phy_Addr alloc(unsigned int bytes = 1) {
+    static Phy_Addr alloc(unsigned int frames = 1) {
         Phy_Addr phy(false);
-        if(bytes) {
-            List::Element * e = _free.search_decrementing(bytes);
+        if(frames) {
+            List::Element * e = _free.search_decrementing(frames);
             if(e)
-                phy = reinterpret_cast<unsigned int>(e->object()) + e->size();
+                phy = reinterpret_cast<unsigned int>(e->object()) + e->size() * PAGE_SIZE;
             else
                 db<MMU>(ERR) << "MMU::alloc() failed!" << endl;
         }
-        db<MMU>(TRC) << "MMU::alloc(bytes=" << bytes << ") => " << phy << endl;
+        db<MMU>(TRC) << "MMU::alloc(bytes=" << frames << ") => " << phy << endl;
 
         return phy;
     };
 
-    static Phy_Addr calloc(unsigned int bytes = 1) {
-        Phy_Addr phy = alloc(bytes);
-        memset(phy, 0, bytes);
+    static Phy_Addr calloc(unsigned int frames = 1) {
+        Phy_Addr phy = alloc(frames);
+        memset(phy, 0, frames*PAGE_SIZE);
         return phy;
     }
 
-    static void free(Phy_Addr addr, unsigned int n = 1) {
-        db<MMU>(TRC) << "MMU::free(addr=" << addr << ",n=" << n << ")" << endl;
-        // No unaligned addresses if the CPU doesn't support it
-        assert(Traits<CPU>::unaligned_memory_access || !(addr % 4));
+    static void free(Phy_Addr frame, unsigned int n = 1) {
+        db<MMU>(TRC) << "MMU::free(frame=" << frame << ",n=" << n << ")" << endl;
 
-        // Free blocks must be large enough to contain a list element
-        assert(n > sizeof (List::Element));
-
-        if(addr && n) {
-            List::Element * e = new (addr) List::Element(addr, n);
+        if(frame && n) {
+            List::Element * e = new (frame) List::Element(frame, n);
             List::Element * m1, * m2;
             _free.insert_merging(e, &m1, &m2);
         }

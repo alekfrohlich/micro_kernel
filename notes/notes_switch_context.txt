@@ -1,1 +1,0 @@
-carregar mpie e nao mie (aproveitar a atomicidade do mret)

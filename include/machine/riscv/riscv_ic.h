@@ -15,8 +15,9 @@ class CLINT
 public:
     static const unsigned int IRQS = 16;
 
+    //!SMODE: This enum is unsigned int in epos
     // Interrupts (mcause with interrupt = 1)
-    enum {
+    enum : unsigned int {
         IRQ_USR_SOFT            = 0,
         IRQ_SUP_SOFT            = 1,
         IRQ_MAC_SOFT            = 3,
@@ -26,7 +27,9 @@ public:
         IRQ_USR_EXT             = 8,
         IRQ_SUP_EXT             = 9,
         IRQ_MAC_EXT             = 11,
-        INTERRUPT               = 1 << 31
+        INTERRUPT               = 1UL << 31,
+        INT_MASK                = ~INTERRUPT
+
     };
 
     // Registers offsets from CLINT_BASE
@@ -43,6 +46,7 @@ public:
 class IC: private IC_Common, private CLINT
 {
     friend class Machine;
+    friend class Setup_SifiveE;
 
 private:
     typedef CPU::Reg Reg;
@@ -74,10 +78,8 @@ public:
         _int_vector[i] = h;
     }
 
-    //!SMODE
     static void enable() {
         db<IC>(TRC) << "IC::enable()" << endl;
-        // CPU::mie(CPU::MSI | CPU::MTI | CPU::MEI);
         CPU::sie(CPU::SSI | CPU::STI | CPU::SEI);
     }
 
@@ -88,10 +90,8 @@ public:
         enable();
     }
 
-    //!SMODE
     static void disable() {
         db<IC>(TRC) << "IC::disable()" << endl;
-        // CPU::mie_clear(CPU::MSI | CPU::MTI | CPU::MEI);
         CPU::sie_clear(CPU::SSI | CPU::STI | CPU::SEI);
     }
 

@@ -8,9 +8,8 @@ __BEGIN_SYS
 extern "C" {
     void _int_entry() __attribute__ ((alias("_ZN4EPOS1S2IC5entryEv")));
     void _mmode_forward() {
-        ASM("ml:");
-        CPU::sip(CPU::STI);
-        // if ()
+        // if (CPU::int_enabled())
+        //     CPU::sip(CPU::STI);
         ASM("mret");
     }
 }
@@ -132,23 +131,16 @@ void IC::int_not(Interrupt_Id id)
         db<IC>(WRN) << endl;
 }
 
-//!SMODE: Always in machine mode
 void IC::exception(Interrupt_Id id)
 {
-    static unsigned exc = 0;
-    exc++;
     // CPU::halt();
-    CPU::Reg mstatus = CPU::mstatus();
-    CPU::Reg mcause = CPU::mcause();
+    CPU::Reg sstatus = CPU::sstatus();
+    CPU::Reg scause = CPU::scause();
     CPU::Reg mhartid = CPU::id();
-    CPU::Reg mepc;
-    ASM("csrr %0, mepc" : "=r"(mepc) : :);
     CPU::Reg sepc;
     ASM("csrr %0, sepc" : "=r"(sepc) : :);
-    CPU::Reg mtval;
-    ASM("csrr %0, mtval" : "=r"(mtval) : :);
 
-    db<IC>(WRN) << "IC::Exception(" << id << ") => {" << hex << "mstatus=" << mstatus << ",mcause=" << mcause << ",mhartid=" << mhartid << ",mepc=" << hex << mepc << ",sepc=" << sepc << ",mtval=" << mtval << "}" << dec;
+    db<IC>(WRN) << "IC::Exception(" << id << ") => {" << hex << "sstatus=" << sstatus << ",scause=" << scause << ",mhartid=" << mhartid << ",sepc=" << sepc  << "}" << dec;
 
     switch(id) {
         case 0: // unaligned Instruction

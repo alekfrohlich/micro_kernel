@@ -26,8 +26,7 @@ public:
 
         // Interrupts have been disable at Thread::init() and will be reenabled by CPU::Context::load()
         // but we first reset the timer to avoid getting a time interrupt during load()
-        // Timer::reset();
-        CPU::int_enable();
+        Timer::reset();
         first->_context->load();
     }
 };

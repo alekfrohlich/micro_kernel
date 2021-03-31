@@ -19,7 +19,7 @@ void Timer::init()
     config(FREQUENCY);
     IC::enable(IC::INT_SYS_TIMER);
 
-    CPU::int_enable();
+    // CPU::int_enable();
 
 }
 

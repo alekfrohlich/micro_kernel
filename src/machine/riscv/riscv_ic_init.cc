@@ -4,6 +4,8 @@
 #include <machine/ic.h>
 #include <machine/timer.h>
 
+extern "C" void _int_entry();
+
 __BEGIN_SYS
 
 // Class methods
@@ -12,7 +14,6 @@ void IC::init()
     db<Init, IC>(TRC) << "IC::init()" << endl;
 
     CPU::int_disable(); // will be reenabled at Thread::init() by Context::load()
-
     disable(); // will be enabled on demand as handlers are registered
 
     // Set all exception handlers to exception()
