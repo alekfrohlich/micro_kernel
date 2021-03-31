@@ -58,11 +58,34 @@ void Setup_SifiveE::build_page_tables()
         * pte |= MMU::RV32_Flags::VALID;    
     }
 
-    for(int i = 0; i < 1024; i++)
+    // for(int i = 0; i < 1024; i++)
+    // {
+    //     Page_Table * pt = new ( (void *)(page_tables + 4*1024*(i+1))  ) Page_Table();
+    //     pt->remap(RV32_Flags::SYS);
+    // }
+    for(int i = 0; i < 512; i++)
     {
         Page_Table * pt = new ( (void *)(page_tables + 4*1024*(i+1))  ) Page_Table();
         pt->remap(RV32_Flags::SYS);
     }
+
+    ASM("bk:");
+    Page_Table * pt = new ( (void *)(page_tables + 4*1024*(512+1))  ) Page_Table();
+    pt->ptes[0] = RV32_Flags::SYS;
+    for(int i = 1; i < 1024; i++) {
+        unsigned int pte = (((unsigned)pt - Traits<Machine>::PAGE_TABLES)>>12) - 1;
+        pte = pte << 20;
+        pte += ((i) << 10);
+        pte = pte | RV32_Flags::SYS;
+        pt->ptes[i] = pte;
+    }
+
+    for(int i = 513; i < 1024; i++)
+    {
+        Page_Table * pt = new ( (void *)(page_tables + 4*1024*(i+1))  ) Page_Table();
+        pt->remap(RV32_Flags::SYS);
+    }
+
 }
 
 void Setup_SifiveE::setup_supervisor_environment() 
@@ -85,9 +108,9 @@ void Setup_SifiveE::setup_supervisor_environment()
 void Setup_SifiveE::setup_machine_environment()
 {
     CPU::mie_write(CPU::MSI | CPU::MTI | CPU::MEI);
-    // CPU::mies(CPU::MSI | CPU::MTI | CPU::MEI); // if this one is disabled, we will not receive timer and software interrupts
     CPU::mmode_int_disable();
-    CPU::mstatus_write(CPU::MPP_S | CPU::MPIE); // set
+
+    CPU::mstatus_write(CPU::MPP_S | CPU::MPIE);
     Reg core = CPU::mhartid();
     CPU::tp(core);
     // set stack for each core
