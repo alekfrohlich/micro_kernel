@@ -24,7 +24,7 @@ template <> struct Traits<Machine>: public Traits<Machine_Common>
     // Physical Memory
     static const unsigned int MEM_BASE          = 0x80000000;
     static const unsigned int VECTOR_TABLE      = NOT_USED;
-    static const unsigned int PAGE_TABLES       = 0x87ffffff + 1 - 16*1024 - ((1024+1)*4*1024);
+    static const unsigned int PAGE_TABLES       = 0x87ffffff + 1 - 16*1024 - ((1024+1)*4*1024); // 0x87BFB000, 0x87bfc000
     static const unsigned int MEM_TOP           = 0x87ffffff; // 128 MB
     static const unsigned int BOOT_STACK        = 0x87ffffff;
 

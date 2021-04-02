@@ -1,5 +1,6 @@
 // EPOS RISC-V sifive SETUP
 
+//!SMODE: clean this
 #include <system/config.h>
 #include <architecture/cpu.h>
 #include <architecture/mmu.h>
@@ -9,12 +10,12 @@
 using namespace EPOS::S;
 typedef unsigned int Reg;
 
-extern "C" 
+extern "C"
 {
     [[gnu::naked, gnu::section(".init")]] void _setup();
     void _int_entry();
     void _start();
-    void _wait() { 
+    void _wait() {
         CPU::halt();
         _start();
     }
@@ -50,53 +51,91 @@ public:
     static void build_page_tables();
 };
 
-void Setup_SifiveE::build_page_tables() 
+void Setup_SifiveE::build_page_tables()
 {
-    Reg page_tables = Traits<Machine>::PAGE_TABLES; // address of the page table root
+    // Address of the Directory
+    Reg page_tables = Traits<Machine>::PAGE_TABLES;
     MMU::_master = new ( (void *) page_tables ) Page_Directory();
 
-    for(int i = 0; i < 1024; i++) { 
+    int sys_npages = 512 + MMU::page_tables(MMU::pages(Traits<Machine>::MEM_TOP + 1 - Traits<Machine>::MEM_BASE));
+
+    // Manually build the kernel directory
+    for(int i = 0; i < sys_npages; i++) {
         PT_Entry * pte = (((PT_Entry *)MMU::_master) + i);
         * pte = ((page_tables >> 12) << 10);
         * pte += ((i+1) << 10);
-        * pte |= MMU::RV32_Flags::VALID;    
+        * pte |= MMU::RV32_Flags::VALID;
     }
 
-    for(int i = 0; i < 1024; i++)
+    // Map logical addrs back to themselves; with this, the kernel may access any
+    // physical RAM address directly (as if paging wasn't there)
+    for(int i = 0; i < sys_npages; i++)
     {
-        Page_Table * pt = new ( (void *)(page_tables + 4*1024*(i+1))  ) Page_Table();
-        pt->remap(RV32_Flags::SYS);
+        Page_Table * pt = new ( (void *)(page_tables + 4*1024*(i+1)) ) Page_Table();
+        pt->remap(pt, RV32_Flags::SYS);
     }
+
+    // for(int i = sys_npages; i < 1024; i++)
+    // {
+    //     Page_Table * pt = new ( (void *)(page_tables + 4*1024*(i+1))  ) Page_Table();
+    //     pt->remap(pt, RV32_Flags::USR);
+    // }
 }
 
-void Setup_SifiveE::setup_supervisor_environment() 
+void Setup_SifiveE::setup_supervisor_environment()
 {
+    //!SMODE: why?
     IC::init();
     IC::int_vector(IC::INT_RESCHEDULER, IC::ipi_eoi);
+
     CPU::stvec_write((unsigned)&_int_entry & 0xfffffffc);
+
+    // This creates and configures the kernel page tables (which map logical==physical)
     build_page_tables();
-    
+
     // forward everything
     CPU::satp((0x1 << 31) | (Traits<Machine>::PAGE_TABLES >> 12));
     CPU::sepc_write((unsigned)&_start);
+
+    // Interrupts will remain disable until the Context::load at Init_First
     CPU::sstatus_write(CPU::SPP_S);
     CPU::sie_write(CPU::SSI | CPU::STI | CPU::SEI);
+
     ASM("sret");
 }
 
 void Setup_SifiveE::setup_machine_environment()
 {
+    // We first configure the M-mode CSRs and then switch to S-mode
+    // configure paging. After that, we won't return to M-mode; an exception
+    // is the forwarding of ints and excps to S-mode.
+
     CPU::mie_write(CPU::MSI | CPU::MTI | CPU::MEI);
     CPU::mmode_int_disable();
 
+    // We need to set:
+    //      MPP_S: to switch to S-mode after mret
+    //      MPIE:  otherwise we won't ever receive interrupts
     CPU::mstatus_write(CPU::MPP_S | CPU::MPIE);
+
+    // We store mhartid at tp, since it becomes inaccessible while in S-mode.
     Reg core = CPU::mhartid();
     CPU::tp(core);
-    // set stack for each core
+
+    // Set stack for each core
     CPU::sp(Traits<Machine>::BOOT_STACK - Traits<Machine>::STACK_SIZE * core);
-    CPU::satp_write(0); // paging off
+
+    // Guarantee that paging is off before going to S-mode.
+    CPU::satp_write(0);
+
+    // Forward all ints and excs to S-mode.
+    //!ECALLS: Not yet implemented.
     CPU::mideleg_write(CPU::SSI | CPU::STI | CPU::SEI);
-    CPU::medeleg_write(0xffff); // ecalls will be handled in the future
+    CPU::medeleg_write(0xffff);
+
+    // All ints received in M-mode are forwarded to S-mode.
+    // The first two bits indicate the mode: Direct or Vectored;
+    // we opted for Direct.
     CPU::mtvec((unsigned)&_mmode_forward & 0xfffffffc);
     CPU::mepc((unsigned)&setup_supervisor_environment);
 
