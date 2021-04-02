@@ -12,10 +12,10 @@ unsigned int CPU::_bus_clock;
 // Class methods
 void CPU::Context::save() volatile
 {
-    ASM("       csrr     x4,  sstatus           \n"
-        "       sw       x4, -120(sp)           \n"     // push st
-        "       la       x4,      pc            \n"
-        "       sw       x4, -116(sp)           \n"     // push pc
+    ASM("       csrr     gp,  sstatus           \n"
+        "       sw       gp, -120(sp)           \n"     // push sstatus
+        "       la       gp,      pc            \n"
+        "       sw       gp, -116(sp)           \n"     // push pc
         "       sw       x1, -112(sp)           \n"     // push ra
         "       sw       x5, -108(sp)           \n"     // push x5-x31
         "       sw       x6, -104(sp)           \n"
@@ -50,7 +50,7 @@ void CPU::Context::save() volatile
 }
 
 // Context load does not verify if interrupts were previously enabled by the Context's constructor
-// We are setting mstatus to MPP | MPIE, therefore, interrupts will be enabled only after mret
+// We are setting sstatus to SPP_S | SPIE, therefore, interrupts will be enabled only after sret
 void CPU::Context::load() const volatile
 {
     ASM("       mv      sp, %0                  \n"                     // load the stack pointer with the this pointer
@@ -84,14 +84,13 @@ void CPU::Context::load() const volatile
         "       lw      x29,  -12(sp)           \n"
         "       lw      x30,   -8(sp)           \n"
         "       lw      x31,   -4(sp)           \n"
-        "       lw       x4, -120(sp)           \n"     // pop st
-        "       csrs    sstatus,   x4           \n"     // set mstatus for mret
-        "       lw       x4, -116(sp)           \n"     // pop pc
-        "       csrw     sepc,     x4           \n"     // move pc to mepc for mret
+        "       lw       gp, -120(sp)           \n"     // pop sstatus
+        "       csrs    sstatus,   gp           \n"     // set sstatus for sret
+        "       lw       gp, -116(sp)           \n"     // pop pc
+        "       csrw     sepc,     gp           \n"     // move pc to sepc for sret
         "       sret                            \n");
 }
 
-//!SMODE: Fix sret: add SPP
 void CPU::switch_context(Context ** o, Context * n)
 {   
     // Push the context into the stack and update "o"
@@ -125,7 +124,7 @@ void CPU::switch_context(Context ** o, Context * n)
         "       sw      x30,   -8(sp)           \n"
         "       sw      x31,   -4(sp)           \n"
         "       csrr    x31,  sstatus           \n"     // get mstatus
-        "       sw      x31, -120(sp)           \n"     // push st
+        "       sw      x31, -120(sp)           \n"     // push sstatus
         "       addi     sp,      sp,   -120    \n"     // complete the pushes above by adjusting the SP
         "       sw       sp,    0(a0)           \n");   // update Context * volatile * o
 
@@ -160,13 +159,12 @@ void CPU::switch_context(Context ** o, Context * n)
         "       lw      x27,  -20(sp)           \n"
         "       lw      x28,  -16(sp)           \n"
         "       lw      x29,  -12(sp)           \n"
-        "       lw      x31, -120(sp)           \n"     // pop st
-        "       li      x30, 0b11 << 11         \n"     // set x30 as machine mode bits on MPP
-        "       or      x31, x31, x30           \n"     // machine mode on MPP is obligatory to avoid errors on mret
+        "       lw      x31, -120(sp)           \n"     // pop sstatus
+        // As we are not handling an interrupt, we need to manually configure SPP_S to avoid
+        // going to user mode.
+        "       li      x30, 0b1 << 8           \n"
+        "       or      x31, x31, x30           \n"   
         "       csrw     sstatus, x31           \n"
-    "       li      gp, 1 << 8              \n"
-    "       csrs    sstatus, gp             \n"
-    "       li      gp, 0                   \n"
         "       lw      x30,   -8(sp)           \n"
         "       lw      x31,   -4(sp)           \n"
         "       sret                            \n");

@@ -5,14 +5,7 @@
 
 __BEGIN_SYS
 
-extern "C" {
-    void _int_entry() __attribute__ ((alias("_ZN4EPOS1S2IC5entryEv")));
-    void _mmode_forward() {
-        // if (CPU::int_enabled())
-        //     CPU::sip(CPU::STI);
-        ASM("mret");
-    }
-}
+extern "C" { void _int_entry() __attribute__ ((alias("_ZN4EPOS1S2IC5entryEv"))); }
 
 // Class attributes
 IC::Interrupt_Handler IC::_int_vector[IC::INTS];
@@ -96,11 +89,7 @@ void IC::entry()
         "        lw         x29, 116(sp)                                \n"
         "        lw         x30, 120(sp)                                \n"
         "        lw         x31, 128(sp)                                \n"
-        // lembre-se do if nojento pro modo user
         "        csrw   sstatus, x31                                    \n"
-        "       li      gp, 1 << 8                                      \n"
-        "       csrs    sstatus, gp                                     \n"
-        "       li      gp, 0                                           \n"
         "        lw         x31, 132(sp)                                \n"
         "        csrw      sepc, x31                                    \n"
         "        lw         x31, 124(sp)                                \n"
@@ -135,7 +124,6 @@ void IC::int_not(Interrupt_Id id)
 
 void IC::exception(Interrupt_Id id)
 {
-    // CPU::halt();
     CPU::Reg sstatus = CPU::sstatus();
     CPU::Reg scause = CPU::scause();
     CPU::Reg mhartid = CPU::id();

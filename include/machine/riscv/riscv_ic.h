@@ -15,7 +15,6 @@ class CLINT
 public:
     static const unsigned int IRQS = 16;
 
-    //!SMODE: This enum is unsigned int in epos
     // Interrupts (mcause with interrupt = 1)
     enum : unsigned int {
         IRQ_USR_SOFT            = 0,
@@ -29,7 +28,6 @@ public:
         IRQ_MAC_EXT             = 11,
         INTERRUPT               = 1UL << 31,
         INT_MASK                = ~INTERRUPT
-
     };
 
     // Registers offsets from CLINT_BASE
