@@ -71,25 +71,35 @@ public:
         // }
 
         void map(const RV32_Flags & flags, int from, int to) {
-            // Phy_Addr * addr = alloc(to - from);
-            // if(addr)
-            //     remap(addr, flags, from , to);
+            Phy_Addr * addr = alloc(to - from);
+            if(addr)
+                remap(addr, flags, from , to);
             // else
-            //     for( ; from < to; from++) {
-            //         Log_Addr * tmp = phy2log(&ptes[from]);
-            //         *tmp = alloc(1) | flags;
-            //         unsigned int pte = ((addr - Traits<Machine>::PAGE_TABLES)>>12) - 1;
-            //         pte = pte << 20;
-            //         pte += ((from) << 10);
-            //         pte = pte | flags;
-            //         ptes[i] = pte;
-            //     }
+                // for( ; from < to; from++) {
+                //     Log_Addr * tmp = phy2log(&ptes[from]);
+                //     *tmp = alloc(1) | flags;
+                //     unsigned int pte = ((addr - Traits<Machine>::PAGE_TABLES)>>12) - 1;
+                //     pte = pte << 20;
+                //     pte += ((from) << 10);
+                //     pte = pte | flags;
+                //     ptes[i] = pte;
+                // }
         }
+
+        // void remap(Phy_Addr phy_addr, const RV32_Flags & flags, int from = 0, int to = 1024) {
+        //     for(int i = from; i < to; i++) {
+        //         unsigned int pte = ((this - Traits<Machine>::PAGE_TABLES)>>12) - 1;
+        //         pte = pte << 20;
+        //         pte += ((i) << 10);
+        //         pte = pte | flags;
+        //         ptes[i] = pte;
+        //     }
+        // }
 
         void remap(Phy_Addr phy_addr, const RV32_Flags & flags, int from = 0, int to = 1024) {
             for(int i = from; i < to; i++) {
-                unsigned int pte = ((phy_addr - Traits<Machine>::PAGE_TABLES)>>12) - 1;
-                pte = pte << 20;
+                unsigned int pte = phy_addr >> 12;
+                pte = pte << 10;
                 pte += ((i) << 10);
                 pte = pte | flags;
                 ptes[i] = pte;
@@ -148,7 +158,15 @@ public:
     class Directory
     {
     public:
-        Directory() {}
+        // Directory() {}
+        Directory() : _pd(calloc(1)) {
+            kout << "Directory" << endl;
+            for(unsigned int i = 0; i < 544; i++){
+                (*_pd)[i] = (*_master)[i];
+                kout << i << endl;
+            }
+
+        }
         // Directory(Page_Directory * pd) {}
         Directory(Page_Directory * pd) : _pd(pd) {}
 
@@ -160,9 +178,16 @@ public:
         // Log_Addr attach(const Chunk & chunk) { return chunk.phy_address(); }
         // Log_Addr attach(const Chunk & chunk, Log_Addr addr) { return (addr == chunk.phy_address())? addr : Log_Addr(false); }
 
+        Log_Addr attach(const Chunk & chunk, unsigned int from = 0) {
+            for(unsigned int i = from; i < PD_ENTRIES; i++)
+                if(attach(i, chunk.pt(), chunk.pts(), RV32_Flags::VALID))
+                    return i << DIRECTORY_SHIFT;
+            return false;
+        }
+
         Log_Addr attach(const Chunk & chunk, const Log_Addr & addr) {
             unsigned int from = directory(addr);
-            if(!attach(from, chunk.pt(), chunk.pts(), chunk.flags()))
+            if(!attach(from, chunk.pt(), chunk.pts(), RV32_Flags::VALID))
                 return Log_Addr(false);
             return from << DIRECTORY_SHIFT;
         }
@@ -177,7 +202,7 @@ public:
                 if((*static_cast<Page_Directory *>(phy2log(_pd)))[i]) //it has already been used
                     return false;
             for(unsigned int i = from; i < from + n; i++, pt++)
-                (*static_cast<Page_Directory *>(phy2log(_pd)))[i] = Phy_Addr(pt) | flags;
+                (*static_cast<Page_Directory *>(phy2log(_pd)))[i] = Phy_Addr(pt) | flags; // is pt the correct value?
             return true;
         }
 

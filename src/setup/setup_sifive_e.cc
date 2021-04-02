@@ -57,25 +57,27 @@ void Setup_SifiveE::build_page_tables()
     Reg page_tables = Traits<Machine>::PAGE_TABLES;
     MMU::_master = new ( (void *) page_tables ) Page_Directory();
 
-    int sys_npages = 512 + MMU::page_tables(MMU::pages(Traits<Machine>::MEM_TOP + 1 - Traits<Machine>::MEM_BASE));
+    unsigned sys_entries = 512 + MMU::page_tables(MMU::pages(Traits<Machine>::MEM_TOP + 1 - Traits<Machine>::MEM_BASE));
+
+    MMU::_master->remap(page_tables + (1 << 12), MMU::RV32_Flags::VALID, 0, sys_entries);
 
     // Manually build the kernel directory
-    for(int i = 0; i < sys_npages; i++) {
-        PT_Entry * pte = (((PT_Entry *)MMU::_master) + i);
-        * pte = ((page_tables >> 12) << 10);
-        * pte += ((i+1) << 10);
-        * pte |= MMU::RV32_Flags::VALID;
-    }
+    // for(int i = 0; i < sys_entries; i++) {
+    //     PT_Entry * pte = (((PT_Entry *)MMU::_master) + i);
+    //     * pte = ((page_tables >> 12) << 10);
+    //     * pte += ((i+1) << 10);
+    //     * pte |= MMU::RV32_Flags::VALID;
+    // }
 
     // Map logical addrs back to themselves; with this, the kernel may access any
     // physical RAM address directly (as if paging wasn't there)
-    for(int i = 0; i < sys_npages; i++)
+    for(unsigned i = 0; i < sys_entries; i++)
     {
         Page_Table * pt = new ( (void *)(page_tables + 4*1024*(i+1)) ) Page_Table();
-        pt->remap(pt, RV32_Flags::SYS);
+        pt->remap(i * 1024*4096, RV32_Flags::SYS);
     }
 
-    // for(int i = sys_npages; i < 1024; i++)
+    // for(int i = sys_entries; i < 1024; i++)
     // {
     //     Page_Table * pt = new ( (void *)(page_tables + 4*1024*(i+1))  ) Page_Table();
     //     pt->remap(pt, RV32_Flags::USR);

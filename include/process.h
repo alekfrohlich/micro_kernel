@@ -178,34 +178,35 @@ private:
 };
 
 
-// class Task
-// {
-// private:
-//     static const bool multitask = Traits<System>::multitask;
+class Task
+{
+private:
+    static const bool multitask = Traits<System>::multitask;
+    typedef CPU::Log_Addr Log_Addr;
 
-// public:
-//     template<typename ... Tn>
-//     Task(const Thread::Configuration & conf, Segment * cs, Segment * ds, int (* entry)(Tn ...), Tn ... an)
-//     : _as (new (SYSTEM) Address_Space), _cs(cs), _ds(ds), _entry(entry), _code(_as->attach(_cs)), _data(_as->attach(_ds)) {
-//         db<Task>(TRC) << "Task(as=" << _as << ",cs=" << _cs << ",ds=" << _ds << ",entry=" << _entry << ",code=" << _code << ",data=" << _data << ") => " << this << endl;
+public:
+    Task(Segment * cs, Segment * ds)
+    : _as (new (SYSTEM) Address_Space), _cs(cs), _ds(ds), _code(_as->attach(_cs)), _data(_as->attach(_ds)) {
+        db<Task>(TRC) << "Task(as=" << _as << ",cs=" << _cs << ",ds=" << _ds <<  ",code=" << _code << ",data=" << _data << ") => " << this << endl;
+    }
+    ~Task();
 
-//     }
-//     ~Task();
+    Address_Space * address_space() const { return _as; }
 
-//     Address_Space * address_space() const { return _as; }
+    Segment * code_segment() const { return _cs; }
+    Segment * data_segment() const { return _ds; }
 
-//     Segment * code_segment() const { return _cs; }
-//     Segment * data_segment() const { return _ds; }
-
-//     Log_Addr code() const { return _code; }
-//     Log_Addr data() const { return _data; }
+    Log_Addr code() const { return _code; }
+    Log_Addr data() const { return _data; }
 
 
-// private:
-//     Address_Space * _as;
-//     Segment * _cs;
-//     Segment * _ds;
-// };
+private:
+    Address_Space * _as;
+    Segment * _cs;
+    Segment * _ds;
+    Log_Addr _code;
+    Log_Addr _data;
+};
 
 
 // class Task
