@@ -1,0 +1,21 @@
+diff --git a/src/api/scheduler.cc b/src/api/scheduler.cc
+index 88375cc..2417106 100644
+--- a/src/api/scheduler.cc
++++ b/src/api/scheduler.cc
+@@ -19,4 +19,18 @@ FCFS::FCFS(int p, Tn & ... an): Priority((p == IDLE) ? IDLE : Alarm::elapsed())
+ // Since the definition of FCFS above is only known to this unit, forcing its instantiation here so it gets emitted in scheduler.o for subsequent linking with other units is necessary.
+ template FCFS::FCFS<>(int p);
+ 
++// !@#
++template <typename ... Tn>
++RM::RM(const Microsecond & period, int priority, Tn & ... an) {
++    if(priority == HIGH) {
++        _priority = HIGH + Alarm::ticks(period);
++    }else {
++        _priority = priority;
++    }
++
++     db<Init>(TRC) << "_priority=" << _priority << endl;
++}
++
++template RM::RM<>(const Microsecond & period, int priority);
