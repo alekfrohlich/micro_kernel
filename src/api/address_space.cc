@@ -19,14 +19,14 @@ Address_Space::~Address_Space()
     db<Address_Space>(TRC) << "~Address_Space(this=" << this << ") [Directory::pd=" << Directory::pd() << "]" << endl;
 }
 
-// Address_Space::Log_Addr Address_Space::attach(Segment * seg)
-// {
-//     Log_Addr tmp = Directory::attach(*seg);
+Address_Space::Log_Addr Address_Space::attach(Segment * seg)
+{
+    Log_Addr tmp = Directory::attach(*seg);
 
-//     db<Address_Space>(TRC) << "Address_Space::attach(this=" << this << ",seg=" << seg << ") => " << tmp << endl;
+    db<Address_Space>(TRC) << "Address_Space::attach(this=" << this << ",seg=" << seg << ") => " << tmp << endl;
 
-//     return tmp;
-// }
+    return tmp;
+}
 
 Address_Space::Log_Addr Address_Space::attach(Segment * seg, const Address_Space::Log_Addr & addr)
 {

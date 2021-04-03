@@ -1,11 +1,7 @@
 // EPOS RISC-V sifive SETUP
 
-//!SMODE: clean this
-#include <system/config.h>
-#include <architecture/cpu.h>
-#include <architecture/mmu.h>
-#include <machine/timer.h>
-#include <machine/ic.h>
+#include <architecture.h>
+#include <machine.h>
 
 using namespace EPOS::S;
 typedef unsigned int Reg;
@@ -23,15 +19,13 @@ extern "C"
 
 extern "C" [[gnu::interrupt, gnu::aligned(4)]] void _mmode_forward() {
     Reg id = CPU::mcause();
-    if(id & CLINT::INTERRUPT) {
-        if((id & IC::INT_MASK) == CLINT::IRQ_MAC_TIMER) {
-            Timer::reset();
-            CPU::sie(CPU::STI);
-        }
-        Reg interrupt_id = 1 << ((id & IC::INT_MASK) - 2);
-        if(CPU::int_enabled() && (CPU::sie() & (interrupt_id)))
-            CPU::mip(interrupt_id);
+    if((id & IC::INT_MASK) == CLINT::IRQ_MAC_TIMER) {
+        Timer::reset();
+        CPU::sie(CPU::STI);
     }
+    Reg interrupt_id = 1 << ((id & IC::INT_MASK) - 2);
+    if(CPU::int_enabled() && (CPU::sie() & (interrupt_id)))
+        CPU::mip(interrupt_id);
 }
 
 __BEGIN_SYS
@@ -49,6 +43,7 @@ public:
     static void setup_machine_environment();
     static void setup_supervisor_environment();
     static void build_page_tables();
+    static void clean_bss();
 };
 
 void Setup_SifiveE::build_page_tables()
@@ -57,17 +52,10 @@ void Setup_SifiveE::build_page_tables()
     Reg page_tables = Traits<Machine>::PAGE_TABLES;
     MMU::_master = new ( (void *) page_tables ) Page_Directory();
 
+    // Number of kernel entries in each directory
     unsigned sys_entries = 512 + MMU::page_tables(MMU::pages(Traits<Machine>::MEM_TOP + 1 - Traits<Machine>::MEM_BASE));
 
-    MMU::_master->remap(page_tables + (1 << 12), MMU::RV32_Flags::VALID, 0, sys_entries);
-
-    // Manually build the kernel directory
-    // for(int i = 0; i < sys_entries; i++) {
-    //     PT_Entry * pte = (((PT_Entry *)MMU::_master) + i);
-    //     * pte = ((page_tables >> 12) << 10);
-    //     * pte += ((i+1) << 10);
-    //     * pte |= MMU::RV32_Flags::VALID;
-    // }
+    MMU::_master->remap(page_tables + 4096, RV32_Flags::VALID, 0, sys_entries);
 
     // Map logical addrs back to themselves; with this, the kernel may access any
     // physical RAM address directly (as if paging wasn't there)
@@ -76,12 +64,19 @@ void Setup_SifiveE::build_page_tables()
         Page_Table * pt = new ( (void *)(page_tables + 4*1024*(i+1)) ) Page_Table();
         pt->remap(i * 1024*4096, RV32_Flags::SYS);
     }
+}
 
-    // for(int i = sys_entries; i < 1024; i++)
-    // {
-    //     Page_Table * pt = new ( (void *)(page_tables + 4*1024*(i+1))  ) Page_Table();
-    //     pt->remap(pt, RV32_Flags::USR);
-    // }
+extern "C" char __bss_start;
+extern "C" char _end;
+
+void Setup_SifiveE::clean_bss()
+{
+    unsigned * bss_start = reinterpret_cast<unsigned *>(&__bss_start);
+    unsigned * bss_end = reinterpret_cast<unsigned *>(&_end);
+    for (unsigned * word = bss_start; word < bss_end; word++) {
+        unsigned * t = new (word) unsigned;
+        *t = 0;
+    }
 }
 
 void Setup_SifiveE::setup_supervisor_environment()
@@ -91,6 +86,9 @@ void Setup_SifiveE::setup_supervisor_environment()
     IC::int_vector(IC::INT_RESCHEDULER, IC::ipi_eoi);
 
     CPU::stvec_write((unsigned)&_int_entry & 0xfffffffc);
+
+    // We must clean the bss before setting MMU::_master
+    clean_bss();
 
     // This creates and configures the kernel page tables (which map logical==physical)
     build_page_tables();
