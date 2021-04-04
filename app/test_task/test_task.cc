@@ -10,7 +10,7 @@ OStream cout;
 int main()
 {
     cout << "Task Test" << endl;
-    unsigned * data_base = reinterpret_cast<unsigned*>(0xFFBFFFFF);
+    unsigned * data_base = reinterpret_cast<unsigned*>(Memory_Map::APP_DATA);
     
     Segment * code_seg1 = new Segment(1024*4, MMU::Flags::KCODE);
     Segment * data_seg1 = new Segment(1024*4, MMU::Flags::KDATA);
@@ -30,6 +30,8 @@ int main()
     cout << "Data base=" << *data_base << endl;
     ASM("A2:");
     t2->activate();
+    // Should be Garbage
+    cout << "Data base=" << *data_base << endl;
     *data_base = 9;
     // Should be 9
     cout << "Data base=" << *data_base << endl;
