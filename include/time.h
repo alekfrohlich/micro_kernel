@@ -51,14 +51,12 @@ public:
     static Hertz frequency() { return _timer->frequency(); }
     static Microsecond timer_period() { return 1000000 / frequency(); }
     static volatile Tick & elapsed() { return _elapsed; }
+    static Tick ticks(const Microsecond & time) { return (time + timer_period() / 2) / timer_period(); }
 
     static void delay(const Microsecond & time);
 
 private:
     unsigned int times() const { return _times; }
-
-
-    static Tick ticks(const Microsecond & time) { return (time + timer_period() / 2) / timer_period(); }
 
     static void lock();
     static void unlock();

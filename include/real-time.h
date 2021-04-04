@@ -24,13 +24,6 @@ typedef Thread Aperiodic_Thread;
 // Periodic Thread
 class Periodic_Thread: public Thread
 {
-public:
-    // enum {
-    //     SAME,
-    //     NOW,
-    //     UNKNOWN,
-    //     ANY
-    // };
 
 protected:
     // Alarm Handler for periodic threads under static scheduling policies
@@ -72,17 +65,29 @@ public:
     //     unsigned int times;
     // };
 
+//!SMODE: 
+struct Configuration {
+        Configuration(const Microsecond & p, const unsigned int n = INFINITE, const State & s = READY, const Criterion & c = HIGH, unsigned int ss = STACK_SIZE)
+        : period(p), times(n), state(s), criterion(p, c), stack_size(ss) {}
+
+        Microsecond period;
+        unsigned int times;
+        State state;
+        Criterion criterion;
+        unsigned int stack_size;
+};
+
 public:
     // template<typename ... Tn>
     // Periodic_Thread(const Microsecond & p, int (* entry)(Tn ...), Tn ... an)
     // : Thread(Thread::Configuration(SUSPENDED, Criterion(p)), entry, an ...),
     //   _semaphore(0), _handler(&_semaphore, this), _alarm(p, &_handler, INFINITE) { resume(); }
-    typedef Alarm::Tick Tick;
+    // typedef Alarm::Tick Tick;
 
-    template<typename ... Tn>
-    Periodic_Thread(const Tick & t, int (* entry)(Tn ...), Tn ... an)
-    : Thread(Thread::Configuration(SUSPENDED, Criterion(t)), entry, an ...),
-      _semaphore(0), _handler(&_semaphore, this), _alarm(t * Alarm::timer_period(), &_handler, INFINITE) { resume(); }
+    // template<typename ... Tn>
+    // Periodic_Thread(const Tick & t, int (* entry)(Tn ...), Tn ... an)
+    // : Thread(Thread::Configuration(SUSPENDED, Criterion(t)), entry, an ...),
+    //   _semaphore(0), _handler(&_semaphore, this), _alarm(t * Alarm::timer_period(), &_handler, INFINITE) { resume(); }
 
     // template<typename ... Tn>
     // Periodic_Thread(const Configuration & conf, int (* entry)(Tn ...), Tn ... an)
@@ -94,6 +99,17 @@ public:
     //     } else
     //         _state = conf.state;
     // }
+
+    template<typename ... Tn>
+    Periodic_Thread(const Configuration & conf, int (* entry)(Tn ...), Tn ... an)
+    : Thread(Thread::Configuration(SUSPENDED, conf.criterion, conf.stack_size), entry, an ...),
+      _semaphore(0), _handler(&_semaphore, this), _alarm(conf.period, &_handler, conf.times) {
+        if((conf.state == READY) || (conf.state == RUNNING)) {
+            _state = SUSPENDED;
+            resume();
+        } else
+            _state = conf.state;
+    }
 
     const Microsecond & period() const { return _alarm.period(); }
     void period(const Microsecond & p) { _alarm.period(p); }

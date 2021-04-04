@@ -96,7 +96,7 @@ __BEGIN_SYS
 template<> struct Traits<Application>: public Traits<Build>
 {
     static const unsigned int STACK_SIZE = Traits<Machine>::STACK_SIZE;
-    static const unsigned int HEAP_SIZE = Traits<Machine>::HEAP_SIZE;
+    static const unsigned int HEAP_SIZE = 16*1024;
     static const unsigned int MAX_THREADS = Traits<Machine>::MAX_THREADS;
 };
 

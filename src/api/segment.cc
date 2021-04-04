@@ -18,12 +18,12 @@ Segment::Segment(unsigned int bytes, const Flags & flags): Chunk(bytes, flags)
 //     db<Segment>(TRC) << "Segment(bytes=" << bytes << ",phy_addr=" << phy_addr << ",flags=" << flags << ") [Chunk::_pt=" << Chunk::pt() << "] => " << this << endl;
 // }
 
-Segment::Segment(const Phy_Addr & phy_addr, unsigned int bytes, const Flags & flags): Chunk(phy_addr, bytes, flags)
-// The MMU::IO flag signalizes the MMU that the attached memory shall
-// not be released when the chunk is deleted
-{
-    db<Segment>(TRC) << "Segment(bytes=" << bytes << ",phy_addr=" << phy_addr << ",flags=" << flags << ") [Chunk::_pt=" << Chunk::pt() << "] => " << this << endl;
-}
+// Segment::Segment(const Phy_Addr & phy_addr, unsigned int bytes, const Flags & flags): Chunk(phy_addr, bytes, flags)
+// // The MMU::IO flag signalizes the MMU that the attached memory shall
+// // not be released when the chunk is deleted
+// {
+//     db<Segment>(TRC) << "Segment(bytes=" << bytes << ",phy_addr=" << phy_addr << ",flags=" << flags << ") [Chunk::_pt=" << Chunk::pt() << "] => " << this << endl;
+// }
 
 Segment::~Segment()
 {

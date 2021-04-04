@@ -11,8 +11,12 @@ void Machine::pre_init(System_Info * si)
 
     db<Init, Machine>(TRC) << "Machine::pre_init()" << endl;
 
-    if(Traits<System>::multicore && CPU::id() == 0)
-        smp_barrier_init(Traits<Build>::CPUS);
+    if(CPU::id() == 0 && Traits<IC>::enabled) {
+        IC::init();
+
+        if(Traits<System>::multicore)
+            smp_barrier_init(Traits<Build>::CPUS);
+    }
 }
 
 void Machine::init()

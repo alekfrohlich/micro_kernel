@@ -30,8 +30,8 @@ struct Memory_Map
     // Logical Address Space
     enum {
         APP_LOW         = Traits<Machine>::APP_LOW,
-        APP_CODE        = Traits<Machine>::APP_CODE,
-        APP_DATA        = Traits<Machine>::APP_DATA,
+        APP_CODE        = 0x88000000,
+        APP_DATA        = 0xffc00000,
         APP_HIGH        = Traits<Machine>::APP_HIGH,
 
         PHY_MEM         = Traits<Machine>::PHY_MEM,

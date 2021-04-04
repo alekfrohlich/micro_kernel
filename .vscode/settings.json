@@ -3,6 +3,7 @@
         "makeinc": "makefile",
         "makedefs": "makefile",
         "*.cfg": "plaintext",
-        "atomic": "cpp"
+        "atomic": "cpp",
+        "vector": "cpp"
     }
 }

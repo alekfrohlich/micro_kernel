@@ -323,7 +323,6 @@ public:
     //================ supervisor mode
     
     static void satp(Reg value) {       ASM("csrw satp, %0" : : "r"(value) : "cc"); }
-    static void satp_write(Reg value) { ASM("csrw satp, %0" : : "r"(value) : "cc"); }
     
     static void mideleg_write(Reg value) { ASM("csrw mideleg, %0" : : "r"(value) : "cc"); }
     static void medeleg_write(Reg value) { ASM("csrw medeleg, %0" : : "r"(value) : "cc"); }

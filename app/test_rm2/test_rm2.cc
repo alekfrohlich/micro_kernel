@@ -1,3 +1,4 @@
+// A reference to this test is in this directory (RM-example.png). Here, the values are multiplied by 5.
 
 #include <system.h>
 #include <utility/ostream.h>
@@ -12,7 +13,6 @@ OStream cout;
 typedef unsigned int Tick;
 
 int function_periodic_a(){
-    // CPU::int_enable(); // ints were disabled
     for(int i=0;i<4;i++){
         Tick begin = Alarm::elapsed();
         Tick last = Alarm::elapsed();
@@ -21,7 +21,7 @@ int function_periodic_a(){
         while(tot <= 100){
             CPU::int_disable();
             if (Alarm::elapsed() - last > 5) {
-                last = Alarm::elapsed();
+                last = Alarm::elapsed();    
                 cout << "============ a is back tick: " << Alarm::elapsed() << endl;
             }
             tot += Alarm::elapsed() - last;
@@ -35,7 +35,6 @@ int function_periodic_a(){
 }
 
 int function_periodic_b(){
-    // CPU::int_enable();
     for(int i=0;i<3;i++){
         Tick begin = Alarm::elapsed();
         Tick last = Alarm::elapsed();
@@ -58,7 +57,6 @@ int function_periodic_b(){
 }
 
 int function_periodic_c(){
-    // CPU::int_enable();
     for(int i=0;i<2 ;i++){
         Tick begin = Alarm::elapsed();
         Tick last = Alarm::elapsed();

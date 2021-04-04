@@ -37,15 +37,18 @@ public:
     {
     public:
         enum {
-            PRE = 0x001, // Presence (0=not-present, 1=present)
-            RW  = 0x002, // Write (0=read-only, 1=read-write)
-            USR = 0x004, // Access Control (0=supervisor, 1=user)
-            CWT = 0x008, // Cache Mode (0=write-back, 1=write-through)
-            CD  = 0x010, // Cache Disable (0=cacheable, 1=non-cacheable)
-            CT  = 0x020, // Contiguous (0=non-contiguous, 1=contiguous)
-            IO  = 0x040, // Memory Mapped I/O (0=memory, 1=I/O)
-            SYS = (PRE | RW ),
-            APP = (PRE | RW | USR)
+            PRE  = 0x001, // Presence (0=not-present, 1=present)
+            RW   = 0x002, // Write (0=read-only, 1=read-write)
+            USR  = 0x004, // Access Control (0=supervisor, 1=user)
+            CWT  = 0x008, // Cache Mode (0=write-back, 1=write-through)
+            CD   = 0x010, // Cache Disable (0=cacheable, 1=non-cacheable)
+            CT   = 0x020, // Contiguous (0=non-contiguous, 1=contiguous)
+            IO   = 0x040, // Memory Mapped I/O (0=memory, 1=I/O)
+            SYS = (PRE | RW),
+            APP = (PRE | RW | USR),
+            EXEC  = 0x080,
+            KCODE = (PRE | EXEC),
+            KDATA = (PRE | RW),
         };
 
     public:

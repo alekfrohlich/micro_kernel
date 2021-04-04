@@ -30,20 +30,23 @@ public:
             READ     = 1 << 1,
             WRITE    = 1 << 2,
             EXEC     = 1 << 3,
+            USR      = 1 << 4,
             ACCESSED = 1 << 6,
             DIRTY    = 1 << 7,
             SYS      = VALID | READ | WRITE | EXEC,
             KCODE    = VALID | READ | EXEC,
             KDATA    = VALID | READ | WRITE,
-            USR      = VALID | READ | WRITE | EXEC,
+            UCODE    = VALID | READ | EXEC | USR,
+            UDATA    = VALID | READ | WRITE | USR,
         };
 
         RV32_Flags() {}
         RV32_Flags(const RV32_Flags & f): _flags(f) {}
         RV32_Flags(unsigned int f): _flags(f) {}
-        RV32_Flags(const Flags & f): _flags(VALID |
-                                            ((f & Flags::RW)  ? READ  : 0) |
-                                            ((f & Flags::USR) ? USR : 0)) {}
+        RV32_Flags(const Flags & f): _flags(((f & Flags::PRE)  ? VALID : 0) | 
+                                            ((f & Flags::RW)   ? (READ | WRITE) : READ) |
+                                            ((f & Flags::USR)  ? USR : 0) | 
+                                            ((f & Flags::EXEC) ? EXEC : 0)) {}
         operator unsigned int() const { return _flags; }
 
     private:
@@ -66,35 +69,17 @@ public:
 
         PTE & operator[](unsigned int i) { return ptes[i]; }
 
-        // void map(int from, int to, const RV32_Flags & flags) {
-        //     // alloc?
-        // }
-
         void map(const RV32_Flags & flags, int from, int to) {
             Phy_Addr * addr = alloc(to - from);
-            if(addr)
+            // Try to alloc contiguous
+            if (addr) {
                 remap(addr, flags, from , to);
-            // else
-                // for( ; from < to; from++) {
-                //     Log_Addr * tmp = phy2log(&ptes[from]);
-                //     *tmp = alloc(1) | flags;
-                //     unsigned int pte = ((addr - Traits<Machine>::PAGE_TABLES)>>12) - 1;
-                //     pte = pte << 20;
-                //     pte += ((from) << 10);
-                //     pte = pte | flags;
-                //     ptes[i] = pte;
-                // }
+            } else {
+                for(; from < to; from++){
+                    ptes[from] = ((alloc(1) >> 12) << 10) | flags ;
+                }
+            }
         }
-
-        // void remap(Phy_Addr phy_addr, const RV32_Flags & flags, int from = 0, int to = 1024) {
-        //     for(int i = from; i < to; i++) {
-        //         unsigned int pte = ((this - Traits<Machine>::PAGE_TABLES)>>12) - 1;
-        //         pte = pte << 20;
-        //         pte += ((i) << 10);
-        //         pte = pte | flags;
-        //         ptes[i] = pte;
-        //     }
-        // }
 
         void remap(Phy_Addr phy_addr, const RV32_Flags & flags, int from = 0, int to = 1024) {
             for(int i = from; i < to; i++) {
@@ -116,26 +101,25 @@ public:
         // Chunk(Phy_Addr phy_addr, unsigned int bytes, Flags flags): _phy_addr(phy_addr), _bytes(bytes), _flags(flags) {}
 
         Chunk(unsigned int bytes, const Flags & flags)
-        : _from(0), _to(pages(bytes)), _pts(page_tables(_to - _from)), _flags(RV32_Flags(flags)), _pt(calloc(_pts)) {
+        : _from(0), _to(pages(bytes)), _pts(page_tables(_to - _from)), _bytes(bytes), _flags(RV32_Flags(flags)), _pt(calloc(_pts)) {
             _pt->map(_flags, _from, _to);
         }
 
-        Chunk(const Phy_Addr & phy_addr, unsigned int bytes, const Flags & flags)
-        : _from(0), _to(pages(bytes)), _pts(page_tables(_to - _from)), _flags(RV32_Flags(flags)), _pt(calloc(_pts)) {
-            _pt->remap(phy_addr, flags);
-        }
+        // Chunk(const Phy_Addr & phy_addr, unsigned int bytes, const Flags & flags)
+        // : _from(0), _to(pages(bytes)), _pts(page_tables(_to - _from)), _flags(RV32_Flags(flags)), _pt(calloc(_pts)) {
+        //     _pt->remap(phy_addr, flags);
+        // }
 
         // ~Chunk() { free(_phy_addr, _bytes); }
         ~Chunk() {
-
             for( ; _from < _to; _from++)
                 free((*static_cast<Page_Table *>(phy2log(_pt)))[_from]);
             free(_pt, _pts);
         }
 
-        unsigned int pts() const { return 0; }
-        Flags flags() const { return Flags(_flags); }
-        Page_Table * pt() const { return 0; }
+        unsigned int pts() const { return _pts; }
+        // Flags flags() const { return Flags(_flags); }
+        Page_Table * pt() const { return _pt; }
         unsigned int size() const { return _bytes; }
         // Phy_Addr phy_address() const { return _phy_addr; } // always CT
         int resize(unsigned int amount) { return 0; } // no resize in CT
@@ -158,39 +142,32 @@ public:
     class Directory
     {
     public:
-        // Directory() {}
         Directory() : _pd(calloc(1)) {
-            kout << "Directory" << endl;
             for(unsigned int i = 0; i < 544; i++){
                 (*_pd)[i] = (*_master)[i];
-                kout << i << endl;
             }
-
         }
-        // Directory(Page_Directory * pd) {}
         Directory(Page_Directory * pd) : _pd(pd) {}
 
-        // Page_Table * pd() const { return 0; }
         Phy_Addr pd() const { return _pd; }
 
         void activate() {}
 
-        // Log_Addr attach(const Chunk & chunk) { return chunk.phy_address(); }
-        // Log_Addr attach(const Chunk & chunk, Log_Addr addr) { return (addr == chunk.phy_address())? addr : Log_Addr(false); }
-
         Log_Addr attach(const Chunk & chunk, unsigned int from = 0) {
-            for(unsigned int i = from; i < PD_ENTRIES; i++)
+            for(unsigned int i = from; i < PD_ENTRIES - chunk.pts(); i++)
                 if(attach(i, chunk.pt(), chunk.pts(), RV32_Flags::VALID))
                     return i << DIRECTORY_SHIFT;
             return false;
         }
 
+        // Used to create non-relocatable segments such as code
         Log_Addr attach(const Chunk & chunk, const Log_Addr & addr) {
             unsigned int from = directory(addr);
             if(!attach(from, chunk.pt(), chunk.pts(), RV32_Flags::VALID))
                 return Log_Addr(false);
             return from << DIRECTORY_SHIFT;
         }
+
         void detach(const Chunk & chunk) {}
         void detach(const Chunk & chunk, Log_Addr addr) {}
 
@@ -199,10 +176,10 @@ public:
     private:
         bool attach(unsigned int from, const Page_Table * pt, unsigned int n, RV32_Flags flags) {
             for(unsigned int i = from; i < from + n; i++)
-                if((*static_cast<Page_Directory *>(phy2log(_pd)))[i]) //it has already been used
+                if((*static_cast<Page_Directory *>(phy2log(_pd)))[i]) // it has already been used
                     return false;
             for(unsigned int i = from; i < from + n; i++, pt++)
-                (*static_cast<Page_Directory *>(phy2log(_pd)))[i] = Phy_Addr(pt) | flags; // is pt the correct value?
+                (*static_cast<Page_Directory *>(phy2log(_pd)))[i] = ((Phy_Addr(pt) >> 12) << 10) | flags; // is pt the correct value?
             return true;
         }
 
@@ -222,7 +199,7 @@ public:
             else
                 db<MMU>(ERR) << "MMU::alloc() failed!" << endl;
         }
-        db<MMU>(TRC) << "MMU::alloc(bytes=" << frames << ") => " << phy << endl;
+        db<MMU>(TRC) << "MMU::alloc(frames=" << frames << ") => " << phy << endl;
 
         return phy;
     };

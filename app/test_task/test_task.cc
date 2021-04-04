@@ -7,17 +7,34 @@ using namespace EPOS;
 
 OStream cout;
 
-typedef unsigned int RV_INS;
-
 int main()
 {
+    cout << "Task Test" << endl;
+    unsigned * data_base = reinterpret_cast<unsigned*>(0xFFBFFFFF);
+    
+    Segment * code_seg1 = new Segment(1024*4, MMU::Flags::KCODE);
+    Segment * data_seg1 = new Segment(1024*4, MMU::Flags::KDATA);
+    cout << "Create Task1" << endl;
+    Task * t1 =  new Task(code_seg1, data_seg1);
 
-    cout << "Hello world" << endl;
-    Segment * code_seg = new Segment(1024*4, MMU::RV32_Flags::SYS);
-    Segment * data_seg = new Segment(1024*4, MMU::RV32_Flags::SYS);
-    cout << "Segments ready" << endl;
-    Task * t =  new Task(code_seg, data_seg);
+    ASM("A1:");
+    t1->activate();
+    *data_base = 10;
 
+    Segment * code_seg2 = new Segment(1024*4, MMU::Flags::KCODE);
+    Segment * data_seg2 = new Segment(1024*4, MMU::Flags::KDATA);
+    cout << "Create Task2" << endl;
+    Task * t2 =  new Task(code_seg2, data_seg2);
+
+    // Should be 10
+    cout << "Data base=" << *data_base << endl;
+    ASM("A2:");
+    t2->activate();
+    *data_base = 9;
+    // Should be 9
+    cout << "Data base=" << *data_base << endl;
+
+    ASM("End:");
     cout << "End!" << endl;
     return 0;
 }

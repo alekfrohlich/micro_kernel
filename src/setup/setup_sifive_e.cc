@@ -81,10 +81,6 @@ void Setup_SifiveE::clean_bss()
 
 void Setup_SifiveE::setup_supervisor_environment()
 {
-    //!SMODE: why?
-    IC::init();
-    IC::int_vector(IC::INT_RESCHEDULER, IC::ipi_eoi);
-
     CPU::stvec_write((unsigned)&_int_entry & 0xfffffffc);
 
     // We must clean the bss before setting MMU::_master
@@ -126,7 +122,7 @@ void Setup_SifiveE::setup_machine_environment()
     CPU::sp(Traits<Machine>::BOOT_STACK - Traits<Machine>::STACK_SIZE * core);
 
     // Guarantee that paging is off before going to S-mode.
-    CPU::satp_write(0);
+    CPU::satp(0);
 
     // Forward all ints and excs to S-mode.
     //!ECALLS: Not yet implemented.

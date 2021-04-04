@@ -165,17 +165,34 @@ public:
 };
 
 // Rate Monotonic
-class RM:public Real_Time_Scheduler_Common
+// class RM:public Real_Time_Scheduler_Common
+// {
+// public:
+//     static const bool timed = false;
+//     static const bool dynamic = false;
+//     static const bool preemptive = true;
+
+// public:
+//     RM(int p = APERIODIC): Real_Time_Scheduler_Common(p) {}
+//     RM(const Microsecond & d, const Microsecond & p = SAME, const Microsecond & c = UNKNOWN, unsigned int cpu = ANY)
+//     : Real_Time_Scheduler_Common(p ? p : d, d, p, c) {}
+// };
+
+//!SMODE:
+// Rate Monotonic
+class RM: public Priority
 {
 public:
-    static const bool timed = false;
-    static const bool dynamic = false;
     static const bool preemptive = true;
+    static const bool timed = true;
 
 public:
-    RM(int p = APERIODIC): Real_Time_Scheduler_Common(p) {}
-    RM(const Microsecond & d, const Microsecond & p = SAME, const Microsecond & c = UNKNOWN, unsigned int cpu = ANY)
-    : Real_Time_Scheduler_Common(p ? p : d, d, p, c) {}
+    // used for aperiodic threads
+    RM(int priority): Priority(priority) {}
+
+    // used for periodic threads
+    template <typename ... Tn>
+    RM(const Microsecond & period, int priority, Tn & ... an);
 };
 
 // Deadline Monotonic
