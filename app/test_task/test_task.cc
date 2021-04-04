@@ -18,6 +18,7 @@ int main()
     Task * t1 =  new Task(code_seg1, data_seg1);
 
     ASM("A1:");
+    ASM("sfence.vma");
     t1->activate();
     *data_base = 10;
 
@@ -29,6 +30,7 @@ int main()
     // Should be 10
     cout << "Data base=" << *data_base << endl;
     ASM("A2:");
+    ASM("sfence.vma");
     t2->activate();
     // Should be Garbage
     cout << "Data base=" << *data_base << endl;
