@@ -16,9 +16,10 @@ extern "C"
         _start();
     }
 }
-
+bool passei = false;
 extern "C" [[gnu::interrupt, gnu::aligned(4)]] void _mmode_forward() {
     Reg id = CPU::mcause();
+    passei = true;
     if((id & IC::INT_MASK) == CLINT::IRQ_MAC_TIMER) {
         Timer::reset();
         CPU::sie(CPU::STI);

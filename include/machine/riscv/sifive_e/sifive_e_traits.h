@@ -33,19 +33,24 @@ template <> struct Traits<Machine>: public Traits<Machine_Common>
     static const unsigned int SETUP             = NOT_USED;
     static const unsigned int INIT              = NOT_USED;
 
-    static const unsigned int APP_LOW           = 0x80000000;
-    static const unsigned int APP_CODE          = 0x80000000;
-    static const unsigned int APP_DATA          = 0x80000000;
+    static const unsigned int APP_LOW           = 0x88000000;
+    static const unsigned int APP_CODE = 0x80000000;
+    static const unsigned int APP_DATA = 0x80000000;
+    // static const unsigned int APP_CODE          = 0x88000000;
+    // static const unsigned int APP_DATA          = 0xffc00000;
     static const unsigned int APP_HIGH          = 0x87ffffff;
 
-    static const unsigned int PHY_MEM           = NOT_USED; // No paging MMU
-    static const unsigned int IO_BASE           = NOT_USED; // No paging MMU
-    static const unsigned int IO_TOP            = NOT_USED; // No paging MMU
+    static const unsigned int PHY_MEM           = NOT_USED;
+    static const unsigned int IO_BASE           = NOT_USED;
+    static const unsigned int IO_TOP            = NOT_USED;
 
-    static const unsigned int SYS               = NOT_USED; // No paging MMU
-    static const unsigned int SYS_CODE          = NOT_USED; // No paging MMU
-    static const unsigned int SYS_DATA          = NOT_USED; // No paging MMU
-    static const unsigned int SYS_HEAP          = NOT_USED; // No paging MMU
+    static const unsigned int SYS               = NOT_USED;
+    static const unsigned int SYS_CODE          = 0x80000000;
+    //!P2: How can we know SYS_DATA?
+    static const unsigned int SYS_DATA          = 0x80010000; // This is just a guess
+    //!P2: Is SYS_HEAP necessary?
+    static const unsigned int SYS_HEAP          = NOT_USED;   // No paging MMU
+    //!P2: we can let the BOOT_STACK be the kernel stack
     static const unsigned int SYS_STACK         = NOT_USED; // No paging MMU
 
     // Default Sizes and Quantities

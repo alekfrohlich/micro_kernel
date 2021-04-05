@@ -1,0 +1,34 @@
+we did not specify target: execute all; APPLICATION was defined => execute all1
+all1: etc tools src app img
+
+ETC
+=======
+etc: config eposcfg eposcc.conf eposmkbi.conf
+config: config.h (config always execute?)
+    defines SMOD, ARCH, MACH, etc. in config.h
+eposcfg: FORCE
+    removes eposcfg executable
+eposcc.conf and eposmkbi.conf: FORCE
+    use eposcfg to build .conf files (which I suppose are used by tools?)
+=======
+
+SRC
+=======
+
+=======
+
+CLEAN
+=======
+-clean:
+    etc: resets config.h
+    app: do nothing?
+    src: everything below src? or excludes system, image, init?
+    img: do nothing?
+-cleanapps:
+    clean for every app
+-veryclean: clean cleanapps cleantest
+
+Doubts:
+- Does epos need eposcfg to use makedefs?
+- I saw .sdata as section 1 (right after .init), werent we assuming they would
+    be contiguous on the logical address space?

@@ -182,8 +182,8 @@ riscv_EMULATOR			= qemu-system-riscv32 -machine virt -cpu rv32gcsu-v1.10.0 -smp 
 riscv_DEBUGGER          := $(COMP_PREFIX)gdb
 riscv_FLASHER           := 
 riscv_MAGIC             := --nmagic
-riscv_CODE_NAME := .init
-riscv_DATA_NAME :=
+riscv_CODE_NAME 		:= .init
+riscv_DATA_NAME 		:= .sdata
 riscv_IMG_SUFFIX        := .img
 endif
 
