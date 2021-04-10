@@ -44,27 +44,30 @@ C_LINK_FLGS="$MACH_LD_FLAGS"
 C_LINK_OBJS=
 C_LINK_LIBS=
 
+#!P2: C++ flags are now used
+# 
+
 CPP_COMPILER="$TOOLS_PREFIX""g++"
-CPP_COMP_FLGS="--no-exceptions --no-rtti --no-use-cxa-atexit -std=c++14"
+CPP_COMP_FLGS="$MACH_CC_FLAGS"
 CPP_COMP_HDRS=
 CPP_LINK_FLGS="$MACH_LD_FLAGS"
 CPP_LINK_OBJS=
 CPP_LINK_LIBS=
 
-F77_COMPILER="$TOOLS_PREFIX""g77"
-F77_COMP_FLGS=
-F77_COMP_HDRS=
-F77_LINK_FLGS="$MACH_LD_FLAGS"
-F77_LINK_OBJS=
-F77_LINK_LIBS="f2c"
+# F77_COMPILER="$TOOLS_PREFIX""g77"
+# F77_COMP_FLGS=
+# F77_COMP_HDRS=
+# F77_LINK_FLGS="$MACH_LD_FLAGS"
+# F77_LINK_OBJS=
+# F77_LINK_LIBS="f2c"
 
 LINKER="$TOOLS_PREFIX""ld"
 
 LINKER_LIBRARY=$LINKER
 LINK_FLGS_LIBRARY="-L$LIB -L`$C_COMPILER $C_COMP_FLGS -print-file-name=` -static --section-start $MACH_CODE_NAME=$APP_CODE"
-if [ "$MACH_DATA_NAME" != "" ] ; then
-    LINK_FLGS_LIBRARY="$LINK_FLGS_LIBRARY --section-start $MACH_DATA_NAME=$APP_DATA"
-fi
+# if [ "$MACH_DATA_NAME" != "" ] ; then
+#     LINK_FLGS_LIBRARY="$LINK_FLGS_LIBRARY --section-start $MACH_DATA_NAME=0x86000000"
+# fi
 if [ "$BOOT_STACK" != "" ] ; then
     LINK_FLGS_LIBRARY="$LINK_FLGS_LIBRARY --defsym=__boot_stack__=$BOOT_STACK"
 fi
@@ -86,12 +89,12 @@ if [ "$SETUP" = "" ] ; then
 LINK_OBJN_BUILTIN="$LIB/setup_$MMOD.o $LINK_OBJN_BUILTIN"
 fi
 
-LINKER_KERNEL=$LINKER
-LINK_FLGS_KERNEL="-L$LIB -L`$C_COMPILER $C_COMP_FLGS -print-file-name=` -static --section-start $MACH_CODE_NAME=$APP_CODE --section-start $MACH_DATA_NAME=$APP_DATA"
-LINK_OBJI_KERNEL="$LIB/crt0_$MMOD.o $LIB/crtbegin_$MMOD.o"
-LINK_OBJN_KERNEL="$LIB/application_$MMOD.o $LIB/init_application_$MMOD.o"
-LINK_OBJL_KERNEL="$LIB/crtend_$MMOD.o"
-LINK_LIBS_KERNEL="util_$MMOD arch_$MMOD gcc"
+# LINKER_KERNEL=$LINKER
+# LINK_FLGS_KERNEL="-L$LIB -L`$C_COMPILER $C_COMP_FLGS -print-file-name=` -static --section-start $MACH_CODE_NAME=$APP_CODE --section-start $MACH_DATA_NAME=$APP_DATA"
+# LINK_OBJI_KERNEL="$LIB/crt0_$MMOD.o $LIB/crtbegin_$MMOD.o"
+# LINK_OBJN_KERNEL="$LIB/application_$MMOD.o $LIB/init_application_$MMOD.o"
+# LINK_OBJL_KERNEL="$LIB/crtend_$MMOD.o"
+# LINK_LIBS_KERNEL="util_$MMOD arch_$MMOD gcc"
 
 #=========================================================================
 # VARIABLES
@@ -271,6 +274,7 @@ done
 #=========================================================================
 # COMMAND ISSUING
 #=========================================================================
+
 if [ "$language" = "F77" ] ; then
     compiler=$F77_COMPILER
     compile_flgs="$compile_flgs $F77_COMP_FLGS"
@@ -289,6 +293,8 @@ elif [ "$language" = "CPP" ] ; then
         compile_flgs="$compile_flgs -I$hdr"
     done
     link_flgs="$link_flgs $CPP_LINK_FLGS"
+    echo "LD FLAGS1\n"
+    echo $link_flgs
     link_objs="$CPP_LINK_OBJS $link_objs"
     for lib in $CPP_LINK_LIBS ; do
         link_libs="$link_libs -l$lib"
@@ -347,51 +353,54 @@ if [ $need_compile = 1 -a ! -f "$key_file" ] ; then
 fi
 
 # disabled for EPOS
-if [ $need_analyze = 5 ] ; then
-    analyze_flgs=$compile_flgs
+# if [ $need_analyze = 5 ] ; then
+#     analyze_flgs=$compile_flgs
 
-    if [ $has_dash_c = 0 ] ; then
-        analyze_flgs="-c $analyze_flgs"
-    fi
-    tmp_file="$TMP/epos`date +%Y%m%d%H%M%S`"
-    analyze_flgs="$analyze_flgs $ANL_COMP_FLGS"
-    analyze_flgs="$analyze_flgs -o $tmp_file.o"
-    $do_echo $compiler $analyze_flgs $analyze_args $input_file
-    $do_exec $compiler $analyze_flgs $analyze_args $input_file
-    status=$?
-    if [ $status != 0 ] ; then
-        $do_echo rm -f "$tmp_file.*"
-        $do_exec rm -f "$tmp_file.*"
-        exit $status
-    fi
+#     if [ $has_dash_c = 0 ] ; then
+#         analyze_flgs="-c $analyze_flgs"
+#     fi
+#     tmp_file="$TMP/epos`date +%Y%m%d%H%M%S`"
+#     analyze_flgs="$analyze_flgs $ANL_COMP_FLGS"
+#     analyze_flgs="$analyze_flgs -o $tmp_file.o"
+#     $do_echo $compiler $analyze_flgs $analyze_args $input_file
+#     $do_exec $compiler $analyze_flgs $analyze_args $input_file
+#     status=$?
+#     if [ $status != 0 ] ; then
+#         $do_echo rm -f "$tmp_file.*"
+#         $do_exec rm -f "$tmp_file.*"
+#         exit $status
+#     fi
 
-    $do_echo $ANALYZER $ANL_FLAGS "$tmp_file.o" -o "$tmp_file.anl"
-    $do_exec $ANALYZER $ANL_FLAGS "$tmp_file.o" -o "$tmp_file.anl"
-    status=$?
-    if [ $status != 0 ] ; then
-        $do_echo rm -f "$tmp_file.*"
-        $do_exec rm -f "$tmp_file.*"
-        exit $status
-    fi
+#     $do_echo $ANALYZER $ANL_FLAGS "$tmp_file.o" -o "$tmp_file.anl"
+#     $do_exec $ANALYZER $ANL_FLAGS "$tmp_file.o" -o "$tmp_file.anl"
+#     status=$?
+#     if [ $status != 0 ] ; then
+#         $do_echo rm -f "$tmp_file.*"
+#         $do_exec rm -f "$tmp_file.*"
+#         exit $status
+#     fi
 
-    if [ $only_analyze = 1 -a -n "$output_file" ] ; then
-        configurator_output_file=$output_file
-    else
-        configurator_output_file=$key_file
-    fi
-    $do_echo $CONFIGURATOR "$tmp_file.anl" -o $configurator_output_file
-    $do_exec $CONFIGURATOR "$tmp_file.anl" -o $configurator_output_file
+#     if [ $only_analyze = 1 -a -n "$output_file" ] ; then
+#         configurator_output_file=$output_file
+#     else
+#         configurator_output_file=$key_file
+#     fi
+#     $do_echo $CONFIGURATOR "$tmp_file.anl" -o $configurator_output_file
+#     $do_exec $CONFIGURATOR "$tmp_file.anl" -o $configurator_output_file
 
-    status=$?
-    $do_echo rm -f "$tmp_file.*"
-    $do_exec rm -f "$tmp_file.*"
+#     status=$?
+#     $do_echo rm -f "$tmp_file.*"
+#     $do_exec rm -f "$tmp_file.*"
 
-    if [ $only_analyze = 1 ] ; then
-        exit $status
-    fi
-fi
+#     if [ $only_analyze = 1 ] ; then
+#         exit $status
+#     fi
+# fi
 
 if [ $need_compile = 1 ] ; then
+    # echo $has_dash_c
+    # echo $language
+    # echo $compile_flgs
     if [ $has_dash_c = 0 ] ; then
         compile_flgs="-c $compile_flgs"
     fi
@@ -412,7 +421,7 @@ if [ $need_link = 1 ] ; then
         link_flgs="$link_flgs -o $output_file"
     fi
     $do_echo "$linker $link_flgs $link_objs $link_args $link_libs"
-    $do_exec $linker $link_flgs $link_objs $link_args $link_libs
+    $do_exec $linker --trace $link_flgs $link_objs $link_args $link_libs
     status=$?
 fi
 

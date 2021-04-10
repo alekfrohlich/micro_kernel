@@ -14,7 +14,7 @@ void CPU::Context::save() volatile
 {
     ASM("       csrr     gp,  sstatus           \n"
         "       sw       gp, -120(sp)           \n"     // push sstatus
-        "       la       gp,      pc            \n"
+        "       auipc    gp, 0                  \n"     //!P2: Is still ok?
         "       sw       gp, -116(sp)           \n"     // push pc
         "       sw       x1, -112(sp)           \n"     // push ra
         "       sw       x5, -108(sp)           \n"     // push x5-x31

@@ -251,7 +251,7 @@ TLD		:= gcc
 TLDFLAGS	:= -m32
 
 # Tools and flags to compile applications
-ACC		= $(BIN)/eposcc $(MACH_CC_FLAGS)  -c -ansi -O
+ACC		= $(BIN)/eposcc --echo $(MACH_CC_FLAGS)  -c -ansi -O
 ACXX		= $(BIN)/eposcc $(MACH_CXX_FLAGS) -c -ansi -O
 AF77		= $(BIN)/eposcc $(MACH_CC_FLAGS)  -c -ansi -O
 ALD		= $(BIN)/eposcc --echo --$(SMOD) --no-warn-mismatch 

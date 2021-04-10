@@ -1,25 +1,33 @@
 // EPOS RISC-V sifive SETUP
 
+#include <utility/ostream.h>
 #include <architecture.h>
 #include <machine.h>
 
 using namespace EPOS::S;
 typedef unsigned int Reg;
 
+//!P2:
+// _start is now inside init
+// _int_entry and _mmode_forward must be rellocated to avoid being erased from MMU::_free
+// How can we run machine_pre_init before Init_System if it is part of SYS?
+
 extern "C"
 {
     [[gnu::naked, gnu::section(".init")]] void _setup();
-    void _int_entry();
-    void _start();
+    // void _int_entry();
+    // void _start();
     void _wait() {
         CPU::halt();
-        _start();
+        // _start();
     }
+    void _print(const char * s) { Display::puts(s); }
 }
-bool passei = false;
+
+EPOS::S::U::OStream kout, kerr;
+
 extern "C" [[gnu::interrupt, gnu::aligned(4)]] void _mmode_forward() {
     Reg id = CPU::mcause();
-    passei = true;
     if((id & IC::INT_MASK) == CLINT::IRQ_MAC_TIMER) {
         Timer::reset();
         CPU::sie(CPU::STI);
@@ -82,7 +90,7 @@ void Setup_SifiveE::clean_bss()
 
 void Setup_SifiveE::setup_supervisor_environment()
 {
-    CPU::stvec_write((unsigned)&_int_entry & 0xfffffffc);
+    // CPU::stvec_write((unsigned)&_int_entry & 0xfffffffc);
 
     // We must clean the bss before setting MMU::_master
     clean_bss();
@@ -90,9 +98,22 @@ void Setup_SifiveE::setup_supervisor_environment()
     // This creates and configures the kernel page tables (which map logical==physical)
     build_page_tables();
 
+    //!P2: How could machine pre_init run before Init_System if it was linked w/ SYS?
+    // if(CPU::id() == 0)
+    //     Display::init();
+
+    // db<Init, Machine>(TRC) << "Machine::pre_init()" << endl;
+
+    // if(CPU::id() == 0 && Traits<IC>::enabled) {
+    //     IC::init();
+
+    //     if(Traits<System>::multicore)
+    //         smp_barrier_init(Traits<Build>::CPUS);
+    // }
+
     // forward everything
     CPU::satp((0x1 << 31) | (Traits<Machine>::PAGE_TABLES >> 12));
-    CPU::sepc_write((unsigned)&_start);
+    // CPU::sepc_write((unsigned)&_start);
 
     // Interrupts will remain disable until the Context::load at Init_First
     CPU::sstatus_write(CPU::SPP_S);

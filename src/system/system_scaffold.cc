@@ -15,7 +15,7 @@ class First_Object
 {
 public:
     First_Object() {
-        Machine::pre_init(reinterpret_cast<System_Info *>(Memory_Map::SYS_INFO));
+        // Machine::pre_init(reinterpret_cast<System_Info *>(Memory_Map::SYS_INFO));
     }
 };
 

@@ -13,7 +13,7 @@ void MMU::init()
     db<Init, MMU>(TRC) << "MMU::init()" << endl;
 
     db<Init, MMU>(INF) << "MMU::init::dat.e=" << &_edata << ",bss.b=" << &__bss_start << ",bss.e=" << &_end << endl;
-
+    //!P2: Needs FIX
     // For machines that do not feature a real MMU, frame size = 1 byte
     // Allocations (using Grouping_List<Frame>::search_decrementing() start from the end
     // To preserve the BOOT stacks until the end of INIT, the free memory list initialization is split in two sections
