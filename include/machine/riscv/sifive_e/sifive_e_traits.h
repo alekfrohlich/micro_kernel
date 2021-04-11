@@ -20,23 +20,25 @@ template <> struct Traits<Machine>: public Traits<Machine_Common>
     // Boot Image
     static const unsigned int BOOT_LENGTH_MIN   = NOT_USED;
     static const unsigned int BOOT_LENGTH_MAX   = NOT_USED;
+    static const unsigned int BOOT_STACK        = 0x87ffffff;
 
     // Physical Memory
     static const unsigned int MEM_BASE          = 0x80000000;
+    static const unsigned int MEM_TOP           = 0x87ffffff; // 128 MB
+    static const unsigned int MIO_BASE          = 0x00000000;
+    static const unsigned int MIO_TOP           = 0x100081ff;
+
     static const unsigned int VECTOR_TABLE      = NOT_USED;
     static const unsigned int PAGE_TABLES       = 0x87ffffff + 1 - 16*1024 - ((1024+1)*4*1024); // 0x87BFB000
-    static const unsigned int MEM_TOP           = 0x87ffffff; // 128 MB
-    static const unsigned int BOOT_STACK        = 0x87ffffff;
 
     // Logical Memory Map
     static const unsigned int BOOT              = NOT_USED;
+    static const unsigned int IMAGE             = NOT_USED;
     static const unsigned int SETUP             = 0x80000000; // This controls whether an ELF file is generated for setup
     // static const unsigned int SETUP             = NOT_USED;
     static const unsigned int INIT              = 0x80010000; // 16 pages for setup
 
     static const unsigned int APP_LOW           = 0x88000000;
-    // static const unsigned int APP_CODE = 0x80000000;
-    // static const unsigned int APP_DATA = 0x80000000;
     static const unsigned int APP_CODE          = 0x88000000;
     static const unsigned int APP_DATA          = 0xffc00000;
     static const unsigned int APP_HIGH          = 0x87ffffff;
@@ -45,14 +47,14 @@ template <> struct Traits<Machine>: public Traits<Machine_Common>
     static const unsigned int IO_BASE           = NOT_USED;
     static const unsigned int IO_TOP            = NOT_USED;
 
-    static const unsigned int SYS               = NOT_USED;
     //!P2: This can be optimized
+    //!P2: Is SYS_HEAP necessary?
+    //!P2: we can let the BOOT_STACK be the kernel stack
+    static const unsigned int SYS               = NOT_USED;
     static const unsigned int SYS_CODE          = 0x80020000;
     static const unsigned int SYS_DATA          = 0x80040000;
-    //!P2: Is SYS_HEAP necessary?
-    static const unsigned int SYS_HEAP          = NOT_USED;   // No paging MMU
-    //!P2: we can let the BOOT_STACK be the kernel stack
-    static const unsigned int SYS_STACK         = NOT_USED; // No paging MMU
+    static const unsigned int SYS_HEAP          = NOT_USED;
+    static const unsigned int SYS_STACK         = NOT_USED;
 
     // Default Sizes and Quantities
     static const unsigned int STACK_SIZE        = 16 * 1024;

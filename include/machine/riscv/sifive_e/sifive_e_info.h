@@ -1,7 +1,7 @@
 // EPOS RISC-V Common Run-Time System Information
 
-#ifndef __riscv_info_h
-#define __riscv_info_h
+#ifndef __riscv_sifive_e_info_h
+#define __riscv_sifive_e_info_h
 
 #include <system/info.h>
 
@@ -22,8 +22,8 @@ public:
         volatile unsigned int n_cpus;     // Number of CPUs in SMPs
         PAddr mem_base;                   // Memory base address
         PAddr mem_top;                    // Memory top address
-        PAddr io_base;                    // I/O Memory base address
-        PAddr io_top;                     // I/O Memory top address
+        PAddr mio_base;                   // Memory-mapped I/O base address
+        PAddr mio_top;                    // Memory-mapped I/O top address
         int node_id;                      // Local node id in SAN (-1 => RARP)
         int space_x;                      // Spatial coordinates of a node (-1 => mobile)
         int space_y;                      //
@@ -49,7 +49,7 @@ public:
         LAddr app_stack;
         LAddr app_heap;
         Size  app_data_size;
-        PAddr app_extra;
+        LAddr app_extra;
         Size  app_extra_size;
     };
 

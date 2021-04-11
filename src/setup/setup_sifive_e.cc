@@ -1,6 +1,8 @@
 // EPOS RISC-V sifive SETUP
 
 #include <utility/ostream.h>
+
+#include <system/info.h>
 #include <architecture.h>
 #include <machine.h>
 
@@ -24,6 +26,8 @@ extern "C"
     void _print(const char * s) { Display::puts(s); }
 }
 
+char placeholder[] = "System_Info placeholder. Actual System_Info will be added by mkbi!_____________________________________________________________";
+System_Info * si;
 EPOS::S::U::OStream kout, kerr;
 
 extern "C" [[gnu::interrupt, gnu::aligned(4)]] void _mmode_forward() {
@@ -124,10 +128,10 @@ void Setup_SifiveE::setup_supervisor_environment()
 
 void Setup_SifiveE::setup_machine_environment()
 {
+    si = reinterpret_cast<System_Info*>(placeholder);
     // We first configure the M-mode CSRs and then switch to S-mode
     // configure paging. After that, we won't return to M-mode; an exception
     // is the forwarding of ints and excps to S-mode.
-
     CPU::mie_write(CPU::MSI | CPU::MTI | CPU::MEI);
     CPU::mmode_int_disable();
 

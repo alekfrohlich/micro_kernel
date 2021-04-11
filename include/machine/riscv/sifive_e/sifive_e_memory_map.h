@@ -11,7 +11,9 @@ __BEGIN_SYS
 
 struct Memory_Map
 {
-    // Physical Memory
+    static const unsigned int NOT_USED = Traits<Machine>::NOT_USED;
+    
+    // Memory Mapped stuff
     enum {
         TEST_BASE                   = 0x00100000, // SiFive test engine
         RTC_BASE                    = 0x00101000, // goldfish_rtc
@@ -24,11 +26,20 @@ struct Memory_Map
     // Physical Memory
     enum {
         MEM_BASE        = Traits<Machine>::MEM_BASE,
-        MEM_TOP         = Traits<Machine>::MEM_TOP
+        MEM_TOP         = Traits<Machine>::MEM_TOP,
+        MIO_BASE        = Traits<Machine>::MIO_BASE,
+        MIO_TOP         = Traits<Machine>::MIO_TOP,
+        BOOT_STACK      = Traits<Machine>::BOOT_STACK,
+
     };
 
     // Logical Address Space
     enum {
+        BOOT            = Traits<Machine>::BOOT,
+        IMAGE           = Traits<Machine>::IMAGE,
+        SETUP           = Traits<Machine>::SETUP,
+        INIT            = Traits<Machine>::INIT,
+
         APP_LOW         = Traits<Machine>::APP_LOW,
         APP_CODE        = Traits<Machine>::APP_CODE,
         APP_DATA        = Traits<Machine>::APP_DATA,
@@ -37,10 +48,10 @@ struct Memory_Map
         PHY_MEM         = Traits<Machine>::PHY_MEM,
         IO              = Traits<Machine>::IO_BASE,
 
-        SYS             = Traits<Machine>::NOT_USED,
+        SYS             = Traits<Machine>::SYS,
         SYS_INFO        = unsigned(-1),                 // Dynamically built during initialization.
-        SYS_CODE        = Traits<Machine>::NOT_USED,
-        SYS_DATA        = Traits<Machine>::NOT_USED,
+        SYS_CODE        = Traits<Machine>::SYS_CODE,
+        SYS_DATA        = Traits<Machine>::SYS_DATA,
         SYS_HEAP        = Traits<Machine>::NOT_USED,
         SYS_STACK       = Traits<Machine>::NOT_USED
     };
