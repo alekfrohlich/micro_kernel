@@ -31,7 +31,7 @@ ifeq ($(DEBUG),1)
 # DEBUGGER	:= $(DEBUGGER) -ex "add-symbol-file $(call DBSEC,$(SRC)/system/$(MACH)_system,.text)"
 # endif
 # DEBUGGER	:= $(DEBUGGER) -ex "add-symbol-file $(call DBSEC,$(APP)/$(APPLICATION)/$(APPLICATION),.text)"
-DEBUGGER	:= $(DEBUGGER) -ex "add-symbol-file $(IMG)/setup_sifive_e 0x80000000"
+DEBUGGER	:= $(DEBUGGER) -ex "add-symbol-file $(IMG)/setup_sifive_e 0x80000080"
 PEER_DEBUGGER	:= $(subst 1235,1236,$(DEBUGGER))
 endif
 

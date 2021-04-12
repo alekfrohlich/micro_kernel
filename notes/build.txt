@@ -133,3 +133,21 @@ usr/local/rv32/bin/riscv32-unknown-linux-gnu-ld --no-relax -nostdlib -L/home/ale
         -lsys_sifive_e -lmach_sifive_e -larch_sifive_e \
         --no-whole-archive \
         -lutil_sifive_e -linit_sifive_e -lgcc
+
+
+GDB
+=======
+
+find 0x80000000, 0x8fffffff, (char) 0x7F , 'E', 'L', 'F'       
+0x80000004
+0x80019b6c
+0x8006ec00
+0x8013a538
+
+entry_point     setup 0x80000080
+
+init global constructors
+
+
+=======
+        

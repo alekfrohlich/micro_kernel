@@ -37,10 +37,50 @@ public:
         Size extras_offset;
     };
 
+    // !P2:
     // Load Map (not used in this machine, but kept for architectural transparency)
+    // struct Load_Map
+    // {
+    //     bool  has_ext;
+    //     LAddr app_entry;
+    //     Size  app_segments;
+    //     LAddr app_code;
+    //     Size  app_code_size;
+    //     LAddr app_data;
+    //     LAddr app_stack;
+    //     LAddr app_heap;
+    //     Size  app_data_size;
+    //     LAddr app_extra;
+    //     Size  app_extra_size;
+    // };
+
     struct Load_Map
     {
+        bool  has_stp;
+        bool  has_ini;
+        bool  has_sys;
+        bool  has_app;
         bool  has_ext;
+        LAddr stp_entry;
+        Size  stp_segments;
+        LAddr stp_code;
+        Size  stp_code_size;
+        LAddr stp_data;
+        Size  stp_data_size;
+        LAddr ini_entry;
+        Size  ini_segments;
+        LAddr ini_code;
+        Size  ini_code_size;
+        LAddr ini_data;
+        Size  ini_data_size;
+        LAddr sys_entry;
+        Size  sys_segments;
+        LAddr sys_code;
+        Size  sys_code_size;
+        LAddr sys_data;
+        Size  sys_data_size;
+        LAddr sys_stack;
+        Size  sys_stack_size;
         LAddr app_entry;
         Size  app_segments;
         LAddr app_code;
@@ -49,7 +89,7 @@ public:
         LAddr app_stack;
         LAddr app_heap;
         Size  app_data_size;
-        LAddr app_extra;
+        PAddr app_extra;
         Size  app_extra_size;
     };
 

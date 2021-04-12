@@ -166,6 +166,11 @@ int main(int argc, char **argv)
     unsigned int image_size = 0;
     fprintf(out, "\n  Creating EPOS bootable image in \"%s\":\n", argv[optind + 1]);
 
+    // !P2:
+    // riscv boot jump: jal 0x78
+    unsigned int boot_jump = 0b111100000000000000001101111; 
+    image_size += put_number(fd_img, boot_jump);
+    
     // Add BOOT
     if(CONFIG.boot_length_max > 0) {
         sprintf(file, "%s/img/boot_%s", argv[optind], CONFIG.mmod);
@@ -181,6 +186,8 @@ int main(int argc, char **argv)
         }
     }
     unsigned int boot_size = image_size;
+    // !P2:
+    boot_size = 0;
 
     // Determine if System_Info is needed and how it must be handled
     bool need_si = (!strcmp(CONFIG.mach, "pc") || !strcmp(CONFIG.mach, "riscv"));
@@ -210,10 +217,10 @@ int main(int argc, char **argv)
     si.bm.space_z  = CONFIG.space_z;
 
     fprintf(out, "\nsi.bm.n_cpus %u", si.bm.n_cpus);
-    fprintf(out, "\nsi.bm.mem_base %u", si.bm.mem_base);
-    fprintf(out, "\nsi.bm.mem_top %u", si.bm.mem_top);
-    fprintf(out, "\nsi.bm.mio_base %u", si.bm.mio_base);
-    fprintf(out, "\nsi.bm.mio_top %u", si.bm.mio_top);
+    fprintf(out, "\nsi.bm.mem_base %08x", si.bm.mem_base);
+    fprintf(out, "\nsi.bm.mem_top %08x", si.bm.mem_top);
+    fprintf(out, "\nsi.bm.mio_base %08x", si.bm.mio_base);
+    fprintf(out, "\nsi.bm.mio_top %08x", si.bm.mio_top);
     fprintf(out, "\nsi.bm.node_id %u", si.bm.node_id);
     fprintf(out, "\nsi.bm.space_x %u", si.bm.space_x);
     fprintf(out, "\nsi.bm.space_y %u", si.bm.space_y);

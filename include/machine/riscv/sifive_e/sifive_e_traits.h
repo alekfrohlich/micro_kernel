@@ -34,7 +34,7 @@ template <> struct Traits<Machine>: public Traits<Machine_Common>
     // Logical Memory Map
     static const unsigned int BOOT              = NOT_USED;
     static const unsigned int IMAGE             = NOT_USED;
-    static const unsigned int SETUP             = 0x80000000; // This controls whether an ELF file is generated for setup
+    static const unsigned int SETUP             = 0x80000000 + 0x78; // This controls whether an ELF file is generated for setup; boot + elf header
     // static const unsigned int SETUP             = NOT_USED;
     static const unsigned int INIT              = 0x80010000; // 16 pages for setup
 

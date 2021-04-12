@@ -5,17 +5,17 @@ using namespace EPOS;
 
 OStream cout;
 
-int __attribute__((optimize("O0"))) dummy(int n) {
-    long long int a = 0;
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            a += i*j;
-        }
-    }
-    return a;
-}
+// int __attribute__((optimize("O0"))) dummy(int n) {
+//     long long int a = 0;
+//     for (int i = 0; i < n; i++) {
+//         for (int j = 0; j < n; j++) {
+//             a += i*j;
+//         }
+//     }
+//     return a;
+// }
 
-static unsigned ITERATIONS = 1000;
+// static unsigned ITERATIONS = 1000;
 int main()
 {
     // Chronometer chron;
@@ -31,7 +31,7 @@ int main()
     // }
     // chron.stop();
     // unsigned avg = (chron.ticks()/ITERATIONS)/RESCALE;
-    // cout << "T=" << avg << endl; 
+    // cout << "T=" << avg << endl;
     cout << "Hello world!" << endl;
     return 0;
 }

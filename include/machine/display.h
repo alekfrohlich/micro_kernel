@@ -34,6 +34,7 @@ public:
 class Serial_Display: public Display_Common
 {
     friend class PC_Setup;
+    friend class Setup_SifiveE;
     friend class Serial_Keyboard;
     friend class Machine;
 
