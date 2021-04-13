@@ -166,9 +166,10 @@ int main(int argc, char **argv)
     unsigned int image_size = 0;
     fprintf(out, "\n  Creating EPOS bootable image in \"%s\":\n", argv[optind + 1]);
 
-    // !P2:
-    // riscv boot jump: jal 0x78
-    unsigned int boot_jump = 0b111100000000000000001101111; 
+    // !P2: offset is not fixed (just got 0x74)
+    // riscv boot jump: jal 0x78; the file_off of .init is 0x74
+    unsigned int boot_jump = 0b111100000000000000001101111;
+    // unsigned int boot_jump = 0b111110000000000000001101111;
     image_size += put_number(fd_img, boot_jump);
     
     // Add BOOT
@@ -216,15 +217,16 @@ int main(int argc, char **argv)
     si.bm.space_y  = CONFIG.space_y;
     si.bm.space_z  = CONFIG.space_z;
 
-    fprintf(out, "\nsi.bm.n_cpus %u", si.bm.n_cpus);
-    fprintf(out, "\nsi.bm.mem_base %08x", si.bm.mem_base);
-    fprintf(out, "\nsi.bm.mem_top %08x", si.bm.mem_top);
-    fprintf(out, "\nsi.bm.mio_base %08x", si.bm.mio_base);
-    fprintf(out, "\nsi.bm.mio_top %08x", si.bm.mio_top);
-    fprintf(out, "\nsi.bm.node_id %u", si.bm.node_id);
-    fprintf(out, "\nsi.bm.space_x %u", si.bm.space_x);
-    fprintf(out, "\nsi.bm.space_y %u", si.bm.space_y);
-    fprintf(out, "\nsi.bm.space_z %u", si.bm.space_z);
+    fprintf(out, "\nBoot Map:");
+    fprintf(out, "  \nsi.bm.n_cpus %u", si.bm.n_cpus);
+    fprintf(out, "  \nsi.bm.mem_base %08x", si.bm.mem_base);
+    fprintf(out, "  \nsi.bm.mem_top %08x", si.bm.mem_top);
+    fprintf(out, "  \nsi.bm.mio_base %08x", si.bm.mio_base);
+    fprintf(out, "  \nsi.bm.mio_top %08x", si.bm.mio_top);
+    fprintf(out, "  \nsi.bm.node_id %u", si.bm.node_id);
+    fprintf(out, "  \nsi.bm.space_x %u", si.bm.space_x);
+    fprintf(out, "  \nsi.bm.space_y %u", si.bm.space_y);
+    fprintf(out, "  \nsi.bm.space_z %u\n\n", si.bm.space_z);
 
     for(unsigned int i = 0; i < 8; i++)
         si.bm.uuid[i]  = CONFIG.uuid[i];

@@ -18,20 +18,18 @@ else
 FLASH		:= $(IMAGE)
 endif
 
-#!P2: Solve debugger
 DEBUGGER	:= $(MACH_DEBUGGER)
 ifeq ($(DEBUG),1)
-# ifneq ($(wildcard $(IMG)/$(MACH)_setup),)
-# DEBUGGER	:= $(DEBUGGER) -ex "add-symbol-file $(call DBSEC,$(SRC)/setup/$(MACH)_setup,.text)"
-# endif
-# ifneq ($(wildcard $(IMG)/$(MACH)_init),)
-# DEBUGGER	:= $(DEBUGGER) -ex "add-symbol-file $(call DBSEC,$(SRC)/init/$(MACH)_init,.text)"
-# endif
-# ifneq ($(wildcard $(IMG)/$(MACH)_system),)
-# DEBUGGER	:= $(DEBUGGER) -ex "add-symbol-file $(call DBSEC,$(SRC)/system/$(MACH)_system,.text)"
-# endif
-# DEBUGGER	:= $(DEBUGGER) -ex "add-symbol-file $(call DBSEC,$(APP)/$(APPLICATION)/$(APPLICATION),.text)"
-DEBUGGER	:= $(DEBUGGER) -ex "add-symbol-file $(IMG)/setup_sifive_e 0x80000080"
+ifneq ($(wildcard $(IMG)/setup_$(MMOD)),)
+DEBUGGER	:= $(DEBUGGER) -ex "add-symbol-file $(call DBSEC,$(SRC)/setup/setup_$(MMOD),.text)"
+endif
+ifneq ($(wildcard $(IMG)/init_$(MMOD)),)
+DEBUGGER	:= $(DEBUGGER) -ex "add-symbol-file $(call DBSEC,$(SRC)/init/init_$(MMOD),.text)"
+endif
+ifneq ($(wildcard $(IMG)/system_$(MMOD)),)
+DEBUGGER	:= $(DEBUGGER) -ex "add-symbol-file $(call DBSEC,$(SRC)/system/system_$(MMOD),.text)"
+endif
+DEBUGGER	:= $(DEBUGGER) -ex "add-symbol-file $(call DBSEC,$(APP)/$(APPLICATION)/$(APPLICATION),.text)"
 PEER_DEBUGGER	:= $(subst 1235,1236,$(DEBUGGER))
 endif
 
@@ -47,7 +45,8 @@ all:		strip $(IMAGE)
 
 else
 
-all:		strip $(IMAGE) $(PEER_IMAGE)
+#!P2: strip couldnt function w/ our jump at the beginning of .img
+all:	 	$(IMAGE) $(PEER_IMAGE)
 
 $(IMAGE):	$(APPLICATION)
 		$(MKBI) -x 0 -y 0 -z 0 $@ $<

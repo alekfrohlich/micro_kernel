@@ -1,0 +1,35 @@
+1. Consertei start address do setup (ld espera o simbolo _start; renomeei _setup pra _start)
+2. Stripei os simbolos de debug do setup
+3. Desabilitei M-mode interrupts
+4. Consertei eposctors
+5. Alterei MMU:init, agora da free no setup e no init e usa sys_info ao inves de _end.
+6. Ignorando os global ctors, MMU::_free e System::_heap parecem ok
+7. Chega no ctor_epilogue da thread e quebra no unlock.
+
+ToDo:
+1. Chamar global ctors do setup (n foi ligado com crts)
+    0x80001214 _print
+    0x8000123c EPOS::S::Serial_Display::_engine
+    0x80001390 EPOS::S::MMU::_free
+2. System parece ter sido ligado na ordem errada;
+    0xffffffff
+    0x80300060 EPOS::S::__entry (ja estamos iniciando no setup, mas teremos que mudar pcausa do stvec)
+    0x00000000
+    0x803031dc EPOS::S::Alarm::_timer (eh ptr, pq ta aqui?)
+    0x8030a334 EPOS::S::U::This_Thread::_not_booting (eh bool, pq ta aqui?)
+    0x8030a4f4 EPOS::S::Serial_Display::_engine (ctor ja eh chamado pelo Display::init)
+    0x8030a648 EPOS::S::Serial_Keyboard::_observed (aparentemente tem uma list; nao usamos, dont care)
+    0x8030afe8 EPOS::S::MMU::_free (ctor nao faz nada)
+Seus construtores nao sao chamados pelo init:
+    0xffffffff
+    0x80200100 EPOS::S::init_first
+    0x80201260 EPOS::S::init_system
+    0x00000000
+3. quem tem .data?
+4. _init da App ta errado (aponta pra SYS_CODE); precisamos do Init_Application
+
+Colocar um print no mmode_forward quebra o codigo; wtf?
+
+Shortcuts:
+    Pra printar MMU::_free tem que castar o endereco que ta no system
+    p (*((EPOS::S::MMU::List *) 0x80400124))

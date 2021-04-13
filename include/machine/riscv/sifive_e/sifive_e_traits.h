@@ -49,8 +49,8 @@ template <> struct Traits<Machine>: public Traits<Machine_Common>
     static const unsigned int IO_BASE           = NOT_USED;
     static const unsigned int IO_TOP            = NOT_USED;
 
-    static const unsigned int SYS               = NOT_USED;
-    static const unsigned int SYS_CODE          = 0x80300000;
+    static const unsigned int SYS               = 0x80300000;
+    static const unsigned int SYS_CODE          = SYS;
     static const unsigned int SYS_DATA          = 0x80400000;
     static const unsigned int SYS_HEAP          = NOT_USED;
     static const unsigned int SYS_STACK         = NOT_USED;

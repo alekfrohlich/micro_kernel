@@ -307,7 +307,7 @@ OBJDUMPFLAGS	:=
 
 SHELL		:= bash
 
-STRIP		= $(COMP_PREFIX)strip -R .note -R .comment
+STRIP		= $(COMP_PREFIX)strip -R .note -R .comment --strip-debug
 
 TCPDUMP		:= tcpdump -tttttennvvvXXr
 

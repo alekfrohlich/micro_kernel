@@ -10,7 +10,8 @@ setup_$(MMOD):	setup_$(MMOD).o
 		$(LD) $(LDFLAGS) -L$(CCLIB) --trace --omagic --section-start .init=$(SETUP_ADDR) -o $@ $^ -l$(LINIT) -l$(LMACH) -l$(LARCH) -l$(LUTIL) -lgcc
 
 install:	setup_$(MMOD)
-		$(INSTALL) $< $(IMG)
+		$(STRIP) $< -o $<_striped
+		mv $<_striped $(IMG)/$<
 
 install.o:	setup_$(MMOD).o
 		$(INSTALL) $< $(LIB)

@@ -1,7 +1,6 @@
 // EPOS RISC-V sifive SETUP
 
 #include <utility/ostream.h>
-
 #include <utility/elf.h>
 #include <utility/debug.h>
 #include <system/info.h>
@@ -12,23 +11,24 @@ using namespace EPOS::S;
 typedef unsigned int Reg;
 
 //!P2:
-// _start is now inside init
+// (both the following are not yet solved)
 // _mmode_forward must be rellocated to avoid being erased from MMU::_free
+// stvec must be set in _pre_init
+//
 // How can we run machine_pre_init before Init_System if it is part of SYS?
 // M-mode interrupts are disabled for the moment (see setup_machine_environment)
 
 extern "C"
 {
-    [[gnu::naked, gnu::section(".init")]] void _setup();
-    // void _int_entry();
+    [[gnu::naked, gnu::section(".init")]] void _start();
+    void _int_entry();
     // void _start();
-    void _wait() {
-        CPU::halt();
-        // _start();
-    }
+    // void _wait() { // Will be added back w/ multicore
+    //     CPU::halt();
+    //     // _start();
+    // }
     void _print(const char * s) { Display::puts(s); }
     void _panic() { Machine::panic(); }
-
 }
 
 // char placeholder[] = "System_Info placeholder. Actual System_Info will be added by mkbi!";
@@ -37,6 +37,7 @@ System_Info * si;
 
 extern "C" [[gnu::interrupt, gnu::aligned(4)]] void _mmode_forward() {
     Reg id = CPU::mcause();
+    // kout << "PASSEI"; // ISSO QUEBRA
     if((id & IC::INT_MASK) == CLINT::IRQ_MAC_TIMER) {
         Timer::reset();
         CPU::sie(CPU::STI);
@@ -169,9 +170,7 @@ void Setup_SifiveE::build_lm()
     si->lm.stp_data = ~0U;
     si->lm.stp_data_size = 0;
 
-    db<Spin>(ERR) << "SETUP ELF image is corrupted!" << endl;
-    EPOS::S::kout << "oioioioioio" << endl;
-    bi = reinterpret_cast<char *>(Traits<Machine>::MEM_BASE);
+    bi = reinterpret_cast<char *>(Traits<Machine>::MEM_BASE); // bi is loaded at MEM_BASE
     if(si->lm.has_stp) {
         ELF * stp_elf = reinterpret_cast<ELF *>(&bi[si->bm.setup_offset]);
         if(!stp_elf->valid()) {
@@ -367,17 +366,7 @@ void Setup_SifiveE::setup_supervisor_environment()
 
     si = reinterpret_cast<System_Info*>(placeholder);
     build_lm();
-    
     load_parts();
-
-    // db<Init, Machine>(TRC) << "Machine::pre_init()" << endl;
-
-    // if(CPU::id() == 0 && Traits<IC>::enabled) {
-    //     IC::init();
-
-    //     if(Traits<System>::multicore)
-    //         smp_barrier_init(Traits<Build>::CPUS);
-    // }
 
     // forward everything
     CPU::satp((0x1 << 31) | (Traits<Machine>::PAGE_TABLES >> 12));
@@ -431,4 +420,4 @@ void Setup_SifiveE::setup_machine_environment()
 
 __END_SYS
 
-void _setup() { Setup_SifiveE::init(); }
+void _start() { Setup_SifiveE::init(); }
