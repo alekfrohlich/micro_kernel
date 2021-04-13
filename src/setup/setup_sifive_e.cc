@@ -13,8 +13,9 @@ typedef unsigned int Reg;
 
 //!P2:
 // _start is now inside init
-// _int_entry and _mmode_forward must be rellocated to avoid being erased from MMU::_free
+// _mmode_forward must be rellocated to avoid being erased from MMU::_free
 // How can we run machine_pre_init before Init_System if it is part of SYS?
+// M-mode interrupts are disabled for the moment (see setup_machine_environment)
 
 extern "C"
 {
@@ -361,7 +362,6 @@ void Setup_SifiveE::setup_supervisor_environment()
     // This creates and configures the kernel page tables (which map logical==physical)
     build_page_tables();
 
-    //!P2: How could machine pre_init run before Init_System if it was linked w/ SYS?
     if(CPU::id() == 0)
         Display::init();
 
@@ -402,7 +402,8 @@ void Setup_SifiveE::setup_machine_environment()
     // We need to set:
     //      MPP_S: to switch to S-mode after mret
     //      MPIE:  otherwise we won't ever receive interrupts
-    CPU::mstatus_write(CPU::MPP_S | CPU::MPIE);
+    // CPU::mstatus_write(CPU::MPP_S | CPU::MPIE);
+    CPU::mstatus_write(CPU::MPP_S);
 
     // We store mhartid at tp, since it becomes inaccessible while in S-mode.
     Reg core = CPU::mhartid();

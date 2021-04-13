@@ -1,0 +1,1691 @@
+diff --git a/app/hello_usr/hello_usr.cc b/app/hello_usr/hello_usr.cc
+new file mode 100644
+index 0000000..2246846
+--- /dev/null
++++ b/app/hello_usr/hello_usr.cc
+@@ -0,0 +1,12 @@
++#include <utility/ostream.h>
++#include <time.h>
++
++using namespace EPOS;
++
++OStream cout;
++
++int main()
++{
++    cout << "Hello world!" << endl;
++    return 0;
++}
+diff --git a/app/hello_usr/hello_usr_traits.h b/app/hello_usr/hello_usr_traits.h
+new file mode 100644
+index 0000000..8fe3f88
+--- /dev/null
++++ b/app/hello_usr/hello_usr_traits.h
+@@ -0,0 +1,154 @@
++#ifndef __traits_h
++#define __traits_h
++
++#include <system/config.h>
++
++__BEGIN_SYS
++
++// Build
++template<> struct Traits<Build>: public Traits_Tokens
++{
++    // Basic configuration
++    static const unsigned int MODE = BUILTIN;
++    static const unsigned int ARCHITECTURE = RV32;
++    static const unsigned int MACHINE = RISCV;
++    static const unsigned int MODEL = SiFive_E;
++    static const unsigned int CPUS = 1;
++    static const unsigned int NODES = 1; // (> 1 => NETWORKING)
++    static const unsigned int EXPECTED_SIMULATION_TIME = 6000; // s (0 => not simulated)
++
++    // Default flags
++    static const bool enabled = true;
++    static const bool monitored = false;
++    static const bool debugged = true;
++    static const bool hysterically_debugged = true;
++
++    // Default aspects
++    typedef ALIST<> ASPECTS;
++};
++
++
++// Utilities
++template<> struct Traits<Debug>: public Traits<Build>
++{
++    static const bool error   = true;
++    static const bool warning = true;
++    static const bool info    = false;
++    static const bool trace   = true;
++};
++
++template<> struct Traits<Lists>: public Traits<Build>
++{
++    static const bool debugged = hysterically_debugged;
++};
++
++template<> struct Traits<Spin>: public Traits<Build>
++{
++    static const bool debugged = hysterically_debugged;
++};
++
++template<> struct Traits<Heaps>: public Traits<Build>
++{
++    static const bool debugged = hysterically_debugged;
++};
++
++template<> struct Traits<Observers>: public Traits<Build>
++{
++    // Some observed objects are created before initializing the Display
++    // Enabling debug may cause trouble in some Machines
++    static const bool debugged = false;
++};
++
++
++// System Parts (mostly to fine control debugging)
++template<> struct Traits<Boot>: public Traits<Build>
++{
++};
++
++template<> struct Traits<Setup>: public Traits<Build>
++{
++};
++
++template<> struct Traits<Init>: public Traits<Build>
++{
++};
++
++template<> struct Traits<Framework>: public Traits<Build>
++{
++};
++
++template<> struct Traits<Aspect>: public Traits<Build>
++{
++    static const bool debugged = hysterically_debugged;
++};
++
++
++__END_SYS
++
++// Mediators
++#include __ARCHITECTURE_TRAITS_H
++#include __MACHINE_TRAITS_H
++
++__BEGIN_SYS
++
++
++// API Components
++template<> struct Traits<Application>: public Traits<Build>
++{
++    static const unsigned int STACK_SIZE = Traits<Machine>::STACK_SIZE;
++    static const unsigned int HEAP_SIZE = Traits<Machine>::HEAP_SIZE;
++    static const unsigned int MAX_THREADS = Traits<Machine>::MAX_THREADS;
++};
++
++template<> struct Traits<System>: public Traits<Build>
++{
++    static const unsigned int mode = Traits<Build>::MODE;
++    static const bool multithread = (Traits<Build>::CPUS > 1) || (Traits<Application>::MAX_THREADS > 1);
++    static const bool multitask = (mode != Traits<Build>::LIBRARY);
++    static const bool multicore = (Traits<Build>::CPUS > 1) && multithread;
++    static const bool multiheap = multitask || Traits<Scratchpad>::enabled || true;
++
++    static const unsigned long LIFE_SPAN = 1 * YEAR; // s
++    static const unsigned int DUTY_CYCLE = 1000000; // ppm
++
++    static const bool reboot = true;
++
++    static const unsigned int STACK_SIZE = Traits<Machine>::STACK_SIZE;
++    static const unsigned int HEAP_SIZE = (Traits<Application>::MAX_THREADS + 1) * Traits<Application>::STACK_SIZE;
++};
++
++template<> struct Traits<Task>: public Traits<Build>
++{
++    static const bool enabled = Traits<System>::multitask;
++};
++
++template<> struct Traits<Thread>: public Traits<Build>
++{
++    static const bool enabled = Traits<System>::multithread;
++    static const bool smp = Traits<System>::multicore;
++    static const bool trace_idle = hysterically_debugged;
++    static const bool simulate_capacity = false;
++
++    typedef RR Criterion;
++    static const unsigned int QUANTUM = 10000; // us
++};
++
++template<> struct Traits<Scheduler<Thread>>: public Traits<Build>
++{
++    static const bool debugged = Traits<Thread>::trace_idle || hysterically_debugged;
++};
++
++template<> struct Traits<Synchronizer>: public Traits<Build>
++{
++    static const bool enabled = Traits<System>::multithread;
++};
++
++template<> struct Traits<Alarm>: public Traits<Build>
++{
++    static const bool visible = hysterically_debugged;
++};
++
++
++__END_SYS
++
++#endif
+diff --git a/app/hello_usr/makefile b/app/hello_usr/makefile
+new file mode 100644
+index 0000000..8a6578a
+--- /dev/null
++++ b/app/hello_usr/makefile
+@@ -0,0 +1,17 @@
++# EPOS Application Makefile
++
++include ../../makedefs
++
++all: install
++
++$(APPLICATION):	$(APPLICATION).o $(LIB)/*
++		$(ALD) $(ALDFLAGS) -o $@ $(APPLICATION).o
++
++$(APPLICATION).o: $(APPLICATION).cc $(SRC)
++		$(ACC) $(ACCFLAGS) -o $@ $<
++
++install: $(APPLICATION)
++		$(INSTALL) $(APPLICATION) $(IMG)
++
++clean:
++		$(CLEAN) *.o $(APPLICATION)
+diff --git a/etc/makefile b/etc/makefile
+index 1e29432..7e25768 100644
+--- a/etc/makefile
++++ b/etc/makefile
+@@ -31,7 +31,8 @@ eposcc.conf: FORCE
+ 		@echo "APP_DATA=$(shell $(BIN)/eposcfg APP_DATA)" >> $@
+ 		@echo "SETUP=$(shell $(BIN)/eposcfg SETUP)" >> $@
+ 		@echo "BOOT_STACK=$(shell $(BIN)/eposcfg BOOT_STACK)" >> $@
+-		@echo "MACH_CC_FLAGS='$(MACH_CC_FLAGS)'" >> $@
++#!P2: Why CC and not CXX?
++		@echo "MACH_CC_FLAGS='$(MACH_CXX_FLAGS)'" >> $@
+ 		@echo "MACH_LD_FLAGS='$(MACH_LD_FLAGS)'" >> $@
+ 		@echo "MACH_CODE_NAME='$(MACH_CODE_NAME)'" >> $@
+ 		@echo "MACH_DATA_NAME='$(MACH_DATA_NAME)'" >> $@
+@@ -47,6 +48,8 @@ eposmkbi.conf:	FORCE
+ 		@echo "ENDIANESS=$(shell $(BIN)/eposcfg ENDIANESS)" >> $@
+ 		@echo "MEM_BASE=$(shell $(BIN)/eposcfg MEM_BASE)" >> $@
+ 		@echo "MEM_TOP=$(shell $(BIN)/eposcfg MEM_TOP)" >> $@
++		@echo "MIO_BASE=$(shell $(BIN)/eposcfg MIO_BASE)" >> $@
++		@echo "MIO_TOP=$(shell $(BIN)/eposcfg MIO_TOP)" >> $@
+ 		@echo "BOOT_LENGTH_MIN=$(shell $(BIN)/eposcfg BOOT_LENGTH_MIN)" >> $@
+ 		@echo "BOOT_LENGTH_MAX=$(shell $(BIN)/eposcfg BOOT_LENGTH_MAX)" >> $@
+ 		@echo "NODE_ID=$(NODE_ID)" >> $@
+diff --git a/img/makefile b/img/makefile
+index 0799121..9b1b14f 100644
+--- a/img/makefile
++++ b/img/makefile
+@@ -18,18 +18,20 @@ else
+ FLASH		:= $(IMAGE)
+ endif
+ 
++#!P2: Solve debugger
+ DEBUGGER	:= $(MACH_DEBUGGER)
+ ifeq ($(DEBUG),1)
+-ifneq ($(wildcard $(IMG)/$(MACH)_setup),)
+-DEBUGGER	:= $(DEBUGGER) -ex "add-symbol-file $(call DBSEC,$(SRC)/setup/$(MACH)_setup,.text)"
+-endif
+-ifneq ($(wildcard $(IMG)/$(MACH)_init),)
+-DEBUGGER	:= $(DEBUGGER) -ex "add-symbol-file $(call DBSEC,$(SRC)/init/$(MACH)_init,.text)"
+-endif
+-ifneq ($(wildcard $(IMG)/$(MACH)_system),)
+-DEBUGGER	:= $(DEBUGGER) -ex "add-symbol-file $(call DBSEC,$(SRC)/system/$(MACH)_system,.text)"
+-endif
+-DEBUGGER	:= $(DEBUGGER) -ex "add-symbol-file $(call DBSEC,$(APP)/$(APPLICATION)/$(APPLICATION),.text)"
++# ifneq ($(wildcard $(IMG)/$(MACH)_setup),)
++# DEBUGGER	:= $(DEBUGGER) -ex "add-symbol-file $(call DBSEC,$(SRC)/setup/$(MACH)_setup,.text)"
++# endif
++# ifneq ($(wildcard $(IMG)/$(MACH)_init),)
++# DEBUGGER	:= $(DEBUGGER) -ex "add-symbol-file $(call DBSEC,$(SRC)/init/$(MACH)_init,.text)"
++# endif
++# ifneq ($(wildcard $(IMG)/$(MACH)_system),)
++# DEBUGGER	:= $(DEBUGGER) -ex "add-symbol-file $(call DBSEC,$(SRC)/system/$(MACH)_system,.text)"
++# endif
++# DEBUGGER	:= $(DEBUGGER) -ex "add-symbol-file $(call DBSEC,$(APP)/$(APPLICATION)/$(APPLICATION),.text)"
++DEBUGGER	:= $(DEBUGGER) -ex "add-symbol-file $(IMG)/setup_sifive_e 0x80000000"
+ PEER_DEBUGGER	:= $(subst 1235,1236,$(DEBUGGER))
+ endif
+ 
+diff --git a/include/architecture/mmu.h b/include/architecture/mmu.h
+index 57da06c..6618b02 100644
+--- a/include/architecture/mmu.h
++++ b/include/architecture/mmu.h
+@@ -79,6 +79,7 @@ public:
+     static unsigned int directory(const Log_Addr & addr) { return addr >> DIRECTORY_SHIFT; }
+ 
+     static Log_Addr align_page(const Log_Addr & addr) { return (addr + sizeof(Page) - 1) & ~(sizeof(Page) - 1); }
++    //!P2: yet to be merged
+     static Log_Addr align_directory(const Log_Addr & addr) { return (addr + sizeof(Page) * sizeof(Page) - 1) &  ~(sizeof(Page) * sizeof(Page) - 1); }
+ };
+ 
+diff --git a/include/machine/riscv/riscv_info.h b/include/machine/riscv/riscv_info.h
+deleted file mode 100644
+index f50bdda..0000000
+--- a/include/machine/riscv/riscv_info.h
++++ /dev/null
+@@ -1,63 +0,0 @@
+-// EPOS RISC-V Common Run-Time System Information
+-
+-#ifndef __riscv_info_h
+-#define __riscv_info_h
+-
+-#include <system/info.h>
+-
+-__BEGIN_SYS
+-
+-struct System_Info
+-{
+-private:
+-    typedef unsigned int LAddr;
+-    typedef unsigned int PAddr;
+-    typedef unsigned int Size;
+-
+-public:
+-    // The information we have at boot time (built by MKBI)
+-    // Modifications to this map requires adjustments at MKBI
+-    struct Boot_Map
+-    {
+-        volatile unsigned int n_cpus;     // Number of CPUs in SMPs
+-        PAddr mem_base;                   // Memory base address
+-        PAddr mem_top;                    // Memory top address
+-        PAddr io_base;                    // I/O Memory base address
+-        PAddr io_top;                     // I/O Memory top address
+-        int node_id;                      // Local node id in SAN (-1 => RARP)
+-        int space_x;                      // Spatial coordinates of a node (-1 => mobile)
+-        int space_y;                      //
+-        int space_z;                      //
+-        unsigned char uuid[8];            // EPOS image Universally Unique Identifier
+-        Size img_size;                    // Boot image size (in bytes)
+-        Size setup_offset;                // Image offsets (-1 => not present)
+-        Size init_offset;
+-        Size system_offset;
+-        Size application_offset;
+-        Size extras_offset;
+-    };
+-
+-    // Load Map (not used in this machine, but kept for architectural transparency)
+-    struct Load_Map
+-    {
+-        bool  has_ext;
+-        LAddr app_entry;
+-        Size  app_segments;
+-        LAddr app_code;
+-        Size  app_code_size;
+-        LAddr app_data;
+-        LAddr app_stack;
+-        LAddr app_heap;
+-        Size  app_data_size;
+-        PAddr app_extra;
+-        Size  app_extra_size;
+-    };
+-
+-public:
+-    Boot_Map bm;
+-    Load_Map lm;
+-};
+-
+-__END_SYS
+-
+-#endif
+diff --git a/include/machine/riscv/sifive_e/sifive_e_info.h b/include/machine/riscv/sifive_e/sifive_e_info.h
+index f50bdda..865e083 100644
+--- a/include/machine/riscv/sifive_e/sifive_e_info.h
++++ b/include/machine/riscv/sifive_e/sifive_e_info.h
+@@ -1,7 +1,7 @@
+ // EPOS RISC-V Common Run-Time System Information
+ 
+-#ifndef __riscv_info_h
+-#define __riscv_info_h
++#ifndef __riscv_sifive_e_info_h
++#define __riscv_sifive_e_info_h
+ 
+ #include <system/info.h>
+ 
+@@ -22,8 +22,8 @@ public:
+         volatile unsigned int n_cpus;     // Number of CPUs in SMPs
+         PAddr mem_base;                   // Memory base address
+         PAddr mem_top;                    // Memory top address
+-        PAddr io_base;                    // I/O Memory base address
+-        PAddr io_top;                     // I/O Memory top address
++        PAddr mio_base;                   // Memory-mapped I/O base address
++        PAddr mio_top;                    // Memory-mapped I/O top address
+         int node_id;                      // Local node id in SAN (-1 => RARP)
+         int space_x;                      // Spatial coordinates of a node (-1 => mobile)
+         int space_y;                      //
+@@ -49,7 +49,7 @@ public:
+         LAddr app_stack;
+         LAddr app_heap;
+         Size  app_data_size;
+-        PAddr app_extra;
++        LAddr app_extra;
+         Size  app_extra_size;
+     };
+ 
+diff --git a/include/machine/riscv/sifive_e/sifive_e_memory_map.h b/include/machine/riscv/sifive_e/sifive_e_memory_map.h
+index eb7606c..cb8beac 100644
+--- a/include/machine/riscv/sifive_e/sifive_e_memory_map.h
++++ b/include/machine/riscv/sifive_e/sifive_e_memory_map.h
+@@ -11,7 +11,9 @@ __BEGIN_SYS
+ 
+ struct Memory_Map
+ {
+-    // Physical Memory
++    static const unsigned int NOT_USED = Traits<Machine>::NOT_USED;
++    
++    // Memory Mapped stuff
+     enum {
+         TEST_BASE                   = 0x00100000, // SiFive test engine
+         RTC_BASE                    = 0x00101000, // goldfish_rtc
+@@ -24,23 +26,32 @@ struct Memory_Map
+     // Physical Memory
+     enum {
+         MEM_BASE        = Traits<Machine>::MEM_BASE,
+-        MEM_TOP         = Traits<Machine>::MEM_TOP
++        MEM_TOP         = Traits<Machine>::MEM_TOP,
++        MIO_BASE        = Traits<Machine>::MIO_BASE,
++        MIO_TOP         = Traits<Machine>::MIO_TOP,
++        BOOT_STACK      = Traits<Machine>::BOOT_STACK,
++
+     };
+ 
+     // Logical Address Space
+     enum {
++        BOOT            = Traits<Machine>::BOOT,
++        IMAGE           = Traits<Machine>::IMAGE,
++        SETUP           = Traits<Machine>::SETUP,
++        INIT            = Traits<Machine>::INIT,
++
+         APP_LOW         = Traits<Machine>::APP_LOW,
+-        APP_CODE        = 0x88000000,
+-        APP_DATA        = 0xffc00000,
++        APP_CODE        = Traits<Machine>::APP_CODE,
++        APP_DATA        = Traits<Machine>::APP_DATA,
+         APP_HIGH        = Traits<Machine>::APP_HIGH,
+ 
+         PHY_MEM         = Traits<Machine>::PHY_MEM,
+         IO              = Traits<Machine>::IO_BASE,
+ 
+-        SYS             = Traits<Machine>::NOT_USED,
++        SYS             = Traits<Machine>::SYS,
+         SYS_INFO        = unsigned(-1),                 // Dynamically built during initialization.
+-        SYS_CODE        = Traits<Machine>::NOT_USED,
+-        SYS_DATA        = Traits<Machine>::NOT_USED,
++        SYS_CODE        = Traits<Machine>::SYS_CODE,
++        SYS_DATA        = Traits<Machine>::SYS_DATA,
+         SYS_HEAP        = Traits<Machine>::NOT_USED,
+         SYS_STACK       = Traits<Machine>::NOT_USED
+     };
+diff --git a/include/machine/riscv/sifive_e/sifive_e_traits.h b/include/machine/riscv/sifive_e/sifive_e_traits.h
+index 2b3718c..2acbf80 100644
+--- a/include/machine/riscv/sifive_e/sifive_e_traits.h
++++ b/include/machine/riscv/sifive_e/sifive_e_traits.h
+@@ -20,33 +20,41 @@ template <> struct Traits<Machine>: public Traits<Machine_Common>
+     // Boot Image
+     static const unsigned int BOOT_LENGTH_MIN   = NOT_USED;
+     static const unsigned int BOOT_LENGTH_MAX   = NOT_USED;
++    static const unsigned int BOOT_STACK        = 0x87ffffff;
+ 
+     // Physical Memory
+     static const unsigned int MEM_BASE          = 0x80000000;
++    static const unsigned int MEM_TOP           = 0x87ffffff; // 128 MB
++    static const unsigned int MIO_BASE          = 0x00000000;
++    static const unsigned int MIO_TOP           = 0x100081ff;
++
+     static const unsigned int VECTOR_TABLE      = NOT_USED;
+     static const unsigned int PAGE_TABLES       = 0x87ffffff + 1 - 16*1024 - ((1024+1)*4*1024); // 0x87BFB000
+-    static const unsigned int MEM_TOP           = 0x87ffffff; // 128 MB
+-    static const unsigned int BOOT_STACK        = 0x87ffffff;
+ 
+     // Logical Memory Map
+     static const unsigned int BOOT              = NOT_USED;
+-    static const unsigned int SETUP             = NOT_USED;
+-    static const unsigned int INIT              = NOT_USED;
+-
+-    static const unsigned int APP_LOW           = 0x80000000;
+-    static const unsigned int APP_CODE          = 0x80000000;
+-    static const unsigned int APP_DATA          = 0x80000000;
++    static const unsigned int IMAGE             = NOT_USED;
++    static const unsigned int SETUP             = 0x80000000; // This controls whether an ELF file is generated for setup
++    // static const unsigned int SETUP             = NOT_USED;
++    static const unsigned int INIT              = 0x80010000; // 16 pages for setup
++
++    static const unsigned int APP_LOW           = 0x88000000;
++    static const unsigned int APP_CODE          = 0x88000000;
++    static const unsigned int APP_DATA          = 0xffc00000;
+     static const unsigned int APP_HIGH          = 0x87ffffff;
+ 
+-    static const unsigned int PHY_MEM           = NOT_USED; // No paging MMU
+-    static const unsigned int IO_BASE           = NOT_USED; // No paging MMU
+-    static const unsigned int IO_TOP            = NOT_USED; // No paging MMU
+-
+-    static const unsigned int SYS               = NOT_USED; // No paging MMU
+-    static const unsigned int SYS_CODE          = NOT_USED; // No paging MMU
+-    static const unsigned int SYS_DATA          = NOT_USED; // No paging MMU
+-    static const unsigned int SYS_HEAP          = NOT_USED; // No paging MMU
+-    static const unsigned int SYS_STACK         = NOT_USED; // No paging MMU
++    static const unsigned int PHY_MEM           = NOT_USED;
++    static const unsigned int IO_BASE           = NOT_USED;
++    static const unsigned int IO_TOP            = NOT_USED;
++
++    //!P2: This can be optimized
++    //!P2: Is SYS_HEAP necessary?
++    //!P2: we can let the BOOT_STACK be the kernel stack
++    static const unsigned int SYS               = NOT_USED;
++    static const unsigned int SYS_CODE          = 0x80020000;
++    static const unsigned int SYS_DATA          = 0x80040000;
++    static const unsigned int SYS_HEAP          = NOT_USED;
++    static const unsigned int SYS_STACK         = NOT_USED;
+ 
+     // Default Sizes and Quantities
+     static const unsigned int STACK_SIZE        = 16 * 1024;
+diff --git a/makedefs b/makedefs
+index 7c5fd92..5e654fb 100644
+--- a/makedefs
++++ b/makedefs
+@@ -182,8 +182,8 @@ riscv_EMULATOR			= qemu-system-riscv32 -machine virt -cpu rv32gcsu-v1.10.0 -smp
+ riscv_DEBUGGER          := $(COMP_PREFIX)gdb
+ riscv_FLASHER           := 
+ riscv_MAGIC             := --nmagic
+-riscv_CODE_NAME := .init
+-riscv_DATA_NAME :=
++riscv_CODE_NAME 		:= .init
++riscv_DATA_NAME 		:= .sdata
+ riscv_IMG_SUFFIX        := .img
+ endif
+ 
+@@ -251,7 +251,7 @@ TLD		:= gcc
+ TLDFLAGS	:= -m32
+ 
+ # Tools and flags to compile applications
+-ACC		= $(BIN)/eposcc $(MACH_CC_FLAGS)  -c -ansi -O
++ACC		= $(BIN)/eposcc --echo $(MACH_CC_FLAGS)  -c -ansi -O
+ ACXX		= $(BIN)/eposcc $(MACH_CXX_FLAGS) -c -ansi -O
+ AF77		= $(BIN)/eposcc $(MACH_CC_FLAGS)  -c -ansi -O
+ ALD		= $(BIN)/eposcc --echo --$(SMOD) --no-warn-mismatch 
+diff --git a/notes/build.txt b/notes/build.txt
+new file mode 100644
+index 0000000..25a091f
+--- /dev/null
++++ b/notes/build.txt
+@@ -0,0 +1,135 @@
++We did not specify target: execute all; APPLICATION was defined => execute all1
++all1: etc tools src app img
++
++ETC
++=======
++etc: config eposcfg eposcc.conf eposmkbi.conf
++config: config.h (config always execute?)
++    defines SMOD, ARCH, MACH, etc. in config.h
++eposcfg: FORCE
++    removes eposcfg executable
++eposcc.conf and eposmkbi.conf: FORCE
++    use eposcfg to build .conf files (which I suppose are used by tools?)
++=======
++
++TOOLS
++=======
++Mostly, just compile them
++=======
++
++SRC
++=======
++src: utility architecture machine api setup boot system init
++
++    UTIL
++    =======
++    just compiles utility/ and groups it inside lib/libutil_sifive_e.a
++    =======
++
++    ARCH
++    =======
++    forwards to rv32,
++    
++        RV32
++        =======
++        compiles crts and installs them under lib/crtxxx_sifive_e.o, then compiles the cpu/mmu/tsc _inits and their corresponding
++        _inits and places them under libarch and libinit.
++        =======
++    =======
++
++    MACH
++    =======
++    Does common and places them under libmach, then forwards to riscv
++    //!: what is common for?
++
++        RISCV
++        =======
++        Compiles ic/machine/timer and their corresponding _inits and places them under libmach and libinit.
++        =======
++    =======
++
++    API
++    =======
++    Same with libsys.
++    =======
++
++    SETUP
++    =======
++    If SETUP is NOT_USED, then just install the .o file under lib/
++    =======
++
++    SYSTEM
++    =======
++    links system_binding.o + system_scaffold.o together under system_sifive.o and installs it and application_scaffold
++    (now application_sifive_e) under lib/ 
++    =======
++
++    INIT
++    =======
++    Just renames the inits and places them under lib/
++    =======
++=======
++
++APP
++=======
++eposcc is finally used. Compiles the application with eposcc, links it, and then installs it under img/
++
++=======
++
++EPOSCC
++=======
++language=C
++link_objs=hello.o
++//!: Note various different compiler flags are used throughout the build.
++=======
++
++IMG
++=======
++Flashing/GDB/QEMU stuff; not important for now
++=======
++
++CLEAN
++=======
++-clean:
++    etc: resets config.h
++    app: do nothing?
++    src: everything below src? or excludes system, image, init?
++    img: do nothing?
++-cleanapps:
++    clean for every app
++-veryclean: clean cleanapps cleantest
++=======
++
++DEFS
++=======
++
++
++=======
++
++Doubts:
++- Does epos need eposcfg to use makedefs?
++- I saw .sdata as section 1 (right after .init), werent we assuming they would
++    be contiguous on the logical address space?
++
++/usr/local/rv32/bin/riscv32-unknown-linux-gnu-g++ -c -Wl, -mno-relax -O -std=c++14 -nostdinc --no-exceptions --no-rtti --no-use-cxa-atexit
++--no-asynchronous-unwind-tables -fno-stack-protector -fno-pie -fdata-sections -ffunction-sections -Wall -Werror -Wno-builtin-declaration-mismatch
++-Wno-array-bounds -Wno-attribute-alias
++-Wno-placement-new -Wno-class-memaccess -Wno-address-of-packed-member -Wattributes -I/home/alek/so2/nicolas2/so2_remote/include elf.cc
++
++
++--no-warn-mismatch 
++
++usr/local/rv32/bin/riscv32-unknown-linux-gnu-ld --no-relax -nostdlib -L/home/alek/so2/nicolas2/so2_remote/lib -Bstatic 
++-L`/usr/local/rv32/bin/riscv32-unknown-linux-gnu-gcc -ansi -c -Wl, 
++-mno-relax -O -nostdinc -fno-stack-protector -fno-pie -Wno-builtin-declaration-mismatch 
++-Wno-array-bounds -Wno-address-of-packed-member -print-file-name=` --nmagic \
++        --section-start .init=0x80010000 \
++        --section-start .sdata=0x80040000 \
++        --entry=_init -o system_sifive_e \
++        /home/alek/so2/nicolas2/so2_remote/lib/crtbegin_sifive_e.o \
++        system_scaffold.o system_binding.o \
++        /home/alek/so2/nicolas2/so2_remote/lib/crtend_sifive_e.o \
++        --whole-archive \
++        -lsys_sifive_e -lmach_sifive_e -larch_sifive_e \
++        --no-whole-archive \
++        -lutil_sifive_e -linit_sifive_e -lgcc
+\ No newline at end of file
+diff --git a/notes/check_list.txt b/notes/check_list.txt
+deleted file mode 100644
+index 0c58e23..0000000
+--- a/notes/check_list.txt
++++ /dev/null
+@@ -1,3 +0,0 @@
+-1) Change Where Page Tables are created (move down a bit)
+-2) Force constructor to be a function
+-3) set satp later
+\ No newline at end of file
+diff --git a/src/architecture/rv32/rv32_cpu.cc b/src/architecture/rv32/rv32_cpu.cc
+index c47a597..47e8f61 100644
+--- a/src/architecture/rv32/rv32_cpu.cc
++++ b/src/architecture/rv32/rv32_cpu.cc
+@@ -14,7 +14,7 @@ void CPU::Context::save() volatile
+ {
+     ASM("       csrr     gp,  sstatus           \n"
+         "       sw       gp, -120(sp)           \n"     // push sstatus
+-        "       la       gp,      pc            \n"
++        "       auipc    gp, 0                  \n"     //!P2: Is still ok?
+         "       sw       gp, -116(sp)           \n"     // push pc
+         "       sw       x1, -112(sp)           \n"     // push ra
+         "       sw       x5, -108(sp)           \n"     // push x5-x31
+diff --git a/src/architecture/rv32/rv32_mmu_init.cc b/src/architecture/rv32/rv32_mmu_init.cc
+index bfcc416..c295a25 100644
+--- a/src/architecture/rv32/rv32_mmu_init.cc
++++ b/src/architecture/rv32/rv32_mmu_init.cc
+@@ -13,7 +13,7 @@ void MMU::init()
+     db<Init, MMU>(TRC) << "MMU::init()" << endl;
+ 
+     db<Init, MMU>(INF) << "MMU::init::dat.e=" << &_edata << ",bss.b=" << &__bss_start << ",bss.e=" << &_end << endl;
+-
++    //!P2: free everything below Traits<Machine>::SYS; worst fit will guarantee no issue w/ this.
+     // For machines that do not feature a real MMU, frame size = 1 byte
+     // Allocations (using Grouping_List<Frame>::search_decrementing() start from the end
+     // To preserve the BOOT stacks until the end of INIT, the free memory list initialization is split in two sections
+diff --git a/src/init/init_first.cc b/src/init/init_first.cc
+index da4ccf1..ecbbe4a 100644
+--- a/src/init/init_first.cc
++++ b/src/init/init_first.cc
+@@ -26,7 +26,8 @@ public:
+ 
+         // Interrupts have been disable at Thread::init() and will be reenabled by CPU::Context::load()
+         // but we first reset the timer to avoid getting a time interrupt during load()
+-        Timer::reset();
++        if (Traits<Timer>::enabled)
++            Timer::reset();
+         first->_context->load();
+     }
+ };
+diff --git a/src/setup/makefile b/src/setup/makefile
+index b5ead57..5fb98cc 100644
+--- a/src/setup/makefile
++++ b/src/setup/makefile
+@@ -5,9 +5,9 @@ include ../../makedefs
+ TARGET := $(if $(shell find setup_$(MMOD)* 2> /dev/null), $(if $(SETUP_ADDR), install, install.o))
+ 
+ all:	$(TARGET)
+-
++#!P2: Switch to mode-based ruling
+ setup_$(MMOD):	setup_$(MMOD).o
+-		$(LD) $(LDFLAGS) -L$(CCLIB) --omagic --section-start .init=$(SETUP_ADDR) -o $@ $^ -l$(LINIT) -l$(LMACH) -l$(LARCH) -l$(LUTIL) -lgcc
++		$(LD) $(LDFLAGS) -L$(CCLIB) --trace --omagic --section-start .init=$(SETUP_ADDR) -o $@ $^ -l$(LINIT) -l$(LMACH) -l$(LARCH) -l$(LUTIL) -lgcc
+ 
+ install:	setup_$(MMOD)
+ 		$(INSTALL) $< $(IMG)
+diff --git a/src/setup/setup_sifive_e.cc b/src/setup/setup_sifive_e.cc
+index 2750ef4..194e2e5 100644
+--- a/src/setup/setup_sifive_e.cc
++++ b/src/setup/setup_sifive_e.cc
+@@ -1,22 +1,35 @@
+ // EPOS RISC-V sifive SETUP
+ 
++#include <utility/ostream.h>
++
++#include <system/info.h>
+ #include <architecture.h>
+ #include <machine.h>
+ 
+ using namespace EPOS::S;
+ typedef unsigned int Reg;
+ 
++//!P2:
++// _start is now inside init
++// _int_entry and _mmode_forward must be rellocated to avoid being erased from MMU::_free
++// How can we run machine_pre_init before Init_System if it is part of SYS?
++
+ extern "C"
+ {
+     [[gnu::naked, gnu::section(".init")]] void _setup();
+-    void _int_entry();
+-    void _start();
++    // void _int_entry();
++    // void _start();
+     void _wait() {
+         CPU::halt();
+-        _start();
++        // _start();
+     }
++    void _print(const char * s) { Display::puts(s); }
+ }
+ 
++char placeholder[] = "System_Info placeholder. Actual System_Info will be added by mkbi!_____________________________________________________________";
++System_Info * si;
++EPOS::S::U::OStream kout, kerr;
++
+ extern "C" [[gnu::interrupt, gnu::aligned(4)]] void _mmode_forward() {
+     Reg id = CPU::mcause();
+     if((id & IC::INT_MASK) == CLINT::IRQ_MAC_TIMER) {
+@@ -81,7 +94,7 @@ void Setup_SifiveE::clean_bss()
+ 
+ void Setup_SifiveE::setup_supervisor_environment()
+ {
+-    CPU::stvec_write((unsigned)&_int_entry & 0xfffffffc);
++    // CPU::stvec_write((unsigned)&_int_entry & 0xfffffffc);
+ 
+     // We must clean the bss before setting MMU::_master
+     clean_bss();
+@@ -89,9 +102,22 @@ void Setup_SifiveE::setup_supervisor_environment()
+     // This creates and configures the kernel page tables (which map logical==physical)
+     build_page_tables();
+ 
++    //!P2: How could machine pre_init run before Init_System if it was linked w/ SYS?
++    // if(CPU::id() == 0)
++    //     Display::init();
++
++    // db<Init, Machine>(TRC) << "Machine::pre_init()" << endl;
++
++    // if(CPU::id() == 0 && Traits<IC>::enabled) {
++    //     IC::init();
++
++    //     if(Traits<System>::multicore)
++    //         smp_barrier_init(Traits<Build>::CPUS);
++    // }
++
+     // forward everything
+     CPU::satp((0x1 << 31) | (Traits<Machine>::PAGE_TABLES >> 12));
+-    CPU::sepc_write((unsigned)&_start);
++    // CPU::sepc_write((unsigned)&_start);
+ 
+     // Interrupts will remain disable until the Context::load at Init_First
+     CPU::sstatus_write(CPU::SPP_S);
+@@ -102,10 +128,10 @@ void Setup_SifiveE::setup_supervisor_environment()
+ 
+ void Setup_SifiveE::setup_machine_environment()
+ {
++    si = reinterpret_cast<System_Info*>(placeholder);
+     // We first configure the M-mode CSRs and then switch to S-mode
+     // configure paging. After that, we won't return to M-mode; an exception
+     // is the forwarding of ints and excps to S-mode.
+-
+     CPU::mie_write(CPU::MSI | CPU::MTI | CPU::MEI);
+     CPU::mmode_int_disable();
+ 
+diff --git a/src/system/system_scaffold.cc b/src/system/system_scaffold.cc
+index cfb0d35..95f1ce4 100644
+--- a/src/system/system_scaffold.cc
++++ b/src/system/system_scaffold.cc
+@@ -15,7 +15,7 @@ class First_Object
+ {
+ public:
+     First_Object() {
+-        Machine::pre_init(reinterpret_cast<System_Info *>(Memory_Map::SYS_INFO));
++        // Machine::pre_init(reinterpret_cast<System_Info *>(Memory_Map::SYS_INFO));
+     }
+ };
+ 
+diff --git a/tests/scheduler_dm_test/scheduler_dm_test.cc b/tests/scheduler_dm_test/scheduler_dm_test.cc
+deleted file mode 120000
+index fa235ad..0000000
+--- a/tests/scheduler_dm_test/scheduler_dm_test.cc
++++ /dev/null
+@@ -1 +0,0 @@
+-../scheduler_rm_test/scheduler_rm_test.cc
+\ No newline at end of file
+diff --git a/tests/scheduler_dm_test/scheduler_dm_test.cc b/tests/scheduler_dm_test/scheduler_dm_test.cc
+new file mode 100644
+index 0000000..56fd387
+--- /dev/null
++++ b/tests/scheduler_dm_test/scheduler_dm_test.cc
+@@ -0,0 +1,129 @@
++// EPOS Periodic Thread Component Test Program
++
++#include <time.h>
++#include <real-time.h>
++
++using namespace EPOS;
++
++const unsigned int iterations = 100;
++const unsigned int period_a = 100; // ms
++const unsigned int period_b = 80; // ms
++const unsigned int period_c = 60; // ms
++const unsigned int wcet_a = 50; // ms
++const unsigned int wcet_b = 20; // ms
++const unsigned int wcet_c = 10; // ms
++
++int func_a();
++int func_b();
++int func_c();
++long max(unsigned int a, unsigned int b, unsigned int c) { return ((a >= b) && (a >= c)) ? a : ((b >= a) && (b >= c) ? b : c); }
++
++OStream cout;
++Chronometer chrono;
++Periodic_Thread * thread_a;
++Periodic_Thread * thread_b;
++Periodic_Thread * thread_c;
++
++inline void exec(char c, unsigned int time = 0) // in miliseconds
++{
++    // Delay was not used here to prevent scheduling interference due to blocking
++    Microsecond elapsed = chrono.read() / 1000;
++
++    cout << "\n" << elapsed << "\t" << c
++         << "\t[p(A)=" << thread_a->priority()
++         << ", p(B)=" << thread_b->priority()
++         << ", p(C)=" << thread_c->priority() << "]";
++
++    if(time) {
++        for(Microsecond end = elapsed + time, last = end; end > elapsed; elapsed = chrono.read() / 1000)
++            if(last != elapsed) {
++                cout << "\n" << elapsed << "\t" << c
++                    << "\t[p(A)=" << thread_a->priority()
++                    << ", p(B)=" << thread_b->priority()
++                    << ", p(C)=" << thread_c->priority() << "]";
++                last = elapsed;
++            }
++    }
++}
++
++
++int main()
++{
++    cout << "Periodic Thread Component Test" << endl;
++
++    cout << "\nThis test consists in creating three periodic threads as follows:" << endl;
++    cout << "- Every " << period_a << "ms, thread A execs \"a\", waits for " << wcet_a << "ms and then execs another \"a\";" << endl;
++    cout << "- Every " << period_b << "ms, thread B execs \"b\", waits for " << wcet_b << "ms and then execs another \"b\";" << endl;
++    cout << "- Every " << period_c << "ms, thread C execs \"c\", waits for " << wcet_c << "ms and then execs another \"c\";" << endl;
++
++    cout << "Threads will now be created and I'll wait for them to finish..." << endl;
++
++    // p,d,c,act,t
++    thread_a = new Periodic_Thread(RTConf(period_a * 1000, 0, 0, 0, iterations), &func_a);
++    thread_b = new Periodic_Thread(RTConf(period_b * 1000, 0, 0, 0, iterations), &func_b);
++    thread_c = new Periodic_Thread(RTConf(period_c * 1000, 0, 0, 0, iterations), &func_c);
++
++    exec('M');
++
++    chrono.start();
++
++    int status_a = thread_a->join();
++    int status_b = thread_b->join();
++    int status_c = thread_c->join();
++
++    chrono.stop();
++
++    exec('M');
++
++    cout << "\n... done!" << endl;
++    cout << "\n\nThread A exited with status \"" << char(status_a)
++         << "\", thread B exited with status \"" << char(status_b)
++         << "\" and thread C exited with status \"" << char(status_c) << "." << endl;
++
++    cout << "\nThe estimated time to run the test was "
++         << max(period_a, period_b, period_c) * iterations
++         << " ms. The measured time was " << chrono.read() / 1000 <<" ms!" << endl;
++
++    cout << "I'm also done, bye!" << endl;
++
++    return 0;
++}
++
++int func_a()
++{
++    exec('A');
++
++    do {
++        exec('a', wcet_a);
++    } while (Periodic_Thread::wait_next());
++
++    exec('A');
++
++    return 'A';
++}
++
++int func_b()
++{
++    exec('B');
++
++    do {
++        exec('b', wcet_b);
++    } while (Periodic_Thread::wait_next());
++
++    exec('B');
++
++    return 'B';
++}
++
++int func_c()
++{
++    exec('C');
++
++    do {
++        exec('c', wcet_c);
++    } while (Periodic_Thread::wait_next());
++
++    exec('C');
++
++    return 'C';
++}
+diff --git a/tests/scheduler_edf_test/scheduler_edf_test.cc b/tests/scheduler_edf_test/scheduler_edf_test.cc
+deleted file mode 120000
+index fa235ad..0000000
+--- a/tests/scheduler_edf_test/scheduler_edf_test.cc
++++ /dev/null
+@@ -1 +0,0 @@
+-../scheduler_rm_test/scheduler_rm_test.cc
+\ No newline at end of file
+diff --git a/tests/scheduler_edf_test/scheduler_edf_test.cc b/tests/scheduler_edf_test/scheduler_edf_test.cc
+new file mode 100644
+index 0000000..56fd387
+--- /dev/null
++++ b/tests/scheduler_edf_test/scheduler_edf_test.cc
+@@ -0,0 +1,129 @@
++// EPOS Periodic Thread Component Test Program
++
++#include <time.h>
++#include <real-time.h>
++
++using namespace EPOS;
++
++const unsigned int iterations = 100;
++const unsigned int period_a = 100; // ms
++const unsigned int period_b = 80; // ms
++const unsigned int period_c = 60; // ms
++const unsigned int wcet_a = 50; // ms
++const unsigned int wcet_b = 20; // ms
++const unsigned int wcet_c = 10; // ms
++
++int func_a();
++int func_b();
++int func_c();
++long max(unsigned int a, unsigned int b, unsigned int c) { return ((a >= b) && (a >= c)) ? a : ((b >= a) && (b >= c) ? b : c); }
++
++OStream cout;
++Chronometer chrono;
++Periodic_Thread * thread_a;
++Periodic_Thread * thread_b;
++Periodic_Thread * thread_c;
++
++inline void exec(char c, unsigned int time = 0) // in miliseconds
++{
++    // Delay was not used here to prevent scheduling interference due to blocking
++    Microsecond elapsed = chrono.read() / 1000;
++
++    cout << "\n" << elapsed << "\t" << c
++         << "\t[p(A)=" << thread_a->priority()
++         << ", p(B)=" << thread_b->priority()
++         << ", p(C)=" << thread_c->priority() << "]";
++
++    if(time) {
++        for(Microsecond end = elapsed + time, last = end; end > elapsed; elapsed = chrono.read() / 1000)
++            if(last != elapsed) {
++                cout << "\n" << elapsed << "\t" << c
++                    << "\t[p(A)=" << thread_a->priority()
++                    << ", p(B)=" << thread_b->priority()
++                    << ", p(C)=" << thread_c->priority() << "]";
++                last = elapsed;
++            }
++    }
++}
++
++
++int main()
++{
++    cout << "Periodic Thread Component Test" << endl;
++
++    cout << "\nThis test consists in creating three periodic threads as follows:" << endl;
++    cout << "- Every " << period_a << "ms, thread A execs \"a\", waits for " << wcet_a << "ms and then execs another \"a\";" << endl;
++    cout << "- Every " << period_b << "ms, thread B execs \"b\", waits for " << wcet_b << "ms and then execs another \"b\";" << endl;
++    cout << "- Every " << period_c << "ms, thread C execs \"c\", waits for " << wcet_c << "ms and then execs another \"c\";" << endl;
++
++    cout << "Threads will now be created and I'll wait for them to finish..." << endl;
++
++    // p,d,c,act,t
++    thread_a = new Periodic_Thread(RTConf(period_a * 1000, 0, 0, 0, iterations), &func_a);
++    thread_b = new Periodic_Thread(RTConf(period_b * 1000, 0, 0, 0, iterations), &func_b);
++    thread_c = new Periodic_Thread(RTConf(period_c * 1000, 0, 0, 0, iterations), &func_c);
++
++    exec('M');
++
++    chrono.start();
++
++    int status_a = thread_a->join();
++    int status_b = thread_b->join();
++    int status_c = thread_c->join();
++
++    chrono.stop();
++
++    exec('M');
++
++    cout << "\n... done!" << endl;
++    cout << "\n\nThread A exited with status \"" << char(status_a)
++         << "\", thread B exited with status \"" << char(status_b)
++         << "\" and thread C exited with status \"" << char(status_c) << "." << endl;
++
++    cout << "\nThe estimated time to run the test was "
++         << max(period_a, period_b, period_c) * iterations
++         << " ms. The measured time was " << chrono.read() / 1000 <<" ms!" << endl;
++
++    cout << "I'm also done, bye!" << endl;
++
++    return 0;
++}
++
++int func_a()
++{
++    exec('A');
++
++    do {
++        exec('a', wcet_a);
++    } while (Periodic_Thread::wait_next());
++
++    exec('A');
++
++    return 'A';
++}
++
++int func_b()
++{
++    exec('B');
++
++    do {
++        exec('b', wcet_b);
++    } while (Periodic_Thread::wait_next());
++
++    exec('B');
++
++    return 'B';
++}
++
++int func_c()
++{
++    exec('C');
++
++    do {
++        exec('c', wcet_c);
++    } while (Periodic_Thread::wait_next());
++
++    exec('C');
++
++    return 'C';
++}
+diff --git a/tools/eposcc/eposcc b/tools/eposcc/eposcc
+index dbe3578..3fb68de 100644
+--- a/tools/eposcc/eposcc
++++ b/tools/eposcc/eposcc
+@@ -44,27 +44,30 @@ C_LINK_FLGS="$MACH_LD_FLAGS"
+ C_LINK_OBJS=
+ C_LINK_LIBS=
+ 
++#!P2: C++ flags are now used
++# 
++
+ CPP_COMPILER="$TOOLS_PREFIX""g++"
+-CPP_COMP_FLGS="--no-exceptions --no-rtti --no-use-cxa-atexit -std=c++14"
++CPP_COMP_FLGS="$MACH_CC_FLAGS"
+ CPP_COMP_HDRS=
+ CPP_LINK_FLGS="$MACH_LD_FLAGS"
+ CPP_LINK_OBJS=
+ CPP_LINK_LIBS=
+ 
+-F77_COMPILER="$TOOLS_PREFIX""g77"
+-F77_COMP_FLGS=
+-F77_COMP_HDRS=
+-F77_LINK_FLGS="$MACH_LD_FLAGS"
+-F77_LINK_OBJS=
+-F77_LINK_LIBS="f2c"
++# F77_COMPILER="$TOOLS_PREFIX""g77"
++# F77_COMP_FLGS=
++# F77_COMP_HDRS=
++# F77_LINK_FLGS="$MACH_LD_FLAGS"
++# F77_LINK_OBJS=
++# F77_LINK_LIBS="f2c"
+ 
+ LINKER="$TOOLS_PREFIX""ld"
+ 
+ LINKER_LIBRARY=$LINKER
+ LINK_FLGS_LIBRARY="-L$LIB -L`$C_COMPILER $C_COMP_FLGS -print-file-name=` -static --section-start $MACH_CODE_NAME=$APP_CODE"
+-if [ "$MACH_DATA_NAME" != "" ] ; then
+-    LINK_FLGS_LIBRARY="$LINK_FLGS_LIBRARY --section-start $MACH_DATA_NAME=$APP_DATA"
+-fi
++# if [ "$MACH_DATA_NAME" != "" ] ; then
++#     LINK_FLGS_LIBRARY="$LINK_FLGS_LIBRARY --section-start $MACH_DATA_NAME=0x86000000"
++# fi
+ if [ "$BOOT_STACK" != "" ] ; then
+     LINK_FLGS_LIBRARY="$LINK_FLGS_LIBRARY --defsym=__boot_stack__=$BOOT_STACK"
+ fi
+@@ -76,6 +79,7 @@ if [ "$SETUP" = "" ] ; then
+     LINK_OBJI_LIBRARY="$LIB/setup_$MMOD.o $LINK_OBJI_LIBRARY"
+ fi
+ 
++#!P2: Epos changed this
+ LINKER_BUILTIN=$LINKER
+ LINK_FLGS_BUILTIN="-L$LIB -L`$C_COMPILER $C_COMP_FLGS -print-file-name=` -static --section-start $MACH_CODE_NAME=$APP_CODE --section-start $MACH_DATA_NAME=$APP_DATA"
+ LINK_OBJI_BUILTIN="$LIB/crt0_$MMOD.o $LIB/crtbegin_$MMOD.o"
+@@ -86,12 +90,12 @@ if [ "$SETUP" = "" ] ; then
+ LINK_OBJN_BUILTIN="$LIB/setup_$MMOD.o $LINK_OBJN_BUILTIN"
+ fi
+ 
+-LINKER_KERNEL=$LINKER
+-LINK_FLGS_KERNEL="-L$LIB -L`$C_COMPILER $C_COMP_FLGS -print-file-name=` -static --section-start $MACH_CODE_NAME=$APP_CODE --section-start $MACH_DATA_NAME=$APP_DATA"
+-LINK_OBJI_KERNEL="$LIB/crt0_$MMOD.o $LIB/crtbegin_$MMOD.o"
+-LINK_OBJN_KERNEL="$LIB/application_$MMOD.o $LIB/init_application_$MMOD.o"
+-LINK_OBJL_KERNEL="$LIB/crtend_$MMOD.o"
+-LINK_LIBS_KERNEL="util_$MMOD arch_$MMOD gcc"
++# LINKER_KERNEL=$LINKER
++# LINK_FLGS_KERNEL="-L$LIB -L`$C_COMPILER $C_COMP_FLGS -print-file-name=` -static --section-start $MACH_CODE_NAME=$APP_CODE --section-start $MACH_DATA_NAME=$APP_DATA"
++# LINK_OBJI_KERNEL="$LIB/crt0_$MMOD.o $LIB/crtbegin_$MMOD.o"
++# LINK_OBJN_KERNEL="$LIB/application_$MMOD.o $LIB/init_application_$MMOD.o"
++# LINK_OBJL_KERNEL="$LIB/crtend_$MMOD.o"
++# LINK_LIBS_KERNEL="util_$MMOD arch_$MMOD gcc"
+ 
+ #=========================================================================
+ # VARIABLES
+@@ -271,6 +275,7 @@ done
+ #=========================================================================
+ # COMMAND ISSUING
+ #=========================================================================
++
+ if [ "$language" = "F77" ] ; then
+     compiler=$F77_COMPILER
+     compile_flgs="$compile_flgs $F77_COMP_FLGS"
+@@ -289,6 +294,8 @@ elif [ "$language" = "CPP" ] ; then
+         compile_flgs="$compile_flgs -I$hdr"
+     done
+     link_flgs="$link_flgs $CPP_LINK_FLGS"
++    echo "LD FLAGS1\n"
++    echo $link_flgs
+     link_objs="$CPP_LINK_OBJS $link_objs"
+     for lib in $CPP_LINK_LIBS ; do
+         link_libs="$link_libs -l$lib"
+@@ -347,51 +354,54 @@ if [ $need_compile = 1 -a ! -f "$key_file" ] ; then
+ fi
+ 
+ # disabled for EPOS
+-if [ $need_analyze = 5 ] ; then
+-    analyze_flgs=$compile_flgs
++# if [ $need_analyze = 5 ] ; then
++#     analyze_flgs=$compile_flgs
+ 
+-    if [ $has_dash_c = 0 ] ; then
+-        analyze_flgs="-c $analyze_flgs"
+-    fi
+-    tmp_file="$TMP/epos`date +%Y%m%d%H%M%S`"
+-    analyze_flgs="$analyze_flgs $ANL_COMP_FLGS"
+-    analyze_flgs="$analyze_flgs -o $tmp_file.o"
+-    $do_echo $compiler $analyze_flgs $analyze_args $input_file
+-    $do_exec $compiler $analyze_flgs $analyze_args $input_file
+-    status=$?
+-    if [ $status != 0 ] ; then
+-        $do_echo rm -f "$tmp_file.*"
+-        $do_exec rm -f "$tmp_file.*"
+-        exit $status
+-    fi
++#     if [ $has_dash_c = 0 ] ; then
++#         analyze_flgs="-c $analyze_flgs"
++#     fi
++#     tmp_file="$TMP/epos`date +%Y%m%d%H%M%S`"
++#     analyze_flgs="$analyze_flgs $ANL_COMP_FLGS"
++#     analyze_flgs="$analyze_flgs -o $tmp_file.o"
++#     $do_echo $compiler $analyze_flgs $analyze_args $input_file
++#     $do_exec $compiler $analyze_flgs $analyze_args $input_file
++#     status=$?
++#     if [ $status != 0 ] ; then
++#         $do_echo rm -f "$tmp_file.*"
++#         $do_exec rm -f "$tmp_file.*"
++#         exit $status
++#     fi
+ 
+-    $do_echo $ANALYZER $ANL_FLAGS "$tmp_file.o" -o "$tmp_file.anl"
+-    $do_exec $ANALYZER $ANL_FLAGS "$tmp_file.o" -o "$tmp_file.anl"
+-    status=$?
+-    if [ $status != 0 ] ; then
+-        $do_echo rm -f "$tmp_file.*"
+-        $do_exec rm -f "$tmp_file.*"
+-        exit $status
+-    fi
++#     $do_echo $ANALYZER $ANL_FLAGS "$tmp_file.o" -o "$tmp_file.anl"
++#     $do_exec $ANALYZER $ANL_FLAGS "$tmp_file.o" -o "$tmp_file.anl"
++#     status=$?
++#     if [ $status != 0 ] ; then
++#         $do_echo rm -f "$tmp_file.*"
++#         $do_exec rm -f "$tmp_file.*"
++#         exit $status
++#     fi
+ 
+-    if [ $only_analyze = 1 -a -n "$output_file" ] ; then
+-        configurator_output_file=$output_file
+-    else
+-        configurator_output_file=$key_file
+-    fi
+-    $do_echo $CONFIGURATOR "$tmp_file.anl" -o $configurator_output_file
+-    $do_exec $CONFIGURATOR "$tmp_file.anl" -o $configurator_output_file
++#     if [ $only_analyze = 1 -a -n "$output_file" ] ; then
++#         configurator_output_file=$output_file
++#     else
++#         configurator_output_file=$key_file
++#     fi
++#     $do_echo $CONFIGURATOR "$tmp_file.anl" -o $configurator_output_file
++#     $do_exec $CONFIGURATOR "$tmp_file.anl" -o $configurator_output_file
+ 
+-    status=$?
+-    $do_echo rm -f "$tmp_file.*"
+-    $do_exec rm -f "$tmp_file.*"
++#     status=$?
++#     $do_echo rm -f "$tmp_file.*"
++#     $do_exec rm -f "$tmp_file.*"
+ 
+-    if [ $only_analyze = 1 ] ; then
+-        exit $status
+-    fi
+-fi
++#     if [ $only_analyze = 1 ] ; then
++#         exit $status
++#     fi
++# fi
+ 
+ if [ $need_compile = 1 ] ; then
++    # echo $has_dash_c
++    # echo $language
++    # echo $compile_flgs
+     if [ $has_dash_c = 0 ] ; then
+         compile_flgs="-c $compile_flgs"
+     fi
+@@ -412,7 +422,7 @@ if [ $need_link = 1 ] ; then
+         link_flgs="$link_flgs -o $output_file"
+     fi
+     $do_echo "$linker $link_flgs $link_objs $link_args $link_libs"
+-    $do_exec $linker $link_flgs $link_objs $link_args $link_libs
++    $do_exec $linker --trace $link_flgs $link_objs $link_args $link_libs
+     status=$?
+ fi
+ 
+diff --git a/tools/eposcfg/eposcfg.cc b/tools/eposcfg/eposcfg.cc
+index 51b0f64..ec54b41 100644
+--- a/tools/eposcfg/eposcfg.cc
++++ b/tools/eposcfg/eposcfg.cc
+@@ -10,6 +10,7 @@
+ 
+ // Traits are included in config.h
+ #include <system/config.h>
++#include <system/memory_map.h>
+ 
+ // Using only bare C to avoid conflicts with EPOS
+ #include <stdio.h>
+@@ -21,7 +22,7 @@ using namespace EPOS::S;
+ using namespace EPOS::S::U;
+ 
+ // Constants
+-const unsigned int TOKENS = 24;
++const unsigned int TOKENS = 31;
+ const unsigned int COMPONENTS = 62;
+ const unsigned int STRING_SIZE = 128;
+ 
+@@ -40,14 +41,21 @@ char tokens[TOKENS][STRING_SIZE] = {
+     "MEM_TOP",
+     "MEM_SIZE",
+     "MEM_SIZE_KB",
++    "MIO_BASE",
++    "MIO_TOP",
++    "MIO_SIZE",
++    "MIO_SIZE_KB",
+     "BOOT_STACK",
+     "BOOT",
++    "IMAGE",
+     "SETUP",
+     "INIT",
+     "APP_CODE",
+     "APP_DATA",
+     "SYS_CODE",
+     "SYS_DATA",
++    "SYS_STACK",
++    "SYS_HEAP",
+     "BOOT_LENGTH_MIN",
+     "BOOT_LENGTH_MAX",
+     "EXPECTED_SIMULATION_TIME"
+@@ -192,66 +200,96 @@ void populate_strings()
+     snprintf(string, STRING_SIZE, "%i", Traits<CPU>::WORD_SIZE);
+     set_token_value("WORD_SIZE", string);
+ 
+-    snprintf(string, STRING_SIZE, "0x%08x", Traits<Machine>::MEM_BASE);
++    snprintf(string, STRING_SIZE, "0x%08x", Memory_Map::MEM_BASE);
+     set_token_value("MEM_BASE", string);
+ 
+-    snprintf(string, STRING_SIZE, "0x%08x", Traits<Machine>::MEM_TOP);
++    snprintf(string, STRING_SIZE, "0x%08x", Memory_Map::MEM_TOP);
+     set_token_value("MEM_TOP", string);
+ 
+-    snprintf(string, STRING_SIZE, "0x%08x", Traits<Machine>::MEM_TOP + 1 - Traits<Machine>::MEM_BASE);
++    snprintf(string, STRING_SIZE, "0x%08x", Memory_Map::MEM_TOP + 1 - Memory_Map::MEM_BASE);
+     set_token_value("MEM_SIZE", string);
+ 
+-    snprintf(string, STRING_SIZE, "0x%08x", (Traits<Machine>::MEM_TOP + 1 - Traits<Machine>::MEM_BASE) / 1024);
++    snprintf(string, STRING_SIZE, "0x%08x", (Memory_Map::MEM_TOP + 1 - Memory_Map::MEM_BASE) / 1024);
+     set_token_value("MEM_SIZE_KB", string);
+ 
+-    if(Traits<Machine>::BOOT_STACK != Traits<Machine>::NOT_USED)
+-        snprintf(string, STRING_SIZE, "0x%08x", Traits<Machine>::BOOT_STACK);
++    snprintf(string, STRING_SIZE, "0x%08x", Memory_Map::MIO_BASE);
++    set_token_value("MIO_BASE", string);
++
++    snprintf(string, STRING_SIZE, "0x%08x", Memory_Map::MIO_TOP);
++    set_token_value("MIO_TOP", string);
++
++    snprintf(string, STRING_SIZE, "0x%08x", Memory_Map::MIO_TOP + 1 - Memory_Map::MIO_BASE);
++    set_token_value("MIO_SIZE", string);
++
++    snprintf(string, STRING_SIZE, "0x%08x", (Memory_Map::MIO_TOP + 1 - Memory_Map::MIO_BASE) / 1024);
++    set_token_value("MIO_SIZE_KB", string);
++
++    if(Memory_Map::BOOT_STACK != Memory_Map::NOT_USED)
++        snprintf(string, STRING_SIZE, "0x%08x", Memory_Map::BOOT_STACK);
+     else
+         string[0] = '\0';
+     set_token_value("BOOT_STACK", string);
+ 
+-    if(Traits<Machine>::BOOT != Traits<Machine>::NOT_USED)
+-        snprintf(string, STRING_SIZE, "0x%08x", Traits<Machine>::BOOT);
++    if(Memory_Map::BOOT != Memory_Map::NOT_USED)
++        snprintf(string, STRING_SIZE, "0x%08x", Memory_Map::BOOT);
+     else
+         string[0] = '\0';
+     set_token_value("BOOT", string);
+ 
+-    if(Traits<Machine>::SETUP != Traits<Machine>::NOT_USED)
+-        snprintf(string, STRING_SIZE, "0x%08x", Traits<Machine>::SETUP);
++    if(Memory_Map::IMAGE != Memory_Map::NOT_USED)
++        snprintf(string, STRING_SIZE, "0x%08x", Memory_Map::IMAGE);
++    else
++        string[0] = '\0';
++    set_token_value("IMAGE", string);
++
++    if(Memory_Map::SETUP != Memory_Map::NOT_USED)
++        snprintf(string, STRING_SIZE, "0x%08x", Memory_Map::SETUP);
+     else
+         string[0] = '\0';
+     set_token_value("SETUP", string);
+ 
+-    if(Traits<Machine>::INIT != Traits<Machine>::NOT_USED)
+-        snprintf(string, STRING_SIZE, "0x%08x", Traits<Machine>::INIT);
++    if(Memory_Map::INIT != Memory_Map::NOT_USED)
++        snprintf(string, STRING_SIZE, "0x%08x", Memory_Map::INIT);
+     else
+         string[0] = '\0';
+     set_token_value("INIT", string);
+ 
+-    if(Traits<Machine>::APP_CODE != Traits<Machine>::NOT_USED)
+-        snprintf(string, STRING_SIZE, "0x%08x", Traits<Machine>::APP_CODE);
++    if(Memory_Map::APP_CODE != Memory_Map::NOT_USED)
++        snprintf(string, STRING_SIZE, "0x%08x", Memory_Map::APP_CODE);
+     else
+         string[0] = '\0';
+     set_token_value("APP_CODE", string);
+ 
+-    if(Traits<Machine>::APP_DATA != Traits<Machine>::NOT_USED)
+-        snprintf(string, STRING_SIZE, "0x%08x", Traits<Machine>::APP_DATA);
++    if(Memory_Map::APP_DATA != Memory_Map::NOT_USED)
++        snprintf(string, STRING_SIZE, "0x%08x", Memory_Map::APP_DATA);
+     else
+         string[0] = '\0';
+     set_token_value("APP_DATA", string);
+ 
+-    if(Traits<Machine>::SYS_CODE != Traits<Machine>::NOT_USED)
+-        snprintf(string, STRING_SIZE, "0x%08x", Traits<Machine>::SYS_CODE);
++    if(Memory_Map::SYS_CODE != Memory_Map::NOT_USED)
++        snprintf(string, STRING_SIZE, "0x%08x", Memory_Map::SYS_CODE);
+     else
+         string[0] = '\0';
+     set_token_value("SYS_CODE", string);
+ 
+-    if(Traits<Machine>::SYS_DATA != Traits<Machine>::NOT_USED)
+-        snprintf(string, STRING_SIZE, "0x%08x", Traits<Machine>::SYS_DATA);
++    if(Memory_Map::SYS_DATA != Memory_Map::NOT_USED)
++        snprintf(string, STRING_SIZE, "0x%08x", Memory_Map::SYS_DATA);
+     else
+         string[0] = '\0';
+     set_token_value("SYS_DATA", string);
+ 
++    if(Memory_Map::SYS_STACK != Memory_Map::NOT_USED)
++        snprintf(string, STRING_SIZE, "0x%08x", Memory_Map::SYS_STACK);
++    else
++        string[0] = '\0';
++    set_token_value("SYS_STACK", string);
++
++    if(Memory_Map::SYS_HEAP != Memory_Map::NOT_USED)
++        snprintf(string, STRING_SIZE, "0x%08x", Memory_Map::SYS_HEAP);
++    else
++        string[0] = '\0';
++    set_token_value("SYS_HEAP", string);
++
+     if(Traits<Machine>::BOOT_LENGTH_MIN != Traits<Machine>::NOT_USED)
+         snprintf(string, STRING_SIZE, "%i", Traits<Machine>::BOOT_LENGTH_MIN);
+     else
+diff --git a/tools/eposmkbi/eposmkbi.cc b/tools/eposmkbi/eposmkbi.cc
+index da82176..75a2801 100644
+--- a/tools/eposmkbi/eposmkbi.cc
++++ b/tools/eposmkbi/eposmkbi.cc
+@@ -38,6 +38,8 @@ struct Configuration
+     bool           endianess;  // true => little, false => big
+     unsigned int   mem_base;
+     unsigned int   mem_top;
++    unsigned int   mio_base;
++    unsigned int   mio_top;
+     unsigned int   boot_length_min;
+     unsigned int   boot_length_max;
+     short          node_id;   // nodes in SAN (-1 => dynamic)
+@@ -52,13 +54,13 @@ typedef _SYS::System_Info System_Info;
+ 
+ // PROTOTYPES
+ bool parse_config(FILE * cfg_file, Configuration * cfg);
+-void strtolower (char *dst,const char* src);
++void strtolower (char * dst,const char * src);
+ bool add_machine_secrets(int fd_img, unsigned int i_size, char * mach, char * mmod);
+ 
+ bool file_exist(char *file);
+ 
+-int put_buf(int fd_out, void *buf, int size);
+-int put_file(int fd_out, char *file);
++int put_buf(int fd_out, void * buf, int size);
++int put_file(int fd_out, char * file);
+ int pad(int fd_out, int size);
+ bool lil_endian();
+ 
+@@ -140,7 +142,7 @@ int main(int argc, char **argv)
+     }
+ 
+     // Open destination file (rewrite)
+-    int fd_img = open(argv[optind + 1], O_WRONLY | O_CREAT | O_TRUNC, 00644);
++    int fd_img = open(argv[optind + 1], O_RDWR | O_CREAT | O_TRUNC, 00644);
+     if(fd_img < 0) {
+         fprintf(err, "Error: can't create boot image \"%s\"!\n", argv[optind + 1]);
+         return 1;
+@@ -152,7 +154,8 @@ int main(int argc, char **argv)
+     fprintf(out, "  Model: %s\n", CONFIG.mmod);
+     fprintf(out, "  Processor: %s (%d bits, %s-endian)\n", CONFIG.arch, CONFIG.word_size, CONFIG.endianess ? "little" : "big");
+     fprintf(out, "  Memory: %d KBytes\n", (CONFIG.mem_top - CONFIG.mem_base) / 1024);
+-    fprintf(out, "  Boot Length: %d - %d (min - max) KBytes\n", CONFIG.boot_length_min, CONFIG.boot_length_max);
++    if((CONFIG.boot_length_min + CONFIG.boot_length_max) > 0)
++        fprintf(out, "  Boot Length: %d - %d (min - max) KBytes\n", CONFIG.boot_length_min, CONFIG.boot_length_max);
+     if(CONFIG.space_x != -1)
+         fprintf(out, "  Node location: (%d, %d, %d)\n", CONFIG.space_x, CONFIG.space_y, CONFIG.space_z);
+     fprintf(out, "  UUID: ");
+@@ -179,29 +182,43 @@ int main(int argc, char **argv)
+     }
+     unsigned int boot_size = image_size;
+ 
++    // Determine if System_Info is needed and how it must be handled
++    bool need_si = (!strcmp(CONFIG.mach, "pc") || !strcmp(CONFIG.mach, "riscv"));
++    bool si_in_setup = (need_si && (boot_size == 0)); // If the image contains a boot sector, then SI will be on a separate disk sector. Otherwise, it will be inside SETUP.
++
+     // Reserve space for System_Info if necessary
+-    System_Info si;
+-    bool need_si = true;
+-    if(image_size == 0) {
+-        need_si = false;
+-    } else
+-        if(sizeof(System_Info) > MAX_SI_LEN) {
++    if(need_si && !si_in_setup) {
++        if(sizeof(System_Info) <= MAX_SI_LEN) {
++            image_size += pad(fd_img, MAX_SI_LEN);
++        } else {
+             fprintf(out, " failed!\n");
+             fprintf(err, "System_Info structure is too large (%d)!\n", sizeof(System_Info));
+             return 1;
+-        } else
+-            image_size += pad(fd_img, MAX_SI_LEN);
++        }
++    }
+ 
+     // Initialize the Boot_Map in System_Info
+-    si.bm.n_cpus   = CONFIG.n_cpus; // can be adjusted by SETUP in some machines
++    System_Info si;
++    si.bm.n_cpus   = CONFIG.n_cpus;     // can be adjusted by SETUP in some machines
+     si.bm.mem_base = CONFIG.mem_base;
+     si.bm.mem_top  = CONFIG.mem_top;
+-    si.bm.io_base  = 0; // will be adjusted by SETUP
+-    si.bm.io_top   = 0; // will be adjusted by SETUP
++    si.bm.mio_base = CONFIG.mio_base;   // can be adjusted by SETUP in some machines
++    si.bm.mio_top  = CONFIG.mio_top;    // can be adjusted by SETUP in some machines
+     si.bm.node_id  = CONFIG.node_id;
+     si.bm.space_x  = CONFIG.space_x;
+     si.bm.space_y  = CONFIG.space_y;
+     si.bm.space_z  = CONFIG.space_z;
++
++    fprintf(out, "\nsi.bm.n_cpus %u", si.bm.n_cpus);
++    fprintf(out, "\nsi.bm.mem_base %u", si.bm.mem_base);
++    fprintf(out, "\nsi.bm.mem_top %u", si.bm.mem_top);
++    fprintf(out, "\nsi.bm.mio_base %u", si.bm.mio_base);
++    fprintf(out, "\nsi.bm.mio_top %u", si.bm.mio_top);
++    fprintf(out, "\nsi.bm.node_id %u", si.bm.node_id);
++    fprintf(out, "\nsi.bm.space_x %u", si.bm.space_x);
++    fprintf(out, "\nsi.bm.space_y %u", si.bm.space_y);
++    fprintf(out, "\nsi.bm.space_z %u", si.bm.space_z);
++
+     for(unsigned int i = 0; i < 8; i++)
+         si.bm.uuid[i]  = CONFIG.uuid[i];
+ 
+@@ -256,8 +273,42 @@ int main(int argc, char **argv)
+ 
+     // Add System_Info
+     if(need_si) {
+-        fprintf(out, "    Adding system info:");
+-        if(lseek(fd_img, boot_size, SEEK_SET) < 0) {
++        unsigned int si_offset = boot_size;
++        fprintf(out, "    Adding system info");
++        if(si_in_setup) {
++            fprintf(out, " to SETUP:");
++            struct stat stat;
++            if(fstat(fd_img, &stat) < 0)  {
++                fprintf(out, " failed! (stat)\n");
++                return 0;
++            }
++            char * buffer = (char *) malloc(stat.st_size);
++            if(!buffer) {
++                fprintf(out, " failed! (malloc)\n");
++                return 0;
++            }
++            memset(buffer, '\1', stat.st_size);
++            lseek(fd_img, 0, SEEK_SET);
++            if(read(fd_img, buffer, stat.st_size) < 0) {
++                fprintf(out, " failed! (read)\n");
++                free(buffer);
++                return 0;
++            }
++
++            char placeholder[] = "System_Info placeholder. Actual System_Info will be added by mkbi!";
++            char * setup_si = reinterpret_cast<char *>(memmem(buffer, stat.st_size, placeholder, strlen(placeholder)));
++            if(setup_si) {
++                si_offset = setup_si - buffer;
++            } else {
++                fprintf(out, " failed! (SETUP does not contain System_Info placeholder)\n");
++                free(buffer);
++                return 0;
++            }
++        } else {
++            fprintf(out, " to image:");
++            si_offset = boot_size;
++        }
++        if(lseek(fd_img, si_offset, SEEK_SET) < 0) {
+             fprintf(err, "Error: can't seek the boot image!\n");
+             return 1;
+         }
+@@ -279,7 +330,7 @@ int main(int argc, char **argv)
+     }
+     fprintf(out, " done.\n");
+ 
+-    //Finish
++    // Finish
+     close(fd_img);
+     fprintf(out, "\n  Image successfully generated (%d bytes)!\n\n", image_size);
+ 
+@@ -400,7 +451,7 @@ bool parse_config(FILE * cfg_file, Configuration * cfg)
+         fprintf(err, "Error: no valid MEM_BASE in configuration!\n");
+         return false;
+     }
+-    cfg->mem_base = strtol(token, 0, 16);
++    cfg->mem_base = strtoll(token, 0, 16);
+ 
+     // Memory Top
+     if(fgets(line, 256, cfg_file) != line) {
+@@ -412,7 +463,31 @@ bool parse_config(FILE * cfg_file, Configuration * cfg)
+         fprintf(err, "Error: no valid MEM_TOP in configuration!\n");
+         return false;
+     }
+-    cfg->mem_top=strtol(token, 0, 16);
++    cfg->mem_top = strtoll(token, 0, 16);
++
++    // I/O Base
++    if(fgets(line, 256, cfg_file) != line) {
++        fprintf(err, "Error: failed to read MIO_BASE from configuration file!\n");
++        return false;
++    }
++    token = strtok(line, "=");
++    if(strcmp(token, "MIO_BASE") || !(token = strtok(NULL, "\n"))) {
++        fprintf(err, "Error: no valid MIO_BASE in configuration!\n");
++        return false;
++    }
++    cfg->mio_base = strtoll(token, 0, 16);
++
++    // I/O Top
++    if(fgets(line, 256, cfg_file) != line) {
++        fprintf(err, "Error: failed to read MIO_TOP from configuration file!\n");
++        return false;
++    }
++    token = strtok(line, "=");
++    if(strcmp(token, "MIO_TOP") || !(token = strtok(NULL, "\n"))) {
++        fprintf(err, "Error: no valid MIO_TOP in configuration!\n");
++        return false;
++    }
++    cfg->mio_top = strtoll(token, 0, 16);
+ 
+     // Boot Length Min
+     if(fgets(line, 256, cfg_file) != line)
+@@ -474,9 +549,9 @@ template<typename T> bool add_boot_map(int fd, System_Info * si)
+     if(!put_number(fd, static_cast<T>(si->bm.mem_top)))
+         return false;
+ 
+-    if(!put_number(fd, static_cast<T>(0))) // io_base
++    if(!put_number(fd, static_cast<T>(si->bm.mio_base)))
+         return false;
+-    if(!put_number(fd, static_cast<T>(0))) // io_top
++    if(!put_number(fd, static_cast<T>(si->bm.mio_top)))
+         return false;
+ 
+     if(!put_number(fd, si->bm.node_id))
+@@ -512,7 +587,7 @@ template<typename T> bool add_boot_map(int fd, System_Info * si)
+ //=============================================================================
+ bool add_machine_secrets(int fd, unsigned int i_size, char * mach, char * mmod)
+ {
+-    if (!strcmp(mach, "pc")) { // PC
++    if(!strcmp(mach, "pc")) { // PC
+         const unsigned int floppy_size   = 1474560;
+         const unsigned int secrets_offset   = CONFIG.boot_length_min - 6;
+         const unsigned short boot_id        = 0xaa55;
+@@ -552,7 +627,7 @@ bool add_machine_secrets(int fd, unsigned int i_size, char * mach, char * mmod)
+         char key_string[] = ":020000040027D3\r\n:0CFFD400FFFFFFEF000000000000200015\r\n:00000001FF\r\n"; // Bootloader Disabled
+         const int key_offset = -strlen(":00000001FF\r\n");
+ 
+-        // Write key string to unlock epos
++        // Write key string to unlock EPOS
+         if(lseek(fd,key_offset,SEEK_END) < 0) {
+             fprintf(err, "Error: can't seek the boot image!\n");
+             return false;

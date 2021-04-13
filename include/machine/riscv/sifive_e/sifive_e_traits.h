@@ -10,6 +10,7 @@ __BEGIN_SYS
 class Machine_Common;
 template<> struct Traits<Machine_Common>: public Traits<Build> {};
 
+//!P2: When will we allocate a kernel stack? We may repurpose boot_stack by not freeing it.
 template <> struct Traits<Machine>: public Traits<Machine_Common>
 {
     static const bool cpus_use_local_timer      = false;
@@ -48,9 +49,6 @@ template <> struct Traits<Machine>: public Traits<Machine_Common>
     static const unsigned int IO_BASE           = NOT_USED;
     static const unsigned int IO_TOP            = NOT_USED;
 
-    //!P2: This can be optimized
-    //!P2: Is SYS_HEAP necessary?
-    //!P2: we can let the BOOT_STACK be the kernel stack
     static const unsigned int SYS               = NOT_USED;
     static const unsigned int SYS_CODE          = 0x80300000;
     static const unsigned int SYS_DATA          = 0x80400000;
