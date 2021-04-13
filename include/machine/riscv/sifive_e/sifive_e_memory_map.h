@@ -49,7 +49,7 @@ struct Memory_Map
         IO              = Traits<Machine>::IO_BASE,
 
         SYS             = Traits<Machine>::SYS,
-        SYS_INFO        = unsigned(-1),                 // Dynamically built during initialization.
+        SYS_INFO        = Traits<Machine>::SYS_INFO,
         SYS_CODE        = Traits<Machine>::SYS_CODE,
         SYS_DATA        = Traits<Machine>::SYS_DATA,
         SYS_HEAP        = Traits<Machine>::NOT_USED,

@@ -30,13 +30,14 @@ template <> struct Traits<Machine>: public Traits<Machine_Common>
 
     static const unsigned int VECTOR_TABLE      = NOT_USED;
     static const unsigned int PAGE_TABLES       = 0x87ffffff + 1 - 16*1024 - ((1024+1)*4*1024); // 0x87BFB000
+    static const unsigned int SYS_INFO          = PAGE_TABLES - 4096; 
 
     // Logical Memory Map
     static const unsigned int BOOT              = NOT_USED;
     static const unsigned int IMAGE             = NOT_USED;
     static const unsigned int SETUP             = 0x80000000 + 0x78; // This controls whether an ELF file is generated for setup; boot + elf header
     // static const unsigned int SETUP             = NOT_USED;
-    static const unsigned int INIT              = 0x80010000; // 16 pages for setup
+    static const unsigned int INIT              = 0x80200000;
 
     static const unsigned int APP_LOW           = 0x88000000;
     static const unsigned int APP_CODE          = 0x88000000;
@@ -51,8 +52,8 @@ template <> struct Traits<Machine>: public Traits<Machine_Common>
     //!P2: Is SYS_HEAP necessary?
     //!P2: we can let the BOOT_STACK be the kernel stack
     static const unsigned int SYS               = NOT_USED;
-    static const unsigned int SYS_CODE          = 0x80020000;
-    static const unsigned int SYS_DATA          = 0x80040000;
+    static const unsigned int SYS_CODE          = 0x80300000;
+    static const unsigned int SYS_DATA          = 0x80400000;
     static const unsigned int SYS_HEAP          = NOT_USED;
     static const unsigned int SYS_STACK         = NOT_USED;
 

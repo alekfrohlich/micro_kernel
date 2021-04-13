@@ -47,11 +47,19 @@ extern "C" [[gnu::interrupt, gnu::aligned(4)]] void _mmode_forward() {
 
 __BEGIN_SYS
 EPOS::S::U::OStream kout, kerr;
+char * bi;
 
 class Setup_SifiveE {
 private:
+    // Physical memory map
+    static const unsigned int SYS_INFO = Memory_Map::SYS_INFO;
+    static const unsigned int PAGE_TABLES = Traits<Machine>::PAGE_TABLES;
+    static const unsigned int MEM_BASE = Memory_Map::MEM_BASE;
+    static const unsigned int MEM_TOP = Memory_Map::MEM_TOP;
+    
     typedef CPU::Reg Reg;
     typedef MMU::RV32_Flags RV32_Flags;
+    typedef MMU::Page Page;
     typedef MMU::Page_Table Page_Table;
     typedef MMU::Page_Directory Page_Directory;
     typedef MMU::PT_Entry PT_Entry;
@@ -63,65 +71,83 @@ public:
     static void build_page_tables();
     static void clean_bss();
     static void build_lm();
+    static void load_parts();
 };
 
 // !P2:
 
-void PC_Setup::load_parts()
+void Setup_SifiveE::load_parts()
 {
     // Relocate System_Info
     if(sizeof(System_Info) > sizeof(Page))
         db<Setup>(WRN) << "System_Info is bigger than a page (" << sizeof(System_Info) << ")!" << endl;
-    memcpy(reinterpret_cast<void *>(SYS_INFO), bi, sizeof(System_Info));
+    memcpy(reinterpret_cast<void *>(SYS_INFO), si, sizeof(System_Info));
 
     // Load INIT
+    ELF * ini_elf = reinterpret_cast<ELF *>(&bi[si->bm.init_offset]);
+    ELF * sys_elf = reinterpret_cast<ELF *>(&bi[si->bm.system_offset]);
+    
     if(si->lm.has_ini) {
-        db<Setup>(TRC) << "PC_Setup::load_init()" << endl;
-        ELF * ini_elf = reinterpret_cast<ELF *>(&bi[si->bm.init_offset]);
+        db<Setup>(TRC) << "Setup_SifiveE::load_init()" << endl;
         if(ini_elf->load_segment(0) < 0) {
             db<Setup>(ERR) << "INIT code segment was corrupted during SETUP!" << endl;
-            panic();
+            _panic();
         }
+        
         for(int i = 1; i < ini_elf->segments(); i++)
             if(ini_elf->load_segment(i) < 0) {
                 db<Setup>(ERR) << "INIT data segment was corrupted during SETUP!" << endl;
-                panic();
+                _panic();
             }
     }
-
+    
+    if((long unsigned int)ini_elf->segment_size(0) > sys_elf->segment_address(0) - ini_elf->segment_address(0)) {
+        db<Setup>(ERR) << "init is larger than its reserved memory" << endl;
+        _panic();
+    } 
+    db<Setup>(TRC) << "init has " << hex << sys_elf->segment_address(0) - ini_elf->segment_address(0) - ini_elf->segment_size(0) << " unused bytes of memory" << endl;
+    
     // Load SYSTEM
     if(si->lm.has_sys) {
-        db<Setup>(TRC) << "PC_Setup::load_os()" << endl;
-        ELF * sys_elf = reinterpret_cast<ELF *>(&bi[si->bm.system_offset]);
+        db<Setup>(TRC) << "Setup_SifiveE::load_system()" << endl;
         if(sys_elf->load_segment(0) < 0) {
-            db<Setup>(ERR) << "OS code segment was corrupted during SETUP!" << endl;
-            panic();
+            db<Setup>(ERR) << "system code segment was corrupted during SETUP!" << endl;
+            _panic();
         }
         for(int i = 1; i < sys_elf->segments(); i++)
             if(sys_elf->load_segment(i) < 0) {
-                db<Setup>(ERR) << "OS data segment was corrupted during SETUP!" << endl;
-                panic();
+                db<Setup>(ERR) << "system data segment was corrupted during SETUP!" << endl;
+                _panic();
             }
     }
+    
+    if((long unsigned int)sys_elf->segment_size(0) > sys_elf->segment_address(1) - sys_elf->segment_address(0)) {
+        db<Setup>(ERR) << "sys code is larger than its reserved memory" << endl;
+        _panic();
+    } 
+    db<Setup>(TRC) << "sys code has " << hex << sys_elf->segment_address(1) - sys_elf->segment_address(0) - sys_elf->segment_size(0) << " unused bytes of memory" << endl;
+    
+    if((long unsigned int)ini_elf->segment_size(1) > sys_elf->segment_address(1) + 0x00100000 - sys_elf->segment_address(1)) {
+        db<Setup>(ERR) << "init is larger than its reserved memory" << endl;
+        _panic();
+    } 
+    db<Setup>(TRC) << "sys data has " << hex << sys_elf->segment_address(1) + 0x00100000 - sys_elf->segment_address(1) - ini_elf->segment_size(1) << " unused bytes of memory" << endl;
 
-    // Load APP
-    if(si->lm.has_app) {
-        ELF * app_elf = reinterpret_cast<ELF *>(&bi[si->bm.application_offset]);
-        db<Setup>(TRC) << "PC_Setup::load_app()" << endl;
-        if(app_elf->load_segment(0) < 0) {
-            db<Setup>(ERR) << "Application code segment was corrupted during SETUP!" << endl;
-            panic();
-        }
-        for(int i = 1; i < app_elf->segments(); i++)
-            if(app_elf->load_segment(i) < 0) {
-                db<Setup>(ERR) << "Application data segment was corrupted during SETUP!" << endl;
-                panic();
-            }
-    }
+    // // Load APP
+    // if(si->lm.has_app) {
+    //     ELF * app_elf = reinterpret_cast<ELF *>(&bi[si->bm.application_offset]);
+    //     db<Setup>(TRC) << "PC_Setup::load_app()" << endl;
+    //     if(app_elf->load_segment(0) < 0) {
+    //         db<Setup>(ERR) << "Application code segment was corrupted during SETUP!" << endl;
+    //         _panic();
+    //     }
+    //     for(int i = 1; i < app_elf->segments(); i++)
+    //         if(app_elf->load_segment(i) < 0) {
+    //             db<Setup>(ERR) << "Application data segment was corrupted during SETUP!" << endl;
+    //             _panic();
+    //         }
+    // }
 
-    // Load EXTRA
-    if(si->lm.has_ext)
-        memcpy(Log_Addr(si->lm.app_extra), &bi[si->bm.extras_offset], si->lm.app_extra_size);
 }
 
 
@@ -144,7 +170,7 @@ void Setup_SifiveE::build_lm()
 
     db<Spin>(ERR) << "SETUP ELF image is corrupted!" << endl;
     EPOS::S::kout << "oioioioioio" << endl;
-    char * bi = reinterpret_cast<char *>(Traits<Machine>::MEM_BASE);
+    bi = reinterpret_cast<char *>(Traits<Machine>::MEM_BASE);
     if(si->lm.has_stp) {
         ELF * stp_elf = reinterpret_cast<ELF *>(&bi[si->bm.setup_offset]);
         if(!stp_elf->valid()) {
@@ -341,6 +367,8 @@ void Setup_SifiveE::setup_supervisor_environment()
 
     si = reinterpret_cast<System_Info*>(placeholder);
     build_lm();
+    
+    load_parts();
 
     // db<Init, Machine>(TRC) << "Machine::pre_init()" << endl;
 
@@ -353,7 +381,8 @@ void Setup_SifiveE::setup_supervisor_environment()
 
     // forward everything
     CPU::satp((0x1 << 31) | (Traits<Machine>::PAGE_TABLES >> 12));
-    // CPU::sepc_write((unsigned)&_start);
+    
+    CPU::sepc_write(si->lm.ini_entry);
 
     // Interrupts will remain disable until the Context::load at Init_First
     CPU::sstatus_write(CPU::SPP_S);

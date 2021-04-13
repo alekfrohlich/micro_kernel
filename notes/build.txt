@@ -137,6 +137,12 @@ usr/local/rv32/bin/riscv32-unknown-linux-gnu-ld --no-relax -nostdlib -L/home/ale
 
 GDB
 =======
+0x81000000 -> 16MB
+0x80100000 -> 1MB
+
+INIT:     0x80200000; 
+SYS_CODE: 0x80300000;
+SYS_DATA: 0x80400000;
 
 find 0x80000000, 0x8fffffff, (char) 0x7F , 'E', 'L', 'F'       
 0x80000004
@@ -147,6 +153,8 @@ find 0x80000000, 0x8fffffff, (char) 0x7F , 'E', 'L', 'F'
 entry_point     setup 0x80000080
 
 init global constructors
+
+app entry 
 
 
 =======
