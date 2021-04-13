@@ -20,7 +20,7 @@ typedef unsigned int Reg;
 
 extern "C"
 {
-    [[gnu::naked, gnu::section(".init")]] void _start();
+    [[gnu::naked, gnu::section(".init")]] void _setup();
     void _int_entry();
     // void _start();
     // void _wait() { // Will be added back w/ multicore
@@ -353,7 +353,7 @@ void Setup_SifiveE::clean_bss()
 
 void Setup_SifiveE::setup_supervisor_environment()
 {
-    // CPU::stvec_write((unsigned)&_int_entry & 0xfffffffc);
+    CPU::stvec_write((unsigned)&_int_entry & 0xfffffffc);
 
     // We must clean the bss before setting MMU::_master
     clean_bss();
@@ -361,8 +361,8 @@ void Setup_SifiveE::setup_supervisor_environment()
     // This creates and configures the kernel page tables (which map logical==physical)
     build_page_tables();
 
-    if(CPU::id() == 0)
-        Display::init();
+    Display::init();
+    IC::init();
 
     si = reinterpret_cast<System_Info*>(placeholder);
     build_lm();
@@ -420,4 +420,4 @@ void Setup_SifiveE::setup_machine_environment()
 
 __END_SYS
 
-void _start() { Setup_SifiveE::init(); }
+void _setup() { Setup_SifiveE::init(); }

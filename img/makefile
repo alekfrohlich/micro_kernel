@@ -105,7 +105,7 @@ strip:		$(SYSTEM) $(APPLICATION)
 		@for file in $^; do $(STRIP) "$${file}"; done;
 
 clean:		FORCE
-		$(CLEAN) $(SYSTEM) $(APPLICATION) $(IMAGE)
+		$(CLEAN) $(SYSTEM) $(APPLICATION) $(IMAGE) setup_sifive_e
 ifneq ($(NODES),1)
 		$(CLEAN) $(PEER_IMAGE)
 endif

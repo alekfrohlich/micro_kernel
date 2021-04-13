@@ -168,8 +168,9 @@ int main(int argc, char **argv)
 
     // !P2: offset is not fixed (just got 0x74)
     // riscv boot jump: jal 0x78; the file_off of .init is 0x74
-    unsigned int boot_jump = 0b111100000000000000001101111;
+    unsigned int boot_jump = 0b00000111100000000000000001101111;
     // unsigned int boot_jump = 0b111110000000000000001101111;
+    // unsigned int boot_jump = 0b1000010000000000000001101111;
     image_size += put_number(fd_img, boot_jump);
     
     // Add BOOT
