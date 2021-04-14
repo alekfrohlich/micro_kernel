@@ -6,6 +6,8 @@
 #include <system.h>
 #include <process.h>
 
+extern "C" void _int_entry();
+
 __BEGIN_SYS
 
 class Init_System
@@ -16,6 +18,8 @@ private:
 public:
     Init_System() {
         db<Init>(TRC) << "Init_System()" << endl;
+
+        Machine::pre_init(System::info());
 
         // Initialize the processor
         db<Init>(INF) << "Initializing the CPU: " << endl;

@@ -13,20 +13,10 @@ typedef unsigned int Reg;
 //!P2:
 // (both the following are not yet solved)
 // _mmode_forward must be rellocated to avoid being erased from MMU::_free
-// stvec must be set in _pre_init
-//
-// How can we run machine_pre_init before Init_System if it is part of SYS?
-// M-mode interrupts are disabled for the moment (see setup_machine_environment)
 
 extern "C"
 {
     [[gnu::naked, gnu::section(".init")]] void _setup();
-    void _int_entry();
-    // void _start();
-    // void _wait() { // Will be added back w/ multicore
-    //     CPU::halt();
-    //     // _start();
-    // }
     void _print(const char * s) { Display::puts(s); }
     void _panic() { Machine::panic(); }
 }
@@ -37,7 +27,6 @@ System_Info * si;
 
 extern "C" [[gnu::interrupt, gnu::aligned(4)]] void _mmode_forward() {
     Reg id = CPU::mcause();
-    // kout << "PASSEI"; // ISSO QUEBRA
     if((id & IC::INT_MASK) == CLINT::IRQ_MAC_TIMER) {
         Timer::reset();
         CPU::sie(CPU::STI);
@@ -55,7 +44,7 @@ class Setup_SifiveE {
 private:
     // Physical memory map
     static const unsigned int SYS_INFO = Memory_Map::SYS_INFO;
-    static const unsigned int PAGE_TABLES = Traits<Machine>::PAGE_TABLES;
+    static const unsigned int PAGE_TABLES = Memory_Map::PAGE_TABLES;
     static const unsigned int MEM_BASE = Memory_Map::MEM_BASE;
     static const unsigned int MEM_TOP = Memory_Map::MEM_TOP;
     
@@ -76,13 +65,13 @@ public:
     static void load_parts();
 };
 
-// !P2:
-
 void Setup_SifiveE::load_parts()
 {
     // Relocate System_Info
-    if(sizeof(System_Info) > sizeof(Page))
-        db<Setup>(WRN) << "System_Info is bigger than a page (" << sizeof(System_Info) << ")!" << endl;
+    if(sizeof(System_Info) > sizeof(Page)) {
+        db<Setup>(ERR) << "System_Info is bigger than a page (" << sizeof(System_Info) << ")!" << endl;
+        _panic();
+    }
     memcpy(reinterpret_cast<void *>(SYS_INFO), si, sizeof(System_Info));
 
     // Load INIT
@@ -134,22 +123,6 @@ void Setup_SifiveE::load_parts()
         _panic();
     } 
     db<Setup>(TRC) << "sys data has " << hex << sys_elf->segment_address(1) + 0x00100000 - sys_elf->segment_address(1) - ini_elf->segment_size(1) << " unused bytes of memory" << endl;
-
-    // // Load APP
-    // if(si->lm.has_app) {
-    //     ELF * app_elf = reinterpret_cast<ELF *>(&bi[si->bm.application_offset]);
-    //     db<Setup>(TRC) << "PC_Setup::load_app()" << endl;
-    //     if(app_elf->load_segment(0) < 0) {
-    //         db<Setup>(ERR) << "Application code segment was corrupted during SETUP!" << endl;
-    //         _panic();
-    //     }
-    //     for(int i = 1; i < app_elf->segments(); i++)
-    //         if(app_elf->load_segment(i) < 0) {
-    //             db<Setup>(ERR) << "Application data segment was corrupted during SETUP!" << endl;
-    //             _panic();
-    //         }
-    // }
-
 }
 
 
@@ -192,7 +165,6 @@ void Setup_SifiveE::build_lm()
             }
         }
     }
-
 
     // Check INIT integrity and get the size of its segments
     si->lm.ini_entry = 0;
@@ -321,7 +293,7 @@ void Setup_SifiveE::build_lm()
 void Setup_SifiveE::build_page_tables()
 {
     // Address of the Directory
-    Reg page_tables = Traits<Machine>::PAGE_TABLES;
+    Reg page_tables = PAGE_TABLES;
     MMU::_master = new ( (void *) page_tables ) Page_Directory();
 
     // Number of kernel entries in each directory
@@ -345,6 +317,8 @@ void Setup_SifiveE::clean_bss()
 {
     unsigned * bss_start = reinterpret_cast<unsigned *>(&__bss_start);
     unsigned * bss_end = reinterpret_cast<unsigned *>(&_end);
+    
+    db<Setup>(TRC) << "bss_start=" << bss_start << ", bss_end=" << bss_end << endl;
     for (unsigned * word = bss_start; word < bss_end; word++) {
         unsigned * t = new (word) unsigned;
         *t = 0;
@@ -353,23 +327,20 @@ void Setup_SifiveE::clean_bss()
 
 void Setup_SifiveE::setup_supervisor_environment()
 {
-    CPU::stvec_write((unsigned)&_int_entry & 0xfffffffc);
-
+    Display::init();
+    
     // We must clean the bss before setting MMU::_master
     clean_bss();
 
     // This creates and configures the kernel page tables (which map logical==physical)
     build_page_tables();
 
-    Display::init();
-    IC::init();
-
     si = reinterpret_cast<System_Info*>(placeholder);
     build_lm();
     load_parts();
 
     // forward everything
-    CPU::satp((0x1 << 31) | (Traits<Machine>::PAGE_TABLES >> 12));
+    CPU::satp((0x1 << 31) | (PAGE_TABLES >> 12));
     
     CPU::sepc_write(si->lm.ini_entry);
 
@@ -391,8 +362,7 @@ void Setup_SifiveE::setup_machine_environment()
     // We need to set:
     //      MPP_S: to switch to S-mode after mret
     //      MPIE:  otherwise we won't ever receive interrupts
-    // CPU::mstatus_write(CPU::MPP_S | CPU::MPIE);
-    CPU::mstatus_write(CPU::MPP_S);
+    CPU::mstatus_write(CPU::MPP_S | CPU::MPIE);
 
     // We store mhartid at tp, since it becomes inaccessible while in S-mode.
     Reg core = CPU::mhartid();

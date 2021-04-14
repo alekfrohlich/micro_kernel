@@ -6,17 +6,8 @@ __BEGIN_SYS
 
 void Machine::pre_init(System_Info * si)
 {
-    if(CPU::id() == 0)
-        Display::init();
-
-    db<Init, Machine>(TRC) << "Machine::pre_init()" << endl;
-
-    if(CPU::id() == 0 && Traits<IC>::enabled) {
-        IC::init();
-
-        if(Traits<System>::multicore)
-            smp_barrier_init(Traits<Build>::CPUS);
-    }
+    CPU::stvec_write((unsigned)&IC::entry & 0xfffffffc);
+    IC::init();
 }
 
 void Machine::init()

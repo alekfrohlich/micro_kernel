@@ -1,0 +1,16 @@
+1. objcopy -O binary fez o setup funcionar (sozinho)
+2. build_lm deve ficar igual, so vamos setar has_stp=0
+3. Troquei WRN de sizeof(System_Info) > Page pra ERR (nao temos memoria reservada pra isso)
+4. IC::init e stvec agora sao chamados em Init_System atraves do Machine::pre_init; stvec aponta pro IC::entry do SYS e _int_vector parece OK
+5. Precisamos reservar espaco no .img pra .bss (colocamos algumas pags, por precaucao)
+6. Display::init esta sendo chamado antes para podermos printar no clean_bss
+7. o free no MMU::init estava corrompendo o _mmode_forward
+8. Como _start (da App) aponta pra fora da RAM fisica, precisamos fazer a Main Task
+9. Movi load_app() pra Thread::init(); estou reapropriando MMU::_master (como so copiamos ate 544, nao deve ter problema)
+
+ta sem _start no setup
+
+mesmo ligando --nmagic, App esta sem .data (.code esta RWE)
+https://qemu.readthedocs.io/en/latest/system/gdb.html#advanced-debugging-options
+
+limpar bss dos outros programas

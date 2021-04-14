@@ -30,7 +30,7 @@ struct Memory_Map
         MIO_BASE        = Traits<Machine>::MIO_BASE,
         MIO_TOP         = Traits<Machine>::MIO_TOP,
         BOOT_STACK      = Traits<Machine>::BOOT_STACK,
-
+        PAGE_TABLES     = Traits<Machine>::PAGE_TABLES,
     };
 
     // Logical Address Space

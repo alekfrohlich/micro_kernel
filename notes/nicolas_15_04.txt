@@ -1,0 +1,2 @@
+1. chamar os ctors da APP
+2. consertar MMU_init dps de relocar _mmode_forward (e lembrar de descomentar o free do mmu_init)

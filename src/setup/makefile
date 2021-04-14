@@ -9,9 +9,10 @@ all:	$(TARGET)
 setup_$(MMOD):	setup_$(MMOD).o
 		$(LD) $(LDFLAGS) -L$(CCLIB) --trace --omagic --section-start .init=$(SETUP_ADDR) -o $@ $^ -l$(LINIT) -l$(LMACH) -l$(LARCH) -l$(LUTIL) -lgcc
 
+# $(STRIP) $< -o $<_striped
 install:	setup_$(MMOD)
-		$(STRIP) $< -o $<_striped
-		mv $<_striped $(IMG)/$<
+		$(OBJCOPY) $< $<_raw -O binary
+		mv $<_raw $(IMG)/$<
 
 install.o:	setup_$(MMOD).o
 		$(INSTALL) $< $(LIB)

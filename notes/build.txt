@@ -143,8 +143,8 @@ GDB
 INIT:     0x80200000; 
 SYS_CODE: 0x80300000;
 SYS_DATA: 0x80400000;
-
-find 0x80000000, 0x8fffffff, (char) 0x7F , 'E', 'L', 'F'       
+dump memory core2 0x80000000 0x8012a2c8
+find 0x80000000, 0x802fffff, (char) 0x7F , 'E', 'L', 'F'       
 0x80000004
 0x80019b6c
 0x8006ec00
