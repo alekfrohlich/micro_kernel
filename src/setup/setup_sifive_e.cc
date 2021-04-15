@@ -25,7 +25,7 @@ extern "C"
 char placeholder[] = "System_Info placeholder. Actual System_Info will be added by mkbi!_____________________________________________________________________________________________________________________________________________________________________________________________";
 System_Info * si;
 
-extern "C" [[gnu::interrupt, gnu::aligned(4), gnu::section(".mmode_f_sec")]] void _mmode_forward() {
+extern "C" [[gnu::interrupt, gnu::aligned(4)]] void _mmode_forward() {
     Reg id = CPU::mcause();
     if((id & IC::INT_MASK) == CLINT::IRQ_MAC_TIMER) {
         Timer::reset();
@@ -381,7 +381,13 @@ void Setup_SifiveE::setup_machine_environment()
     CPU::medeleg_write(0xffff);
 
     // Relocate _mmode_forward - 1024 bytes are enough
-    memcpy(reinterpret_cast<void *>(MMODE_F), reinterpret_cast<const void *>(&_mmode_forward), 1024);
+    char * src = reinterpret_cast<char *>(&_mmode_forward);
+    char * dst = reinterpret_cast<char *>(MMODE_F);
+    for(int i=0; i < 1024; i++){
+        *dst = *src;
+        src++;
+        dst++;
+    }
     
     // All ints received in M-mode are forwarded to S-mode.
     // The first two bits indicate the mode: Direct or Vectored;

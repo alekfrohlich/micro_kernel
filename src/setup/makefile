@@ -7,7 +7,7 @@ TARGET := $(if $(shell find setup_$(MMOD)* 2> /dev/null), $(if $(SETUP_ADDR), in
 all:	$(TARGET)
 #!P2: Switch to mode-based ruling
 setup_$(MMOD):	setup_$(MMOD).o
-		$(LD) $(LDFLAGS) -L$(CCLIB) --trace --omagic --section-start .init=$(SETUP_ADDR) --section-start .mmode_f_sec=$(MMODE_F) -o $@ $^ -l$(LINIT) -l$(LMACH) -l$(LARCH) -l$(LUTIL) -lgcc
+		$(LD) $(LDFLAGS) -L$(CCLIB) --trace --omagic --section-start .init=$(SETUP_ADDR) -o $@ $^ -l$(LINIT) -l$(LMACH) -l$(LARCH) -l$(LUTIL) -lgcc
 
 # $(STRIP) $< -o $<_striped
 install:	setup_$(MMOD)

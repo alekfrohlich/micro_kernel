@@ -229,10 +229,14 @@ int main(int argc, char **argv)
     sprintf(file, "%s/img/setup_%s", argv[optind], CONFIG.mmod);
     if(file_exist(file)) {
         //!P2: stp is a raw binary file now; it has no Elf header to be read
+        
+        fprintf(out, "\nIMAGE SIZE NO SETUP_SIZE No PAD = %u", image_size);
         si.bm.setup_offset = -1;
         fprintf(out, "    Adding setup \"%s\":", file);
         image_size += put_file(fd_img, file);
+        fprintf(out, "\nSETUP_SIZE No PAD = %u", image_size);
         image_size += pad(fd_img, 4*4096 - (image_size % 4096));
+        fprintf(out, "\nSETUP_SIZE = %u", image_size);
     } else
         si.bm.setup_offset = -1;
 
