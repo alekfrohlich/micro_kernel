@@ -22,7 +22,7 @@ using namespace EPOS::S;
 using namespace EPOS::S::U;
 
 // Constants
-const unsigned int TOKENS = 31;
+const unsigned int TOKENS = 32;
 const unsigned int COMPONENTS = 62;
 const unsigned int STRING_SIZE = 128;
 
@@ -43,6 +43,7 @@ char tokens[TOKENS][STRING_SIZE] = {
     "MEM_SIZE_KB",
     "MIO_BASE",
     "MIO_TOP",
+    "MMODE_F",
     "MIO_SIZE",
     "MIO_SIZE_KB",
     "BOOT_STACK",
@@ -205,6 +206,9 @@ void populate_strings()
 
     snprintf(string, STRING_SIZE, "0x%08x", Memory_Map::MEM_TOP);
     set_token_value("MEM_TOP", string);
+    
+    snprintf(string, STRING_SIZE, "0x%08x", Memory_Map::MMODE_F);
+    set_token_value("MMODE_F", string);
 
     snprintf(string, STRING_SIZE, "0x%08x", Memory_Map::MEM_TOP + 1 - Memory_Map::MEM_BASE);
     set_token_value("MEM_SIZE", string);

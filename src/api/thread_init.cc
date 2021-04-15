@@ -41,14 +41,14 @@ void Thread::init()
             ELF * app_elf = reinterpret_cast<ELF *>(&bi[si->bm.application_offset]);
             db<Setup>(TRC) << "Setup_SifiveE::load_app()" << endl;
             if(app_elf->load_segment(0) < 0) {
-                db<Setup>(ERR) << "Application code segment was corrupted during SETUP!" << endl;
+                db<Setup>(ERR) << "Application code segment was corrupted during INIT!" << endl;
                 Machine::panic();
             }
-            // for(int i = 1; i < app_elf->segments(); i++)
-            //     if(app_elf->load_segment(i) < 0) {
-            //         db<Setup>(ERR) << "Application data segment was corrupted during SETUP!" << endl;
-            //         panic();
-            //     }
+            for(int i = 1; i < app_elf->segments(); i++)
+                if(app_elf->load_segment(i) < 0) {
+                    db<Setup>(ERR) << "Application data segment was corrupted during INIT!" << endl;
+                    Machine::panic();
+                }
         }
     }
     else {

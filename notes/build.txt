@@ -157,5 +157,24 @@ init global constructors
 app entry 
 
 
+
+
+Init:
+rv32_cpu_init.o
+rv32_mmu_init.o
+riscv_ic_init.o
+riscv_machine_init.o
+riscv_timer_init.o
+alarm_init.o
+system_init.o
+thread_init.o
+
+crtbegin_sifive_e.o
+init_first.o
+init_system.o
+crtend_sifive_e.o
+
+
+Reduzir o PAGE_TABLES (vamos usar mais que 544+1 tabelas de pagina?)
 =======
         

@@ -25,7 +25,7 @@ extern "C"
 char placeholder[] = "System_Info placeholder. Actual System_Info will be added by mkbi!_____________________________________________________________________________________________________________________________________________________________________________________________";
 System_Info * si;
 
-extern "C" [[gnu::interrupt, gnu::aligned(4)]] void _mmode_forward() {
+extern "C" [[gnu::interrupt, gnu::aligned(4), gnu::section(".mmode_f_sec")]] void _mmode_forward() {
     Reg id = CPU::mcause();
     if((id & IC::INT_MASK) == CLINT::IRQ_MAC_TIMER) {
         Timer::reset();
@@ -45,6 +45,7 @@ private:
     // Physical memory map
     static const unsigned int SYS_INFO = Memory_Map::SYS_INFO;
     static const unsigned int PAGE_TABLES = Memory_Map::PAGE_TABLES;
+    static const unsigned int MMODE_F = Memory_Map::MMODE_F;
     static const unsigned int MEM_BASE = Memory_Map::MEM_BASE;
     static const unsigned int MEM_TOP = Memory_Map::MEM_TOP;
     
@@ -73,7 +74,7 @@ void Setup_SifiveE::load_parts()
         _panic();
     }
     memcpy(reinterpret_cast<void *>(SYS_INFO), si, sizeof(System_Info));
-
+    
     // Load INIT
     ELF * ini_elf = reinterpret_cast<ELF *>(&bi[si->bm.init_offset]);
     ELF * sys_elf = reinterpret_cast<ELF *>(&bi[si->bm.system_offset]);
@@ -379,10 +380,13 @@ void Setup_SifiveE::setup_machine_environment()
     CPU::mideleg_write(CPU::SSI | CPU::STI | CPU::SEI);
     CPU::medeleg_write(0xffff);
 
+    // Relocate _mmode_forward - 1024 bytes are enough
+    memcpy(reinterpret_cast<void *>(MMODE_F), reinterpret_cast<const void *>(&_mmode_forward), 1024);
+    
     // All ints received in M-mode are forwarded to S-mode.
     // The first two bits indicate the mode: Direct or Vectored;
     // we opted for Direct.
-    CPU::mtvec((unsigned)&_mmode_forward & 0xfffffffc);
+    CPU::mtvec(MMODE_F & 0xfffffffc);
     CPU::mepc((unsigned)&setup_supervisor_environment);
 
     ASM("mret");

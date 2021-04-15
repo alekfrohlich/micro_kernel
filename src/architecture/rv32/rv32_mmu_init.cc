@@ -20,11 +20,11 @@ void MMU::init()
     db<Init, MMU>(TRC) << "sys_data= " << si->lm.sys_data << ", begin_free= " << sys_data_end << endl; 
 
     // Worst-Fit guarantees this will work
-    free(align_page(sys_data_end), pages(Memory_Map::SYS_INFO - align_page(sys_data_end))); // [align_page(&_end), 0x87bfa000]
+    free(align_page(sys_data_end), pages(Memory_Map::MMODE_F - align_page(sys_data_end))); // [align_page(&_end), 0x87bf9000]
     free(Memory_Map::MEM_TOP + 1 - Traits<Machine>::STACK_SIZE * Traits<Machine>::CPUS, pages(Traits<Machine>::STACK_SIZE * Traits<Machine>::CPUS));
     
     // Free init/setup memory
-    // free(Memory_Map::MEM_BASE, pages(Memory_Map::SYS - Memory_Map::MEM_BASE));
+    free(Memory_Map::MEM_BASE, pages(Memory_Map::SYS - Memory_Map::MEM_BASE));
 }
 
 __END_SYS
