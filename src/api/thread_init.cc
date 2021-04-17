@@ -53,6 +53,7 @@ void Thread::init()
             new (SYSTEM) Thread(Thread::Configuration(Thread::RUNNING, Thread::MAIN), reinterpret_cast<Main *>(si->lm.app[i].app_entry));
         }
         
+        Task::activate(Thread::self()->_task);
         
         // Segment * code_seg = new (SYSTEM) Segment(64*4096, MMU::Flags::ALL); // we need W permission to load the segment
         // //!P2: do the ctor of Chunk and load_segment interact well if len=0 segments?

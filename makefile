@@ -12,25 +12,25 @@ else
 		(cd tools && $(MAKE) APPLICATION=hello_usr)
 		(cd src && $(MAKE) APPLICATION=hello_usr)
 		(cd app && $(MAKE) APPLICATION=hello_usr)
-		(cd app && $(MAKE) APPLICATION=hello)
+		(cd app && $(MAKE) APPLICATION=philosophers_dinner)
 		(cd img && $(MAKE) APPLICATION=hello_usr)
 endif
 
 dbg: FORCE
-		(cd etc && $(MAKE)   DEBUG=1  APPLICATION=hello_usr)
-		(cd tools && $(MAKE) DEBUG=1  APPLICATION=hello_usr)
-		(cd src && $(MAKE)   DEBUG=1  APPLICATION=hello_usr)
+		(cd etc && $(MAKE)   DEBUG=1  APPLICATION=philosophers_dinner)
+		(cd tools && $(MAKE) DEBUG=1  APPLICATION=philosophers_dinner)
+		(cd src && $(MAKE)   DEBUG=1  APPLICATION=philosophers_dinner)
+		(cd app && $(MAKE)   DEBUG=1  APPLICATION=philosophers_dinner)
 		(cd app && $(MAKE)   DEBUG=1  APPLICATION=hello_usr)
-		(cd app && $(MAKE)   DEBUG=1  APPLICATION=hello)
-		(cd img && $(MAKE)   DEBUG=1  APPLICATION=hello_usr)
-		(cd img && $(MAKE)   DEBUG=1  APPLICATION=hello_usr debug)
+		(cd img && $(MAKE)   DEBUG=1  APPLICATION=philosophers_dinner)
+		(cd img && $(MAKE)   DEBUG=1  APPLICATION=philosophers_dinner debug)
 
 rrrun:
 		(cd etc && $(MAKE) APPLICATION=hello_usr)
 		(cd tools && $(MAKE) APPLICATION=hello_usr)
 		(cd src && $(MAKE) APPLICATION=hello_usr)
 		(cd app && $(MAKE) APPLICATION=hello_usr)
-		(cd app && $(MAKE) APPLICATION=hello)
+		(cd app && $(MAKE) APPLICATION=philosophers_dinner)
 		(cd img && $(MAKE) APPLICATION=hello_usr)
 		(cd img && $(MAKE) APPLICATION=hello_usr run1)
 

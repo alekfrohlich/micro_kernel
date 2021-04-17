@@ -366,7 +366,7 @@ lib%.o: lib%.cc
 # 		$(MKBI) $@ $<
 
 %.img: %
-		$(MKBI) $@ hello_usr philosophers_dinner
+		$(MKBI) $@  philosophers_dinner hello_usr
 
 %.hex: %
 		$(OBJCOPY) -I elf32-$(ARCH_ENDIANESS) -O ihex $< $<.tmp

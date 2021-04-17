@@ -15,13 +15,13 @@ template<> struct Traits<Build>: public Traits_Tokens
     static const unsigned int MODEL = SiFive_E;
     static const unsigned int CPUS = 1;
     static const unsigned int NODES = 1; // (> 1 => NETWORKING)
-    static const unsigned int EXPECTED_SIMULATION_TIME = 60; // s (0 => not simulated)
+    static const unsigned int EXPECTED_SIMULATION_TIME = 6000; // s (0 => not simulated)
 
     // Default flags
     static const bool enabled = true;
     static const bool monitored = false;
     static const bool debugged = true;
-    static const bool hysterically_debugged = false;
+    static const bool hysterically_debugged = true;
 
     // Default aspects
     typedef ALIST<> ASPECTS;
