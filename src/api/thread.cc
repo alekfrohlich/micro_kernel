@@ -12,6 +12,7 @@ __END_UTIL
 __BEGIN_SYS
 
 volatile unsigned int Thread::_thread_count;
+volatile Task * Task::_active;
 Scheduler_Timer * Thread::_timer;
 Scheduler<Thread> Thread::_scheduler;
 
@@ -19,7 +20,8 @@ Scheduler<Thread> Thread::_scheduler;
 void Thread::constructor_prologue(unsigned int stack_size)
 {
     lock();
-
+    // !P2:
+    _task = Task::_active;
     _thread_count++;
     _scheduler.insert(this);
 
@@ -338,6 +340,11 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         db<Thread>(TRC) << "Thread::dispatch(prev=" << prev << ",next=" << next << ")" << endl;
         db<Thread>(INF) << "prev={" << prev << ",ctx=" << *prev->_context << "}" << endl;
         db<Thread>(INF) << "next={" << next << ",ctx=" << *next->_context << "}" << endl;
+        
+        
+        if(prev->_task != next->_task){
+            Task::activate(next->_task);
+        }
 
         // The non-volatile pointer to volatile pointer to a non-volatile context is correct
         // and necessary because of context switches, but here, we are locked() and

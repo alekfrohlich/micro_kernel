@@ -8,8 +8,31 @@ all: FORCE
 ifndef APPLICATION
 		$(foreach app,$(APPLICATIONS),$(MAKE) APPLICATION=$(app) $(PRECLEAN) prebuild_$(app) all1 posbuild_$(app);)
 else
-		$(MAKE) all1
+		(cd etc && $(MAKE) APPLICATION=hello_usr)
+		(cd tools && $(MAKE) APPLICATION=hello_usr)
+		(cd src && $(MAKE) APPLICATION=hello_usr)
+		(cd app && $(MAKE) APPLICATION=hello_usr)
+		(cd app && $(MAKE) APPLICATION=hello)
+		(cd img && $(MAKE) APPLICATION=hello_usr)
 endif
+
+dbg: FORCE
+		(cd etc && $(MAKE)   DEBUG=1  APPLICATION=hello_usr)
+		(cd tools && $(MAKE) DEBUG=1  APPLICATION=hello_usr)
+		(cd src && $(MAKE)   DEBUG=1  APPLICATION=hello_usr)
+		(cd app && $(MAKE)   DEBUG=1  APPLICATION=hello_usr)
+		(cd app && $(MAKE)   DEBUG=1  APPLICATION=hello)
+		(cd img && $(MAKE)   DEBUG=1  APPLICATION=hello_usr)
+		(cd img && $(MAKE)   DEBUG=1  APPLICATION=hello_usr debug)
+
+rrrun:
+		(cd etc && $(MAKE) APPLICATION=hello_usr)
+		(cd tools && $(MAKE) APPLICATION=hello_usr)
+		(cd src && $(MAKE) APPLICATION=hello_usr)
+		(cd app && $(MAKE) APPLICATION=hello_usr)
+		(cd app && $(MAKE) APPLICATION=hello)
+		(cd img && $(MAKE) APPLICATION=hello_usr)
+		(cd img && $(MAKE) APPLICATION=hello_usr run1)
 
 all1: $(SUBDIRS)
 

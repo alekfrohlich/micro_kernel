@@ -22,7 +22,7 @@ extern "C"
 }
 
 // char placeholder[] = "System_Info placeholder. Actual System_Info will be added by mkbi!";
-char placeholder[] = "System_Info placeholder. Actual System_Info will be added by mkbi!_____________________________________________________________________________________________________________________________________________________________________________________________";
+char placeholder[] = "System_Info placeholder. Actual System_Info will be added by mkbi!_____________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________";
 System_Info * si;
 
 extern "C" [[gnu::interrupt, gnu::aligned(4)]] void _mmode_forward() {
@@ -133,7 +133,7 @@ void Setup_SifiveE::build_lm()
     si->lm.has_stp = (si->bm.setup_offset != -1u);
     si->lm.has_ini = (si->bm.init_offset != -1u);
     si->lm.has_sys = (si->bm.system_offset != -1u);
-    si->lm.has_app = (si->bm.application_offset != -1u);
+    si->lm.has_app = (si->bm.application_offset[0] != -1u);
     si->lm.has_ext = (si->bm.extras_offset != -1u);
 
     // Check SETUP integrity and get the size of its segments
@@ -249,31 +249,33 @@ void Setup_SifiveE::build_lm()
     }
 
     // Check APPLICATION integrity and get the size of its segments
-    si->lm.app_entry = 0;
-    si->lm.app_segments = 0;
-    si->lm.app_code = ~0U;
-    si->lm.app_code_size = 0;
-    si->lm.app_data = ~0U;
-    si->lm.app_data_size = 0;
-    if(si->lm.has_app) {
-        ELF * app_elf = reinterpret_cast<ELF *>(&bi[si->bm.application_offset]);
-        if(!app_elf->valid()) {
-            db<Setup>(ERR) << "Application ELF image is corrupted!" << endl;
-            _panic();
-        }
-        si->lm.app_entry = app_elf->entry();
-        si->lm.app_segments = app_elf->segments();
-        si->lm.app_code = app_elf->segment_address(0);
-        si->lm.app_code_size = app_elf->segment_size(0);
-        if(app_elf->segments() > 1) {
-            for(int i = 1; i < app_elf->segments(); i++) {
-                if(app_elf->segment_type(i) != PT_LOAD)
-                    continue;
-                if(app_elf->segment_address(i) < si->lm.app_data)
-                    si->lm.app_data = app_elf->segment_address(i);
-                si->lm.app_data_size += app_elf->segment_size(i);
+    for(unsigned i=0; i < si->bm.n_apps; i++){
+        si->lm.app[i].app_entry = 0;
+        si->lm.app[i].app_segments = 0;
+        si->lm.app[i].app_code = ~0U;
+        si->lm.app[i].app_code_size = 0;
+        si->lm.app[i].app_data = ~0U;
+        si->lm.app[i].app_data_size = 0;
+        if(si->lm.has_app) {
+            ELF * app_elf = reinterpret_cast<ELF *>(&bi[si->bm.application_offset[i]]);
+            if(!app_elf->valid()) {
+                db<Setup>(ERR) << "Application ELF image is corrupted!" << endl;
+                _panic();
             }
-        }
+            si->lm.app[i].app_entry = app_elf->entry();
+            si->lm.app[i].app_segments = app_elf->segments();
+            si->lm.app[i].app_code = app_elf->segment_address(0);
+            si->lm.app[i].app_code_size = app_elf->segment_size(0);
+            if(app_elf->segments() > 1) {
+                for(int i = 1; i < app_elf->segments(); i++) {
+                    if(app_elf->segment_type(i) != PT_LOAD)
+                        continue;
+                    if(app_elf->segment_address(i) < si->lm.app[i].app_data)
+                        si->lm.app[i].app_data = app_elf->segment_address(i);
+                    si->lm.app[i].app_data_size += app_elf->segment_size(i);
+                }
+            }
+    }
         // if(Traits<System>::multiheap) { // Application heap in data segment
         //     si->lm.app_data_size = MMU::align_page(si->lm.app_data_size);
         //     si->lm.app_stack = si->lm.app_data + si->lm.app_data_size;

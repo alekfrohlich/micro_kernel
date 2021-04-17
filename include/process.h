@@ -122,6 +122,9 @@ protected:
     Queue * _waiting;
     Thread * volatile _joining;
     Queue::Element _link;
+    
+    // !P2:
+    volatile Task * _task;
 
     static volatile unsigned int _thread_count;
     static Scheduler_Timer * _timer;
@@ -185,6 +188,7 @@ private:
     typedef CPU::Log_Addr Log_Addr;
 
 public:
+    static volatile Task * _active;
     Task(Segment * cs, Segment * ds)
     : _as (new (SYSTEM) Address_Space), _cs(cs), _ds(ds), _code(_as->attach(_cs, Memory_Map::APP_CODE)), _data(_as->attach(_ds, Memory_Map::APP_DATA)) {
         db<Task>(TRC) << "Task(as=" << _as << ",cs=" << _cs << ",ds=" << _ds <<  ",code=" << _code << ",data=" << _data << ") => " << this << endl;
@@ -198,7 +202,13 @@ public:
     void activate() {
         CPU::satp((0x1 << 31) | _as->pd() >> 12);
     }
-
+    
+    static void activate(volatile Task * task) __attribute__((noinline)){
+        Task::_active = task;
+        CPU::satp((0x1 << 31) | task->_as->pd() >> 12);
+        ASM("sfence.vma");
+    }
+    
     Address_Space * address_space() const { return _as; }
 
     Segment * code_segment() const { return _cs; }
@@ -214,6 +224,7 @@ private:
     Segment * _ds;
     Log_Addr _code;
     Log_Addr _data;
+    
 };
 
 

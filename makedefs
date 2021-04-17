@@ -362,8 +362,11 @@ lib%.o: lib%.cc
 (%.o): %.o
 		$(AR) $(ARFLAGS) $@ $^
 
+# %.img: %
+# 		$(MKBI) $@ $<
+
 %.img: %
-		$(MKBI) $@ $<
+		$(MKBI) $@ hello_usr philosophers_dinner
 
 %.hex: %
 		$(OBJCOPY) -I elf32-$(ARCH_ENDIANESS) -O ihex $< $<.tmp
