@@ -210,17 +210,6 @@ int main(int argc, char **argv)
     si.bm.space_z  = CONFIG.space_z;
     si.bm.n_apps   = argc-3;
 
-    fprintf(out, "\nBoot Map:");
-    fprintf(out, "\n    si.bm.n_cpus %u", si.bm.n_cpus);
-    fprintf(out, "\n    si.bm.mem_base %08x", si.bm.mem_base);
-    fprintf(out, "\n    si.bm.mem_top %08x", si.bm.mem_top);
-    fprintf(out, "\n    si.bm.mio_base %08x", si.bm.mio_base);
-    fprintf(out, "\n    si.bm.mio_top %08x", si.bm.mio_top);
-    fprintf(out, "\n    si.bm.node_id %u", si.bm.node_id);
-    fprintf(out, "\n    si.bm.space_x %u", si.bm.space_x);
-    fprintf(out, "\n    si.bm.space_y %u", si.bm.space_y);
-    fprintf(out, "\n    si.bm.space_z %u\n\n", si.bm.space_z);
-
     for(unsigned int i = 0; i < 8; i++)
         si.bm.uuid[i]  = CONFIG.uuid[i];
 
@@ -328,6 +317,26 @@ int main(int argc, char **argv)
         return 1;
     }
     fprintf(out, " done.\n");
+
+    fprintf(out, "\nBoot Map:");
+    fprintf(out, "\n    si.bm.n_cpus %u",       si.bm.n_cpus);
+    fprintf(out, "\n    si.bm.mem_base %08x",   si.bm.mem_base);
+    fprintf(out, "\n    si.bm.mem_top %08x",    si.bm.mem_top);
+    fprintf(out, "\n    si.bm.mio_base %08x",   si.bm.mio_base);
+    fprintf(out, "\n    si.bm.mio_top %08x",    si.bm.mio_top);
+    fprintf(out, "\n    si.bm.node_id %u",      si.bm.node_id);
+    fprintf(out, "\n    si.bm.space_x %u",      si.bm.space_x);
+    fprintf(out, "\n    si.bm.space_y %u",      si.bm.space_y);
+    fprintf(out, "\n    si.bm.space_z %u\n\n",  si.bm.space_z);
+
+    fprintf(out, "\n    si.bm.img_size %u",           si.bm.img_size);
+    fprintf(out, "\n    si.bm.setup_offset %08x",       si.bm.setup_offset);
+    fprintf(out, "\n    si.bm.init_offset %08x",        si.bm.init_offset);
+    fprintf(out, "\n    si.bm.system_offset %08x",      si.bm.system_offset);
+    for (unsigned i = 0; i < si.bm.n_apps; i++)
+        fprintf(out, "\n    si.bm.application_offset[%u] %08x", i, si.bm.application_offset[0]);
+    fprintf(out, "\n    si.bm.n_apps %u",             si.bm.n_apps);
+    fprintf(out, "\n    si.bm.extras_offset %08x",      si.bm.extras_offset);
 
     // Finish
     close(fd_img);

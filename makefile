@@ -32,11 +32,11 @@ run: FORCE
 ifndef APPLICATION
 		$(foreach app,$(APPLICATIONS),$(MAKE) APPLICATION=$(app) prerun_$(app) run1;)
 else
-		$(MAKE) run1
+		$(MAKE) all1 run1
 endif
 
-#!P2: needs fix
-run1: etc img/$(APPLICATION)$(MACH_IMGSUFF)
+run1: FORCE
+		(cd img && $(MKBI) $(word 1, $(APPS)).img $(addprefix $(IMG)/,$(APPS)))
 		(cd img && $(MAKE) run1)
 		
 img/$(APPLICATION)$(MACH_IMGSUFF):

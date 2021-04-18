@@ -22,13 +22,13 @@ int main()
     CPU::int_disable();
 
     char * b1 = alloc(15*1024);
-    char * b2 = alloc(128);
+    alloc(128);
     char * b3 = alloc(128);
     
     free(b3);
     free(b1);
 
-    char * a1 = alloc(16);
+    alloc(16);
 
     return 0;
 }
