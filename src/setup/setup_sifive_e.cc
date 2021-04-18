@@ -220,19 +220,6 @@ void Setup_SifiveE::build_lm()
                 si->lm.sys_data_size += sys_elf->segment_size(i);
             }
         }
-
-        if(si->lm.sys_code != SYS_CODE) {
-            db<Setup>(ERR) << "OS code segment address (" << reinterpret_cast<void *>(si->lm.sys_code) << ") does not match the machine's memory map (" << reinterpret_cast<void *>(SYS_CODE) << ")!" << endl;
-            _panic();
-        }
-        if(si->lm.sys_code + si->lm.sys_code_size > si->lm.sys_data) {
-            db<Setup>(ERR) << "OS code segment is too large!" << endl;
-            _panic();
-        }
-        if(si->lm.sys_data != SYS_DATA) {
-            db<Setup>(ERR) << "OS data segment address (" << reinterpret_cast<void *>(si->lm.sys_data) << ") does not match the machine's memory map (" << reinterpret_cast<void *>(SYS_DATA) << ")!" << endl;
-            _panic();
-        }
     }
 
     // Check APPLICATION integrity and get the size of its segments
