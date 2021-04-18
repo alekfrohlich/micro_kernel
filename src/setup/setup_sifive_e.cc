@@ -10,10 +10,6 @@
 using namespace EPOS::S;
 typedef unsigned int Reg;
 
-//!P2:
-// (both the following are not yet solved)
-// _mmode_forward must be rellocated to avoid being erased from MMU::_free
-
 extern "C"
 {
     [[gnu::naked, gnu::section(".init")]] void _setup();
@@ -21,8 +17,7 @@ extern "C"
     void _panic() { Machine::panic(); }
 }
 
-// char placeholder[] = "System_Info placeholder. Actual System_Info will be added by mkbi!";
-char placeholder[] = "System_Info placeholder. Actual System_Info will be added by mkbi!_____________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________";
+char placeholder[sizeof(System_Info)] = "System_Info placeholder. Actual System_Info will be added by mkbi!";
 System_Info * si;
 
 extern "C" [[gnu::interrupt, gnu::aligned(4)]] void _mmode_forward() {

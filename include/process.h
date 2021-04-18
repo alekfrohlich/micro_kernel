@@ -123,7 +123,6 @@ protected:
     Thread * volatile _joining;
     Queue::Element _link;
     
-    // !P2:
     volatile Task * _task;
 
     static volatile unsigned int _thread_count;
@@ -198,16 +197,16 @@ public:
         db<Task>(TRC) << "Task(as=" << _as << ",cs=" << _cs << ",ds=" << _ds <<  ",code=" << _code << ",data=" << _data << ") => " << this << endl;
     }
     ~Task();
-
-    void activate() {
-        CPU::satp((0x1 << 31) | _as->pd() >> 12);
-    }
     
-    static void activate(volatile Task * task) __attribute__((noinline)){
-        Task::_active = task;
-        CPU::satp((0x1 << 31) | task->_as->pd() >> 12);
-        ASM("sfence.vma");
+    static void activate(volatile Task * t) {
+        Task::_active = t;
+        t->_as->activate();
     }
+
+    // void activate() {
+    //     Task::_active = this;
+    //     _as->activate();
+    // }
     
     Address_Space * address_space() const { return _as; }
 
@@ -226,54 +225,6 @@ private:
     Log_Addr _data;
     
 };
-
-
-// class Task
-// {
-// private:
-//     static const bool multitask = Traits<System>::multitask;
-
-// public:
-//     template<typename ... Tn>
-//     Task(const Thread::Configuration & conf, Segment * cs, Segment * ds, int (* entry)(Tn ...), Tn ... an)
-//     : _as (new (SYSTEM) Address_Space), _cs(cs), _ds(ds), _entry(entry), _code(_as->attach(_cs)), _data(_as->attach(_ds)) {
-//         db<Task>(TRC) << "Task(as=" << _as << ",cs=" << _cs << ",ds=" << _ds << ",entry=" << _entry << ",code=" << _code << ",data=" << _data << ") => " << this << endl;
-
-//         _main = new (SYSTEM) Thread(Thread::Configuration(conf.state, conf.criterion, this, 0), entry, an ...);
-//     }
-//     ~Task();
-
-//     Address_Space * address_space() const { return _as; }
-
-//     Segment * code_segment() const { return _cs; }
-//     Segment * data_segment() const { return _ds; }
-
-//     Log_Addr code() const { return _code; }
-//     Log_Addr data() const { return _data; }
-
-//     Thread * main() const { return _main; }
-
-//     static Task * volatile self() { return current(); }
-
-// private:
-//     void activate() const { _as->activate(); }
-
-//     void insert(Thread * t) { _threads.insert(new (SYSTEM) Queue::Element(t)); }
-//     void remove(Thread * t) { Queue::Element * el = _threads.remove(t); if(el) delete el; }
-
-//     static Task * volatile current() { return _current; }
-//     static void current(Task * t) { _current = t; }
-
-//     static void init();
-
-// private:
-//     Address_Space * _as;
-//     Segment * _cs;
-//     Segment * _ds;
-//     Thread * _main;
-//     Queue _threads;
-//     static Task * volatile _current;
-// };
 
 __END_SYS
 

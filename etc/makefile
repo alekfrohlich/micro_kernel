@@ -31,7 +31,6 @@ eposcc.conf: FORCE
 		@echo "APP_DATA=$(shell $(BIN)/eposcfg APP_DATA)" >> $@
 		@echo "SETUP=$(shell $(BIN)/eposcfg SETUP)" >> $@
 		@echo "BOOT_STACK=$(shell $(BIN)/eposcfg BOOT_STACK)" >> $@
-#!P2: Why CC and not CXX?
 		@echo "MACH_CC_FLAGS='$(MACH_CXX_FLAGS)'" >> $@
 		@echo "MACH_LD_FLAGS='$(MACH_LD_FLAGS)'" >> $@
 		@echo "MACH_CODE_NAME='$(MACH_CODE_NAME)'" >> $@

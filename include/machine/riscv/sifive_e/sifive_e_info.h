@@ -25,6 +25,7 @@ public:
     LAddr app_heap;
     Size  app_data_size;
 };
+
 struct System_Info
 {
 private:
@@ -55,23 +56,6 @@ public:
         unsigned int n_apps;
         Size extras_offset;
     };
-
-    // !P2:
-    // Load Map (not used in this machine, but kept for architectural transparency)
-    // struct Load_Map
-    // {
-    //     bool  has_ext;
-    //     LAddr app_entry;
-    //     Size  app_segments;
-    //     LAddr app_code;
-    //     Size  app_code_size;
-    //     LAddr app_data;
-    //     LAddr app_stack;
-    //     LAddr app_heap;
-    //     Size  app_data_size;
-    //     LAddr app_extra;
-    //     Size  app_extra_size;
-    // };
 
     struct Load_Map
     {

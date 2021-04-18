@@ -32,7 +32,6 @@ public:
         : (seg(i)->p_vaddr & ~(seg(i)->p_align - 1));
     }
     
-    // !P2: is this correct?
     int segment_size(int i) {
         return (i > segments()) ? -1 : (int)(
             ((seg(i)->p_offset % seg(i)->p_align)

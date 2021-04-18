@@ -1,14 +1,12 @@
 // EPOS Thread Initialization
 
 #include <utility/elf.h>
+#include <architecture/mmu.h>
 #include <machine/timer.h>
 #include <machine/ic.h>
 #include <system.h>
 #include <process.h>
 #include <memory.h>
-
-//!P2:  We can use MMU::flags instead
-#include <architecture/mmu.h>
 
 
 __BEGIN_SYS
@@ -18,24 +16,21 @@ extern "C" { void __epos_app_entry(); }
 void Thread::init()
 {
     db<Init, Thread>(TRC) << "Thread::init()" << endl;
-
     typedef int (Main)();
-
     System_Info * si = System::info();
-    // Main * main;
     
     if(Traits<System>::multitask) {
-        // main = reinterpret_cast<Main *>(si->lm.app[0].app_entry);
-        // Should we store this somewhere?
-        char * bi = reinterpret_cast<char*>(0x80000000);
+        char * bi = reinterpret_cast<char*>(Memory_Map::MEM_BASE);
         
-        for(unsigned i = 0; i < 2; i++){
-            Segment * code_seg = new (SYSTEM) Segment(64*4096, MMU::Flags::ALL); // we need W permission to load the segment
-            //!P2: do the ctor of Chunk and load_segment interact well if len=0 segments?
-            Segment * data_seg = new (SYSTEM) Segment(4096, MMU::Flags::ALL); // UNUSED AS OF NOW
+        for(unsigned i = 0; i < si->bm.n_apps; i++) {
+             // We need W permission to load the segment
+            Segment * code_seg = new (SYSTEM) Segment(64*4096, MMU::Flags::ALL);
+            Segment * data_seg = new (SYSTEM) Segment(64*4096, MMU::Flags::ALL);
             Task * app_task =  new (SYSTEM) Task(code_seg, data_seg);
+            
             db<Setup>(TRC) << "app_task = " << hex << app_task << endl;
-            Task::activate(app_task); //just create another thread constr with task
+            Task::activate(app_task);
+            
             if(si->lm.has_app) {
                 ELF * app_elf = reinterpret_cast<ELF *>(&bi[si->bm.application_offset[i]]);
                 db<Setup>(TRC) << "Setup_SifiveE::load_app()" << endl;
@@ -53,40 +48,10 @@ void Thread::init()
             new (SYSTEM) Thread(Thread::Configuration(Thread::RUNNING, Thread::MAIN), reinterpret_cast<Main *>(si->lm.app[i].app_entry));
         }
         
+        // We need to be in the AS of the first thread.
         Task::activate(Thread::self()->_task);
-        
-        // Segment * code_seg = new (SYSTEM) Segment(64*4096, MMU::Flags::ALL); // we need W permission to load the segment
-        // //!P2: do the ctor of Chunk and load_segment interact well if len=0 segments?
-        // Segment * data_seg = new (SYSTEM) Segment(4096, MMU::Flags::ALL); // UNUSED AS OF NOW
-        // Address_Space * master = new (SYSTEM) Address_Space(MMU::current());
-        // Task * app_task =  new (SYSTEM) Task(master, code_seg, data_seg);
-        // Task::activate(app_task);
-        // // ASM("sfence.vma");
-
-        // // Load APP
-        // if(si->lm.has_app) {
-        //     ELF * app_elf = reinterpret_cast<ELF *>(&bi[si->bm.application_offset[0]]);
-        //     db<Setup>(TRC) << "Setup_SifiveE::load_app()" << endl;
-        //     if(app_elf->load_segment(0) < 0) {
-        //         db<Setup>(ERR) << "Application code segment was corrupted during INIT!" << endl;
-        //         Machine::panic();
-        //     }
-        //     for(int i = 1; i < app_elf->segments(); i++)
-        //         if(app_elf->load_segment(i) < 0) {
-        //             db<Setup>(ERR) << "Application data segment was corrupted during INIT!" << endl;
-        //             Machine::panic();
-        //         }
-        // }
     }
-    // else {
-    //     // If EPOS is a library, then adjust the application entry point to __epos_app_entry,
-    //     // which will directly call main(). In this case, _init will have already been called,
-    //     // before Init_Application to construct MAIN's global objects.
-    //     main = reinterpret_cast<Main *>(__epos_app_entry);
-    // }
-
-    // new (SYSTEM) Thread(Thread::Configuration(Thread::RUNNING, Thread::MAIN), main);
-
+   
     // Idle thread creation does not cause rescheduling (see Thread::constructor_epilogue)
     new (SYSTEM) Thread(Thread::Configuration(Thread::READY, Thread::IDLE), &Thread::idle);
 

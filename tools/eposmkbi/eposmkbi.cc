@@ -181,8 +181,6 @@ int main(int argc, char **argv)
         }
     }
     unsigned int boot_size = image_size;
-    // !P2:
-    boot_size = 0;
 
     // Determine if System_Info is needed and how it must be handled
     bool need_si = (!strcmp(CONFIG.mach, "pc") || !strcmp(CONFIG.mach, "riscv"));
@@ -229,15 +227,11 @@ int main(int argc, char **argv)
     // Add SETUP
     sprintf(file, "%s/img/setup_%s", argv[optind], CONFIG.mmod);
     if(file_exist(file)) {
-        //!P2: stp is a raw binary file now; it has no Elf header to be read
-        
-        // fprintf(out, "\nIMAGE SIZE NO SETUP_SIZE No PAD = %u", image_size);
+        // Setup is a raw binary file now; it has no Elf header to be read
         si.bm.setup_offset = -1;
         fprintf(out, "    Adding setup \"%s\":", file);
         image_size += put_file(fd_img, file);
-        // fprintf(out, "\nSETUP_SIZE No PAD = %u", image_size);
         image_size += pad(fd_img, 4*4096 - (image_size % 4096));
-        // fprintf(out, "\nSETUP_SIZE = %u", image_size);
     } else
         si.bm.setup_offset = -1;
 
@@ -266,26 +260,12 @@ int main(int argc, char **argv)
     if((argc - optind) == 3) // single APP
         si.bm.extras_offset = -1;
     else{
-        // fprintf(out, "HHHHHHHHHHEEEEEEEEEEEEEEEEE        %u        ELLLLLLLLLLLLLLLLLLLLLLLLLLLOOOOOOOOOOOOOOOOOOO\n\n", argc);
-        // fprintf(out, "sizeof(System_Info) = %u\n", sizeof(System_Info));
         for(int i=4; i<argc; i++){
             si.bm.application_offset[i-3] = image_size - boot_size;
             fprintf(out, "    Adding application \"%s\":", argv[i]);
             image_size += put_file(fd_img, argv[i]);
         }
     }
-    // else { // multiple APPs or data
-    //     si.bm.extras_offset = image_size - boot_size;
-    //     struct stat file_stat;
-    //     for(int i = optind + 3; i < argc; i++) {
-    //         fprintf(out, "    Adding file \"%s\":", argv[i]);
-    //         stat(argv[i], &file_stat);
-    //         image_size += put_number(fd_img, file_stat.st_size);
-    //         image_size += put_file(fd_img, argv[i]);
-    //     }
-    //     // Signalize last application by setting its size to 0
-    //     image_size += put_number(fd_img, 0);
-    // }
 
     // Add the size of the image to the Boot_Map in System_Info (excluding BOOT)
     si.bm.img_size = image_size - boot_size;

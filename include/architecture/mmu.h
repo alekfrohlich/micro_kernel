@@ -71,8 +71,8 @@ public:
 
 public:
     static unsigned int pages(unsigned int bytes) { return (bytes + sizeof(Page) - 1) / sizeof(Page); }
-    static unsigned int page_tables(unsigned int pages) { return (pages + PT_ENTRIES - 1) / PT_ENTRIES; }
-
+    static unsigned int page_tables(unsigned int pages) { return sizeof(Page) > sizeof(int) ? (pages + PT_ENTRIES - 1) / PT_ENTRIES : 0; } // merged
+    
     static unsigned int offset(const Log_Addr & addr) { return addr & (sizeof(Page) - 1); }
     static unsigned int indexes(const Log_Addr & addr) { return addr & ~(sizeof(Page) - 1); }
 
@@ -80,8 +80,7 @@ public:
     static unsigned int directory(const Log_Addr & addr) { return addr >> DIRECTORY_SHIFT; }
 
     static Log_Addr align_page(const Log_Addr & addr) { return (addr + sizeof(Page) - 1) & ~(sizeof(Page) - 1); }
-    //!P2: yet to be merged
-    static Log_Addr align_directory(const Log_Addr & addr) { return (addr + sizeof(Page) * sizeof(Page) - 1) &  ~(sizeof(Page) * sizeof(Page) - 1); }
+    static Log_Addr align_directory(const Log_Addr & addr) { return (addr + PT_ENTRIES * sizeof(Page) - 1) &  ~(PT_ENTRIES * sizeof(Page) - 1); } // merged
 };
 
 __END_SYS

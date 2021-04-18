@@ -5,7 +5,7 @@
 
 __BEGIN_SYS
 
-extern "C" { void _int_entry() __attribute__ ((alias("_ZN4EPOS1S2IC5entryEv"))); }
+extern "C" { [[gnu::alias("_ZN4EPOS1S2IC5entryEv"), gnu::nothrow]] void _int_entry(); }
 
 // Class attributes
 IC::Interrupt_Handler IC::_int_vector[IC::INTS];
@@ -59,7 +59,7 @@ void IC::entry()
         "# Restore context                                              \n"
         ".restore:                                                      \n"
         "        lw          x1,   4(sp)                                \n"
-        "        lw          x2,   8(sp)                                \n" //?????????????????????????????????????????????????
+        "        lw          x2,   8(sp)                                \n"
         "        lw          x3,  12(sp)                                \n"
         "        lw          x4,  16(sp)                                \n"
         "        lw          x5,  20(sp)                                \n"
@@ -103,9 +103,6 @@ void IC::dispatch()
 
     if((id != INT_SYS_TIMER) || Traits<IC>::hysterically_debugged)
         db<IC>(TRC) << "IC::dispatch(i=" << id << ")" << endl;
-
-    if(id == INT_RESCHEDULER)
-        CPU::sip_clear(CPU::SSI);
 
     if(id == INT_SYS_TIMER)
         CPU::sie_clear(CPU::STI);

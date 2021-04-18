@@ -133,7 +133,7 @@ private:
     static void exception(Interrupt_Id i);
 
     // Physical handler
-    static void entry();
+    [[gnu::naked, gnu::aligned(4)]] static void entry();
 
     static void init();
 

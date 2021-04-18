@@ -20,7 +20,7 @@ Scheduler<Thread> Thread::_scheduler;
 void Thread::constructor_prologue(unsigned int stack_size)
 {
     lock();
-    // !P2:
+    
     _task = Task::_active;
     _thread_count++;
     _scheduler.insert(this);

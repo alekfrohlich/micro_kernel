@@ -151,7 +151,10 @@ public:
 
         Phy_Addr pd() const { return _pd; }
 
-        void activate() {}
+        void activate() {
+            CPU::satp((0x1 << 31) | (Phy_Addr)_pd >> 12);
+            ASM("sfence.vma");
+        }
 
         Log_Addr attach(const Chunk & chunk, unsigned int from = 0) {
             for(unsigned int i = from; i < PD_ENTRIES - chunk.pts(); i++)

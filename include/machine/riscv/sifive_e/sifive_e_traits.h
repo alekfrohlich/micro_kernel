@@ -10,7 +10,7 @@ __BEGIN_SYS
 class Machine_Common;
 template<> struct Traits<Machine_Common>: public Traits<Build> {};
 
-//!P2: When will we allocate a kernel stack? We may repurpose boot_stack by not freeing it.
+//!ECALL: When will we allocate a kernel stack? We may repurpose boot_stack by not freeing it.
 template <> struct Traits<Machine>: public Traits<Machine_Common>
 {
     static const bool cpus_use_local_timer      = false;
