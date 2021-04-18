@@ -221,26 +221,18 @@ void Setup_SifiveE::build_lm()
             }
         }
 
-        // if(si->lm.sys_code != SYS_CODE) {
-        //     db<Setup>(ERR) << "OS code segment address (" << reinterpret_cast<void *>(si->lm.sys_code) << ") does not match the machine's memory map (" << reinterpret_cast<void *>(SYS_CODE) << ")!" << endl;
-        //     _panic();
-        // }
-        // if(si->lm.sys_code + si->lm.sys_code_size > si->lm.sys_data) {
-        //     db<Setup>(ERR) << "OS code segment is too large!" << endl;
-        //     _panic();
-        // }
-        // if(si->lm.sys_data != SYS_DATA) {
-        //     db<Setup>(ERR) << "OS data segment address (" << reinterpret_cast<void *>(si->lm.sys_data) << ") does not match the machine's memory map (" << reinterpret_cast<void *>(SYS_DATA) << ")!" << endl;
-        //     _panic();
-        // }
-        // if(si->lm.sys_data + si->lm.sys_data_size > si->lm.sys_stack) {
-        //     db<Setup>(ERR) << "OS data segment is too large!" << endl;
-        //     panic();
-        // }
-        // if(MMU::page_tables(MMU::pages(si->lm.sys_stack - SYS + si->lm.sys_stack_size)) > 1) {
-        //     db<Setup>(ERR) << "OS stack segment is too large!" << endl;
-        //     _panic();
-        // }
+        if(si->lm.sys_code != SYS_CODE) {
+            db<Setup>(ERR) << "OS code segment address (" << reinterpret_cast<void *>(si->lm.sys_code) << ") does not match the machine's memory map (" << reinterpret_cast<void *>(SYS_CODE) << ")!" << endl;
+            _panic();
+        }
+        if(si->lm.sys_code + si->lm.sys_code_size > si->lm.sys_data) {
+            db<Setup>(ERR) << "OS code segment is too large!" << endl;
+            _panic();
+        }
+        if(si->lm.sys_data != SYS_DATA) {
+            db<Setup>(ERR) << "OS data segment address (" << reinterpret_cast<void *>(si->lm.sys_data) << ") does not match the machine's memory map (" << reinterpret_cast<void *>(SYS_DATA) << ")!" << endl;
+            _panic();
+        }
     }
 
     // Check APPLICATION integrity and get the size of its segments
@@ -270,21 +262,7 @@ void Setup_SifiveE::build_lm()
                     si->lm.app[i].app_data_size += app_elf->segment_size(i);
                 }
             }
-    }
-        // if(Traits<System>::multiheap) { // Application heap in data segment
-        //     si->lm.app_data_size = MMU::align_page(si->lm.app_data_size);
-        //     si->lm.app_stack = si->lm.app_data + si->lm.app_data_size;
-        //     si->lm.app_data_size += MMU::align_page(Traits<Application>::STACK_SIZE);
-        //     si->lm.app_heap = si->lm.app_data + si->lm.app_data_size;
-        //     si->lm.app_data_size += MMU::align_page(Traits<Application>::HEAP_SIZE);
-        // }
-        // if(si->lm.has_ext) { // Check for EXTRA data in the boot image
-        //     si->lm.app_extra = si->lm.app_data + si->lm.app_data_size;
-        //     si->lm.app_extra_size = si->bm.img_size - si->bm.extras_offset;
-        //     if(Traits<System>::multiheap)
-        //         si->lm.app_extra_size = MMU::align_page(si->lm.app_extra_size);
-        //     si->lm.app_data_size += si->lm.app_extra_size;
-        // }
+        }
     }
 }
 
