@@ -79,7 +79,6 @@ if [ "$SETUP" = "" ] ; then
     LINK_OBJI_LIBRARY="$LIB/setup_$MMOD.o $LINK_OBJI_LIBRARY"
 fi
 
-#!P2: Epos changed this
 LINKER_BUILTIN=$LINKER
 LINK_FLGS_BUILTIN="-L$LIB -L`$C_COMPILER $C_COMP_FLGS -print-file-name=` -static --section-start $MACH_CODE_NAME=$APP_CODE --section-start $MACH_DATA_NAME=$APP_DATA"
 LINK_OBJI_BUILTIN="$LIB/crt0_$MMOD.o $LIB/crtbegin_$MMOD.o"
@@ -294,8 +293,6 @@ elif [ "$language" = "CPP" ] ; then
         compile_flgs="$compile_flgs -I$hdr"
     done
     link_flgs="$link_flgs $CPP_LINK_FLGS"
-    echo "LD FLAGS1\n"
-    echo $link_flgs
     link_objs="$CPP_LINK_OBJS $link_objs"
     for lib in $CPP_LINK_LIBS ; do
         link_libs="$link_libs -l$lib"

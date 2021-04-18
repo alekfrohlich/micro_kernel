@@ -2,39 +2,28 @@
 
 include makedefs
 
+ifndef APPS
 SUBDIRS	:= etc tools src app img
+else
+SUBDIRS := etc tools src
+export APPS
+ifndef APPLICATION
+export APPLICATION=$(word 1, $(APPS))
+endif
+endif
+
 
 all: FORCE
 ifndef APPLICATION
 		$(foreach app,$(APPLICATIONS),$(MAKE) APPLICATION=$(app) $(PRECLEAN) prebuild_$(app) all1 posbuild_$(app);)
 else
-		(cd etc && $(MAKE) APPLICATION=hello_usr)
-		(cd tools && $(MAKE) APPLICATION=hello_usr)
-		(cd src && $(MAKE) APPLICATION=hello_usr)
-		(cd app && $(MAKE) APPLICATION=hello_usr)
-		(cd app && $(MAKE) APPLICATION=philosophers_dinner)
-		(cd img && $(MAKE) APPLICATION=hello_usr)
+		$(MAKE) all1
 endif
 
-dbg: FORCE
-		(cd etc && $(MAKE)   DEBUG=1  APPLICATION=philosophers_dinner)
-		(cd tools && $(MAKE) DEBUG=1  APPLICATION=philosophers_dinner)
-		(cd src && $(MAKE)   DEBUG=1  APPLICATION=philosophers_dinner)
-		(cd app && $(MAKE)   DEBUG=1  APPLICATION=philosophers_dinner)
-		(cd app && $(MAKE)   DEBUG=1  APPLICATION=hello_usr)
-		(cd img && $(MAKE)   DEBUG=1  APPLICATION=philosophers_dinner)
-		(cd img && $(MAKE)   DEBUG=1  APPLICATION=philosophers_dinner debug)
-
-rrrun:
-		(cd etc && $(MAKE) APPLICATION=hello_usr)
-		(cd tools && $(MAKE) APPLICATION=hello_usr)
-		(cd src && $(MAKE) APPLICATION=hello_usr)
-		(cd app && $(MAKE) APPLICATION=hello_usr)
-		(cd app && $(MAKE) APPLICATION=philosophers_dinner)
-		(cd img && $(MAKE) APPLICATION=hello_usr)
-		(cd img && $(MAKE) APPLICATION=hello_usr run1)
-
 all1: $(SUBDIRS)
+ifdef APPS
+	$(foreach app,$(APPS), (cd $(APP) && $(MAKE) APPLICATION=$(app));)
+endif
 
 $(SUBDIRS): FORCE
 		(cd $@ && $(MAKE))
@@ -46,6 +35,7 @@ else
 		$(MAKE) run1
 endif
 
+#!P2: needs fix
 run1: etc img/$(APPLICATION)$(MACH_IMGSUFF)
 		(cd img && $(MAKE) run1)
 		
@@ -59,7 +49,8 @@ else
 		$(MAKE) DEBUG=1 all1 debug1
 endif
 
-debug1: etc img/$(APPLICATION)$(MACH_IMGSUFF)
+debug1: FORCE
+		(cd img && $(MKBI) $(word 1, $(APPS)).img $(addprefix $(IMG)/,$(APPS)))
 		(cd img && $(MAKE) DEBUG=1 debug)
 
 flash: FORCE

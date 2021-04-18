@@ -45,7 +45,6 @@ all:		strip $(IMAGE)
 
 else
 
-#!P2: strip couldnt function w/ our jump at the beginning of .img
 all:	 	$(IMAGE) $(PEER_IMAGE)
 
 $(IMAGE):	$(APPLICATION)

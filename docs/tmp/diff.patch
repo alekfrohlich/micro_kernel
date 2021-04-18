@@ -1,0 +1,737 @@
+diff --git a/app/hello/hello_traits.h b/app/hello/hello_traits.h
+index 824a26a..8fe3f88 100644
+--- a/app/hello/hello_traits.h
++++ b/app/hello/hello_traits.h
+@@ -9,7 +9,7 @@ __BEGIN_SYS
+ template<> struct Traits<Build>: public Traits_Tokens
+ {
+     // Basic configuration
+-    static const unsigned int MODE = LIBRARY;
++    static const unsigned int MODE = BUILTIN;
+     static const unsigned int ARCHITECTURE = RV32;
+     static const unsigned int MACHINE = RISCV;
+     static const unsigned int MODEL = SiFive_E;
+diff --git a/app/philosophers_dinner/philosophers_dinner_traits.h b/app/philosophers_dinner/philosophers_dinner_traits.h
+index dca58e8..44d50d4 100644
+--- a/app/philosophers_dinner/philosophers_dinner_traits.h
++++ b/app/philosophers_dinner/philosophers_dinner_traits.h
+@@ -9,7 +9,7 @@ __BEGIN_SYS
+ template<> struct Traits<Build>: public Traits_Tokens
+ {
+     // Basic configuration
+-    static const unsigned int MODE = LIBRARY;
++    static const unsigned int MODE = BUILTIN;
+     static const unsigned int ARCHITECTURE = RV32;
+     static const unsigned int MACHINE = RISCV;
+     static const unsigned int MODEL = SiFive_E;
+diff --git a/app/producer_consumer/producer_consumer_traits.h b/app/producer_consumer/producer_consumer_traits.h
+index d1ca6d5..bdd7794 100644
+--- a/app/producer_consumer/producer_consumer_traits.h
++++ b/app/producer_consumer/producer_consumer_traits.h
+@@ -9,7 +9,7 @@ __BEGIN_SYS
+ template<> struct Traits<Build>: public Traits_Tokens
+ {
+     // Basic configuration
+-    static const unsigned int MODE = LIBRARY;
++    static const unsigned int MODE = BUILTIN;
+     static const unsigned int ARCHITECTURE = RV32;
+     static const unsigned int MACHINE = RISCV;
+     static const unsigned int MODEL = SiFive_E;
+diff --git a/app/test_rm1/test_rm1_traits.h b/app/test_rm1/test_rm1_traits.h
+index 16f955f..86e9470 100644
+--- a/app/test_rm1/test_rm1_traits.h
++++ b/app/test_rm1/test_rm1_traits.h
+@@ -9,7 +9,7 @@ __BEGIN_SYS
+ template<> struct Traits<Build>: public Traits_Tokens
+ {
+     // Basic configuration
+-    static const unsigned int MODE = LIBRARY;
++    static const unsigned int MODE = BUILTIN;
+     static const unsigned int ARCHITECTURE = RV32;
+     static const unsigned int MACHINE = RISCV;
+     static const unsigned int MODEL = SiFive_E;
+diff --git a/app/test_rm2/test_rm2_traits.h b/app/test_rm2/test_rm2_traits.h
+index 9bea085..b9053c9 100644
+--- a/app/test_rm2/test_rm2_traits.h
++++ b/app/test_rm2/test_rm2_traits.h
+@@ -9,7 +9,7 @@ __BEGIN_SYS
+ template<> struct Traits<Build>: public Traits_Tokens
+ {
+     // Basic configuration
+-    static const unsigned int MODE = LIBRARY;
++    static const unsigned int MODE = BUILTIN;
+     static const unsigned int ARCHITECTURE = RV32;
+     static const unsigned int MACHINE = RISCV;
+     static const unsigned int MODEL = SiFive_E;
+diff --git a/include/machine/riscv/sifive_e/sifive_e_info.h b/include/machine/riscv/sifive_e/sifive_e_info.h
+index aefc3ef..20fcb78 100644
+--- a/include/machine/riscv/sifive_e/sifive_e_info.h
++++ b/include/machine/riscv/sifive_e/sifive_e_info.h
+@@ -7,6 +7,24 @@
+ 
+ __BEGIN_SYS
+ 
++
++struct App_Load_Map
++{
++private:
++    typedef unsigned int LAddr;
++    typedef unsigned int PAddr;
++    typedef unsigned int Size;
++
++public:
++    LAddr app_entry;
++    Size  app_segments;
++    LAddr app_code;
++    Size  app_code_size;
++    LAddr app_data;
++    LAddr app_stack;
++    LAddr app_heap;
++    Size  app_data_size;
++};
+ struct System_Info
+ {
+ private:
+@@ -33,7 +51,8 @@ public:
+         Size setup_offset;                // Image offsets (-1 => not present)
+         Size init_offset;
+         Size system_offset;
+-        Size application_offset;
++        Size application_offset[8];
++        unsigned int n_apps;
+         Size extras_offset;
+     };
+ 
+@@ -81,17 +100,19 @@ public:
+         Size  sys_data_size;
+         LAddr sys_stack;
+         Size  sys_stack_size;
+-        LAddr app_entry;
+-        Size  app_segments;
+-        LAddr app_code;
+-        Size  app_code_size;
+-        LAddr app_data;
+-        LAddr app_stack;
+-        LAddr app_heap;
+-        Size  app_data_size;
++        App_Load_Map app[8];
++        // LAddr app_entry;
++        // Size  app_segments;
++        // LAddr app_code;
++        // Size  app_code_size;
++        // LAddr app_data;
++        // LAddr app_stack;
++        // LAddr app_heap;
++        // Size  app_data_size;
+         PAddr app_extra;
+         Size  app_extra_size;
+     };
++    
+ 
+ public:
+     Boot_Map bm;
+diff --git a/include/machine/riscv/sifive_e/sifive_e_memory_map.h b/include/machine/riscv/sifive_e/sifive_e_memory_map.h
+index ca90831..f36d8b7 100644
+--- a/include/machine/riscv/sifive_e/sifive_e_memory_map.h
++++ b/include/machine/riscv/sifive_e/sifive_e_memory_map.h
+@@ -31,6 +31,7 @@ struct Memory_Map
+         MIO_TOP         = Traits<Machine>::MIO_TOP,
+         BOOT_STACK      = Traits<Machine>::BOOT_STACK,
+         PAGE_TABLES     = Traits<Machine>::PAGE_TABLES,
++        MMODE_F         = Traits<Machine>::MMODE_F,
+     };
+ 
+     // Logical Address Space
+diff --git a/include/machine/riscv/sifive_e/sifive_e_traits.h b/include/machine/riscv/sifive_e/sifive_e_traits.h
+index 675a232..3313aaa 100644
+--- a/include/machine/riscv/sifive_e/sifive_e_traits.h
++++ b/include/machine/riscv/sifive_e/sifive_e_traits.h
+@@ -32,7 +32,8 @@ template <> struct Traits<Machine>: public Traits<Machine_Common>
+     static const unsigned int VECTOR_TABLE      = NOT_USED;
+     static const unsigned int PAGE_TABLES       = 0x87ffffff + 1 - 16*1024 - ((1024+1)*4*1024); // 0x87BFB000
+     static const unsigned int SYS_INFO          = PAGE_TABLES - 4096; 
+-
++    static const unsigned int MMODE_F           = SYS_INFO - 4096;
++   
+     // Logical Memory Map
+     static const unsigned int BOOT              = NOT_USED;
+     static const unsigned int IMAGE             = NOT_USED;
+diff --git a/include/process.h b/include/process.h
+index 774cb62..0497ec0 100644
+--- a/include/process.h
++++ b/include/process.h
+@@ -122,6 +122,9 @@ protected:
+     Queue * _waiting;
+     Thread * volatile _joining;
+     Queue::Element _link;
++    
++    // !P2:
++    volatile Task * _task;
+ 
+     static volatile unsigned int _thread_count;
+     static Scheduler_Timer * _timer;
+@@ -185,6 +188,7 @@ private:
+     typedef CPU::Log_Addr Log_Addr;
+ 
+ public:
++    static volatile Task * _active;
+     Task(Segment * cs, Segment * ds)
+     : _as (new (SYSTEM) Address_Space), _cs(cs), _ds(ds), _code(_as->attach(_cs, Memory_Map::APP_CODE)), _data(_as->attach(_ds, Memory_Map::APP_DATA)) {
+         db<Task>(TRC) << "Task(as=" << _as << ",cs=" << _cs << ",ds=" << _ds <<  ",code=" << _code << ",data=" << _data << ") => " << this << endl;
+@@ -198,7 +202,13 @@ public:
+     void activate() {
+         CPU::satp((0x1 << 31) | _as->pd() >> 12);
+     }
+-
++    
++    static void activate(volatile Task * task) __attribute__((noinline)){
++        Task::_active = task;
++        CPU::satp((0x1 << 31) | task->_as->pd() >> 12);
++        ASM("sfence.vma");
++    }
++    
+     Address_Space * address_space() const { return _as; }
+ 
+     Segment * code_segment() const { return _cs; }
+@@ -214,6 +224,7 @@ private:
+     Segment * _ds;
+     Log_Addr _code;
+     Log_Addr _data;
++    
+ };
+ 
+ 
+diff --git a/makedefs b/makedefs
+index 69145be..ac7e8f5 100644
+--- a/makedefs
++++ b/makedefs
+@@ -86,6 +86,7 @@ MEM_SIZE                = $(shell $(BIN)/eposcfg MEM_SIZE_KB 2> /dev/null)
+ BOOT_ADDR               = $(shell $(BIN)/eposcfg BOOT 2> /dev/null)
+ SETUP_ADDR              = $(shell $(BIN)/eposcfg SETUP 2> /dev/null)
+ INIT_ADDR               = $(shell $(BIN)/eposcfg INIT 2> /dev/null)
++MMODE_F                 = $(shell $(BIN)/eposcfg MMODE_F 2> /dev/null)
+ SYS_CODE_ADDR           = $(shell $(BIN)/eposcfg SYS_CODE 2> /dev/null)
+ SYS_DATA_ADDR           = $(shell $(BIN)/eposcfg SYS_DATA 2> /dev/null)
+ UUID                    = $(shell cat /proc/sys/kernel/random/uuid | sed 's/-//g')
+@@ -361,8 +362,11 @@ lib%.o: lib%.cc
+ (%.o): %.o
+ 		$(AR) $(ARFLAGS) $@ $^
+ 
++# %.img: %
++# 		$(MKBI) $@ $<
++
+ %.img: %
+-		$(MKBI) $@ $<
++		$(MKBI) $@ hello_usr philosophers_dinner
+ 
+ %.hex: %
+ 		$(OBJCOPY) -I elf32-$(ARCH_ENDIANESS) -O ihex $< $<.tmp
+diff --git a/makefile b/makefile
+index a35fe1f..3e7459c 100644
+--- a/makefile
++++ b/makefile
+@@ -8,9 +8,32 @@ all: FORCE
+ ifndef APPLICATION
+ 		$(foreach app,$(APPLICATIONS),$(MAKE) APPLICATION=$(app) $(PRECLEAN) prebuild_$(app) all1 posbuild_$(app);)
+ else
+-		$(MAKE) all1
++		(cd etc && $(MAKE) APPLICATION=hello_usr)
++		(cd tools && $(MAKE) APPLICATION=hello_usr)
++		(cd src && $(MAKE) APPLICATION=hello_usr)
++		(cd app && $(MAKE) APPLICATION=hello_usr)
++		(cd app && $(MAKE) APPLICATION=hello)
++		(cd img && $(MAKE) APPLICATION=hello_usr)
+ endif
+ 
++dbg: FORCE
++		(cd etc && $(MAKE)   DEBUG=1  APPLICATION=hello_usr)
++		(cd tools && $(MAKE) DEBUG=1  APPLICATION=hello_usr)
++		(cd src && $(MAKE)   DEBUG=1  APPLICATION=hello_usr)
++		(cd app && $(MAKE)   DEBUG=1  APPLICATION=hello_usr)
++		(cd app && $(MAKE)   DEBUG=1  APPLICATION=hello)
++		(cd img && $(MAKE)   DEBUG=1  APPLICATION=hello_usr)
++		(cd img && $(MAKE)   DEBUG=1  APPLICATION=hello_usr debug)
++
++rrrun:
++		(cd etc && $(MAKE) APPLICATION=hello_usr)
++		(cd tools && $(MAKE) APPLICATION=hello_usr)
++		(cd src && $(MAKE) APPLICATION=hello_usr)
++		(cd app && $(MAKE) APPLICATION=hello_usr)
++		(cd app && $(MAKE) APPLICATION=hello)
++		(cd img && $(MAKE) APPLICATION=hello_usr)
++		(cd img && $(MAKE) APPLICATION=hello_usr run1)
++
+ all1: $(SUBDIRS)
+ 
+ $(SUBDIRS): FORCE
+diff --git a/notes/build.txt b/notes/build.txt
+index 784275a..f8445fd 100644
+--- a/notes/build.txt
++++ b/notes/build.txt
+@@ -157,5 +157,24 @@ init global constructors
+ app entry 
+ 
+ 
++
++
++Init:
++rv32_cpu_init.o
++rv32_mmu_init.o
++riscv_ic_init.o
++riscv_machine_init.o
++riscv_timer_init.o
++alarm_init.o
++system_init.o
++thread_init.o
++
++crtbegin_sifive_e.o
++init_first.o
++init_system.o
++crtend_sifive_e.o
++
++
++Reduzir o PAGE_TABLES (vamos usar mais que 544+1 tabelas de pagina?)
+ =======
+         
+\ No newline at end of file
+diff --git a/src/api/thread.cc b/src/api/thread.cc
+index 3d5e6f5..e4a5445 100644
+--- a/src/api/thread.cc
++++ b/src/api/thread.cc
+@@ -12,6 +12,7 @@ __END_UTIL
+ __BEGIN_SYS
+ 
+ volatile unsigned int Thread::_thread_count;
++volatile Task * Task::_active;
+ Scheduler_Timer * Thread::_timer;
+ Scheduler<Thread> Thread::_scheduler;
+ 
+@@ -19,7 +20,8 @@ Scheduler<Thread> Thread::_scheduler;
+ void Thread::constructor_prologue(unsigned int stack_size)
+ {
+     lock();
+-
++    // !P2:
++    _task = Task::_active;
+     _thread_count++;
+     _scheduler.insert(this);
+ 
+@@ -338,6 +340,11 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
+         db<Thread>(TRC) << "Thread::dispatch(prev=" << prev << ",next=" << next << ")" << endl;
+         db<Thread>(INF) << "prev={" << prev << ",ctx=" << *prev->_context << "}" << endl;
+         db<Thread>(INF) << "next={" << next << ",ctx=" << *next->_context << "}" << endl;
++        
++        
++        if(prev->_task != next->_task){
++            Task::activate(next->_task);
++        }
+ 
+         // The non-volatile pointer to volatile pointer to a non-volatile context is correct
+         // and necessary because of context switches, but here, we are locked() and
+diff --git a/src/api/thread_init.cc b/src/api/thread_init.cc
+index 685e3c1..2d3a7a9 100644
+--- a/src/api/thread_init.cc
++++ b/src/api/thread_init.cc
+@@ -22,43 +22,69 @@ void Thread::init()
+     typedef int (Main)();
+ 
+     System_Info * si = System::info();
+-    Main * main;
+-
++    // Main * main;
++    
+     if(Traits<System>::multitask) {
+-        main = reinterpret_cast<Main *>(si->lm.app_entry);
+-        
++        // main = reinterpret_cast<Main *>(si->lm.app[0].app_entry);
+         // Should we store this somewhere?
+         char * bi = reinterpret_cast<char*>(0x80000000);
+-        Segment * code_seg = new (SYSTEM) Segment(64*4096, MMU::Flags::ALL); // we need W permission to load the segment
+-        //!P2: do the ctor of Chunk and load_segment interact well if len=0 segments?
+-        Segment * data_seg = new (SYSTEM) Segment(4096, MMU::Flags::ALL); // UNUSED AS OF NOW
+-        Address_Space * master = new (SYSTEM) Address_Space(MMU::current());
+-        new (SYSTEM) Task(master, code_seg, data_seg);
+-        ASM("sfence.vma");
+-
+-        // Load APP
+-        if(si->lm.has_app) {
+-            ELF * app_elf = reinterpret_cast<ELF *>(&bi[si->bm.application_offset]);
+-            db<Setup>(TRC) << "Setup_SifiveE::load_app()" << endl;
+-            if(app_elf->load_segment(0) < 0) {
+-                db<Setup>(ERR) << "Application code segment was corrupted during SETUP!" << endl;
+-                Machine::panic();
++        
++        for(unsigned i = 0; i < 2; i++){
++            Segment * code_seg = new (SYSTEM) Segment(64*4096, MMU::Flags::ALL); // we need W permission to load the segment
++            //!P2: do the ctor of Chunk and load_segment interact well if len=0 segments?
++            Segment * data_seg = new (SYSTEM) Segment(4096, MMU::Flags::ALL); // UNUSED AS OF NOW
++            Task * app_task =  new (SYSTEM) Task(code_seg, data_seg);
++            db<Setup>(TRC) << "app_task = " << hex << app_task << endl;
++            Task::activate(app_task); //just create another thread constr with task
++            if(si->lm.has_app) {
++                ELF * app_elf = reinterpret_cast<ELF *>(&bi[si->bm.application_offset[i]]);
++                db<Setup>(TRC) << "Setup_SifiveE::load_app()" << endl;
++                if(app_elf->load_segment(0) < 0) {
++                    db<Setup>(ERR) << "Application code segment was corrupted during INIT!" << endl;
++                    Machine::panic();
++                }
++                for(int i = 1; i < app_elf->segments(); i++)
++                    if(app_elf->load_segment(i) < 0) {
++                        db<Setup>(ERR) << "Application data segment was corrupted during INIT!" << endl;
++                        Machine::panic();
++                    }
+             }
+-            // for(int i = 1; i < app_elf->segments(); i++)
+-            //     if(app_elf->load_segment(i) < 0) {
+-            //         db<Setup>(ERR) << "Application data segment was corrupted during SETUP!" << endl;
+-            //         panic();
+-            //     }
++            
++            new (SYSTEM) Thread(Thread::Configuration(Thread::RUNNING, Thread::MAIN), reinterpret_cast<Main *>(si->lm.app[i].app_entry));
+         }
++        
++        
++        // Segment * code_seg = new (SYSTEM) Segment(64*4096, MMU::Flags::ALL); // we need W permission to load the segment
++        // //!P2: do the ctor of Chunk and load_segment interact well if len=0 segments?
++        // Segment * data_seg = new (SYSTEM) Segment(4096, MMU::Flags::ALL); // UNUSED AS OF NOW
++        // Address_Space * master = new (SYSTEM) Address_Space(MMU::current());
++        // Task * app_task =  new (SYSTEM) Task(master, code_seg, data_seg);
++        // Task::activate(app_task);
++        // // ASM("sfence.vma");
++
++        // // Load APP
++        // if(si->lm.has_app) {
++        //     ELF * app_elf = reinterpret_cast<ELF *>(&bi[si->bm.application_offset[0]]);
++        //     db<Setup>(TRC) << "Setup_SifiveE::load_app()" << endl;
++        //     if(app_elf->load_segment(0) < 0) {
++        //         db<Setup>(ERR) << "Application code segment was corrupted during INIT!" << endl;
++        //         Machine::panic();
++        //     }
++        //     for(int i = 1; i < app_elf->segments(); i++)
++        //         if(app_elf->load_segment(i) < 0) {
++        //             db<Setup>(ERR) << "Application data segment was corrupted during INIT!" << endl;
++        //             Machine::panic();
++        //         }
++        // }
+     }
+-    else {
+-        // If EPOS is a library, then adjust the application entry point to __epos_app_entry,
+-        // which will directly call main(). In this case, _init will have already been called,
+-        // before Init_Application to construct MAIN's global objects.
+-        main = reinterpret_cast<Main *>(__epos_app_entry);
+-    }
+-
+-    new (SYSTEM) Thread(Thread::Configuration(Thread::RUNNING, Thread::MAIN), main);
++    // else {
++    //     // If EPOS is a library, then adjust the application entry point to __epos_app_entry,
++    //     // which will directly call main(). In this case, _init will have already been called,
++    //     // before Init_Application to construct MAIN's global objects.
++    //     main = reinterpret_cast<Main *>(__epos_app_entry);
++    // }
++
++    // new (SYSTEM) Thread(Thread::Configuration(Thread::RUNNING, Thread::MAIN), main);
+ 
+     // Idle thread creation does not cause rescheduling (see Thread::constructor_epilogue)
+     new (SYSTEM) Thread(Thread::Configuration(Thread::READY, Thread::IDLE), &Thread::idle);
+diff --git a/src/architecture/rv32/rv32_cpu.cc b/src/architecture/rv32/rv32_cpu.cc
+index 47e8f61..093ad38 100644
+--- a/src/architecture/rv32/rv32_cpu.cc
++++ b/src/architecture/rv32/rv32_cpu.cc
+@@ -91,6 +91,9 @@ void CPU::Context::load() const volatile
+         "       sret                            \n");
+ }
+ 
++// NOTE:
++// during the first time switch context is called for a thread, the stack may be dirty
++// what will set the registers with random values, is this a problem?
+ void CPU::switch_context(Context ** o, Context * n)
+ {   
+     // Push the context into the stack and update "o"
+@@ -127,6 +130,8 @@ void CPU::switch_context(Context ** o, Context * n)
+         "       sw      x31, -120(sp)           \n"     // push sstatus
+         "       addi     sp,      sp,   -120    \n"     // complete the pushes above by adjusting the SP
+         "       sw       sp,    0(a0)           \n");   // update Context * volatile * o
++        
++    
+ 
+     // Set the stack pointer to "n" and pop the context from the stack
+     ASM("       mv       sp,      a1            \n"     // get Context * volatile n into SP
+diff --git a/src/architecture/rv32/rv32_mmu_init.cc b/src/architecture/rv32/rv32_mmu_init.cc
+index aa18175..fcad04e 100644
+--- a/src/architecture/rv32/rv32_mmu_init.cc
++++ b/src/architecture/rv32/rv32_mmu_init.cc
+@@ -20,11 +20,11 @@ void MMU::init()
+     db<Init, MMU>(TRC) << "sys_data= " << si->lm.sys_data << ", begin_free= " << sys_data_end << endl; 
+ 
+     // Worst-Fit guarantees this will work
+-    free(align_page(sys_data_end), pages(Memory_Map::SYS_INFO - align_page(sys_data_end))); // [align_page(&_end), 0x87bfa000]
++    free(align_page(sys_data_end), pages(Memory_Map::MMODE_F - align_page(sys_data_end))); // [align_page(&_end), 0x87bf9000]
+     free(Memory_Map::MEM_TOP + 1 - Traits<Machine>::STACK_SIZE * Traits<Machine>::CPUS, pages(Traits<Machine>::STACK_SIZE * Traits<Machine>::CPUS));
+     
+     // Free init/setup memory
+-    // free(Memory_Map::MEM_BASE, pages(Memory_Map::SYS - Memory_Map::MEM_BASE));
++    free(Memory_Map::MEM_BASE, pages(Memory_Map::SYS - Memory_Map::MEM_BASE));
+ }
+ 
+ __END_SYS
+\ No newline at end of file
+diff --git a/src/machine/riscv/riscv_ic.cc b/src/machine/riscv/riscv_ic.cc
+index f1b5e94..45b0d99 100644
+--- a/src/machine/riscv/riscv_ic.cc
++++ b/src/machine/riscv/riscv_ic.cc
+@@ -59,7 +59,7 @@ void IC::entry()
+         "# Restore context                                              \n"
+         ".restore:                                                      \n"
+         "        lw          x1,   4(sp)                                \n"
+-        "        lw          x2,   8(sp)                                \n"
++        "        lw          x2,   8(sp)                                \n" //?????????????????????????????????????????????????
+         "        lw          x3,  12(sp)                                \n"
+         "        lw          x4,  16(sp)                                \n"
+         "        lw          x5,  20(sp)                                \n"
+diff --git a/src/setup/setup_sifive_e.cc b/src/setup/setup_sifive_e.cc
+index 74d93df..2ffec02 100644
+--- a/src/setup/setup_sifive_e.cc
++++ b/src/setup/setup_sifive_e.cc
+@@ -22,7 +22,7 @@ extern "C"
+ }
+ 
+ // char placeholder[] = "System_Info placeholder. Actual System_Info will be added by mkbi!";
+-char placeholder[] = "System_Info placeholder. Actual System_Info will be added by mkbi!_____________________________________________________________________________________________________________________________________________________________________________________________";
++char placeholder[] = "System_Info placeholder. Actual System_Info will be added by mkbi!_____________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________";
+ System_Info * si;
+ 
+ extern "C" [[gnu::interrupt, gnu::aligned(4)]] void _mmode_forward() {
+@@ -45,6 +45,7 @@ private:
+     // Physical memory map
+     static const unsigned int SYS_INFO = Memory_Map::SYS_INFO;
+     static const unsigned int PAGE_TABLES = Memory_Map::PAGE_TABLES;
++    static const unsigned int MMODE_F = Memory_Map::MMODE_F;
+     static const unsigned int MEM_BASE = Memory_Map::MEM_BASE;
+     static const unsigned int MEM_TOP = Memory_Map::MEM_TOP;
+     
+@@ -73,7 +74,7 @@ void Setup_SifiveE::load_parts()
+         _panic();
+     }
+     memcpy(reinterpret_cast<void *>(SYS_INFO), si, sizeof(System_Info));
+-
++    
+     // Load INIT
+     ELF * ini_elf = reinterpret_cast<ELF *>(&bi[si->bm.init_offset]);
+     ELF * sys_elf = reinterpret_cast<ELF *>(&bi[si->bm.system_offset]);
+@@ -132,7 +133,7 @@ void Setup_SifiveE::build_lm()
+     si->lm.has_stp = (si->bm.setup_offset != -1u);
+     si->lm.has_ini = (si->bm.init_offset != -1u);
+     si->lm.has_sys = (si->bm.system_offset != -1u);
+-    si->lm.has_app = (si->bm.application_offset != -1u);
++    si->lm.has_app = (si->bm.application_offset[0] != -1u);
+     si->lm.has_ext = (si->bm.extras_offset != -1u);
+ 
+     // Check SETUP integrity and get the size of its segments
+@@ -248,31 +249,33 @@ void Setup_SifiveE::build_lm()
+     }
+ 
+     // Check APPLICATION integrity and get the size of its segments
+-    si->lm.app_entry = 0;
+-    si->lm.app_segments = 0;
+-    si->lm.app_code = ~0U;
+-    si->lm.app_code_size = 0;
+-    si->lm.app_data = ~0U;
+-    si->lm.app_data_size = 0;
+-    if(si->lm.has_app) {
+-        ELF * app_elf = reinterpret_cast<ELF *>(&bi[si->bm.application_offset]);
+-        if(!app_elf->valid()) {
+-            db<Setup>(ERR) << "Application ELF image is corrupted!" << endl;
+-            _panic();
+-        }
+-        si->lm.app_entry = app_elf->entry();
+-        si->lm.app_segments = app_elf->segments();
+-        si->lm.app_code = app_elf->segment_address(0);
+-        si->lm.app_code_size = app_elf->segment_size(0);
+-        if(app_elf->segments() > 1) {
+-            for(int i = 1; i < app_elf->segments(); i++) {
+-                if(app_elf->segment_type(i) != PT_LOAD)
+-                    continue;
+-                if(app_elf->segment_address(i) < si->lm.app_data)
+-                    si->lm.app_data = app_elf->segment_address(i);
+-                si->lm.app_data_size += app_elf->segment_size(i);
++    for(unsigned i=0; i < si->bm.n_apps; i++){
++        si->lm.app[i].app_entry = 0;
++        si->lm.app[i].app_segments = 0;
++        si->lm.app[i].app_code = ~0U;
++        si->lm.app[i].app_code_size = 0;
++        si->lm.app[i].app_data = ~0U;
++        si->lm.app[i].app_data_size = 0;
++        if(si->lm.has_app) {
++            ELF * app_elf = reinterpret_cast<ELF *>(&bi[si->bm.application_offset[i]]);
++            if(!app_elf->valid()) {
++                db<Setup>(ERR) << "Application ELF image is corrupted!" << endl;
++                _panic();
+             }
+-        }
++            si->lm.app[i].app_entry = app_elf->entry();
++            si->lm.app[i].app_segments = app_elf->segments();
++            si->lm.app[i].app_code = app_elf->segment_address(0);
++            si->lm.app[i].app_code_size = app_elf->segment_size(0);
++            if(app_elf->segments() > 1) {
++                for(int i = 1; i < app_elf->segments(); i++) {
++                    if(app_elf->segment_type(i) != PT_LOAD)
++                        continue;
++                    if(app_elf->segment_address(i) < si->lm.app[i].app_data)
++                        si->lm.app[i].app_data = app_elf->segment_address(i);
++                    si->lm.app[i].app_data_size += app_elf->segment_size(i);
++                }
++            }
++    }
+         // if(Traits<System>::multiheap) { // Application heap in data segment
+         //     si->lm.app_data_size = MMU::align_page(si->lm.app_data_size);
+         //     si->lm.app_stack = si->lm.app_data + si->lm.app_data_size;
+@@ -379,10 +382,19 @@ void Setup_SifiveE::setup_machine_environment()
+     CPU::mideleg_write(CPU::SSI | CPU::STI | CPU::SEI);
+     CPU::medeleg_write(0xffff);
+ 
++    // Relocate _mmode_forward - 1024 bytes are enough
++    char * src = reinterpret_cast<char *>(&_mmode_forward);
++    char * dst = reinterpret_cast<char *>(MMODE_F);
++    for(int i=0; i < 1024; i++){
++        *dst = *src;
++        src++;
++        dst++;
++    }
++    
+     // All ints received in M-mode are forwarded to S-mode.
+     // The first two bits indicate the mode: Direct or Vectored;
+     // we opted for Direct.
+-    CPU::mtvec((unsigned)&_mmode_forward & 0xfffffffc);
++    CPU::mtvec(MMODE_F & 0xfffffffc);
+     CPU::mepc((unsigned)&setup_supervisor_environment);
+ 
+     ASM("mret");
+diff --git a/tools/eposcc/eposcc b/tools/eposcc/eposcc
+index 3fb68de..093c89b 100644
+--- a/tools/eposcc/eposcc
++++ b/tools/eposcc/eposcc
+@@ -83,8 +83,8 @@ fi
+ LINKER_BUILTIN=$LINKER
+ LINK_FLGS_BUILTIN="-L$LIB -L`$C_COMPILER $C_COMP_FLGS -print-file-name=` -static --section-start $MACH_CODE_NAME=$APP_CODE --section-start $MACH_DATA_NAME=$APP_DATA"
+ LINK_OBJI_BUILTIN="$LIB/crt0_$MMOD.o $LIB/crtbegin_$MMOD.o"
+-LINK_OBJN_BUILTIN="$LIB/application_$MMOD.o $LIB/init_application_$MMOD.o -R$SRC/system/system_$MMOD"
+-LINK_OBJL_BUILTIN="$LIB/crtend_$MMOD.o"
++LINK_OBJN_BUILTIN="$LIB/application_$MMOD.o $LIB/init_application_$MMOD.o $LIB/crtend_$MMOD.o -R$SRC/system/system_$MMOD"
++# LINK_OBJL_BUILTIN=
+ LINK_LIBS_BUILTIN="util_$MMOD gcc"
+ if [ "$SETUP" = "" ] ; then
+ LINK_OBJN_BUILTIN="$LIB/setup_$MMOD.o $LINK_OBJN_BUILTIN"
+diff --git a/tools/eposcfg/eposcfg.cc b/tools/eposcfg/eposcfg.cc
+index ec54b41..b0f48d5 100644
+--- a/tools/eposcfg/eposcfg.cc
++++ b/tools/eposcfg/eposcfg.cc
+@@ -22,7 +22,7 @@ using namespace EPOS::S;
+ using namespace EPOS::S::U;
+ 
+ // Constants
+-const unsigned int TOKENS = 31;
++const unsigned int TOKENS = 32;
+ const unsigned int COMPONENTS = 62;
+ const unsigned int STRING_SIZE = 128;
+ 
+@@ -43,6 +43,7 @@ char tokens[TOKENS][STRING_SIZE] = {
+     "MEM_SIZE_KB",
+     "MIO_BASE",
+     "MIO_TOP",
++    "MMODE_F",
+     "MIO_SIZE",
+     "MIO_SIZE_KB",
+     "BOOT_STACK",
+@@ -205,6 +206,9 @@ void populate_strings()
+ 
+     snprintf(string, STRING_SIZE, "0x%08x", Memory_Map::MEM_TOP);
+     set_token_value("MEM_TOP", string);
++    
++    snprintf(string, STRING_SIZE, "0x%08x", Memory_Map::MMODE_F);
++    set_token_value("MMODE_F", string);
+ 
+     snprintf(string, STRING_SIZE, "0x%08x", Memory_Map::MEM_TOP + 1 - Memory_Map::MEM_BASE);
+     set_token_value("MEM_SIZE", string);
+diff --git a/tools/eposmkbi/eposmkbi.cc b/tools/eposmkbi/eposmkbi.cc
+index 4cedea1..4f4d299 100644
+--- a/tools/eposmkbi/eposmkbi.cc
++++ b/tools/eposmkbi/eposmkbi.cc
+@@ -210,6 +210,7 @@ int main(int argc, char **argv)
+     si.bm.space_x  = CONFIG.space_x;
+     si.bm.space_y  = CONFIG.space_y;
+     si.bm.space_z  = CONFIG.space_z;
++    si.bm.n_apps   = argc-3;
+ 
+     fprintf(out, "\nBoot Map:");
+     fprintf(out, "\n    si.bm.n_cpus %u", si.bm.n_cpus);
+@@ -229,10 +230,14 @@ int main(int argc, char **argv)
+     sprintf(file, "%s/img/setup_%s", argv[optind], CONFIG.mmod);
+     if(file_exist(file)) {
+         //!P2: stp is a raw binary file now; it has no Elf header to be read
++        
++        fprintf(out, "\nIMAGE SIZE NO SETUP_SIZE No PAD = %u", image_size);
+         si.bm.setup_offset = -1;
+         fprintf(out, "    Adding setup \"%s\":", file);
+         image_size += put_file(fd_img, file);
++        fprintf(out, "\nSETUP_SIZE No PAD = %u", image_size);
+         image_size += pad(fd_img, 4*4096 - (image_size % 4096));
++        fprintf(out, "\nSETUP_SIZE = %u", image_size);
+     } else
+         si.bm.setup_offset = -1;
+ 
+@@ -255,23 +260,32 @@ int main(int argc, char **argv)
+     }
+ 
+     // Add application(s) and data
+-    si.bm.application_offset = image_size - boot_size;
++    si.bm.application_offset[0] = image_size - boot_size;
+     fprintf(out, "    Adding application \"%s\":", argv[optind + 2]);
+     image_size += put_file(fd_img, argv[optind + 2]);
+     if((argc - optind) == 3) // single APP
+         si.bm.extras_offset = -1;
+-    else { // multiple APPs or data
+-        si.bm.extras_offset = image_size - boot_size;
+-        struct stat file_stat;
+-        for(int i = optind + 3; i < argc; i++) {
+-            fprintf(out, "    Adding file \"%s\":", argv[i]);
+-            stat(argv[i], &file_stat);
+-            image_size += put_number(fd_img, file_stat.st_size);
++    else{
++        fprintf(out, "HHHHHHHHHHEEEEEEEEEEEEEEEEE        %u        ELLLLLLLLLLLLLLLLLLLLLLLLLLLOOOOOOOOOOOOOOOOOOO\n\n", argc);
++        fprintf(out, "sizeof(System_Info) = %u\n", sizeof(System_Info));
++        for(int i=4; i<argc; i++){
++            si.bm.application_offset[i-3] = image_size - boot_size;
++            fprintf(out, "    Adding application \"%s\":", argv[i]);
+             image_size += put_file(fd_img, argv[i]);
+         }
+-        // Signalize last application by setting its size to 0
+-        image_size += put_number(fd_img, 0);
+     }
++    // else { // multiple APPs or data
++    //     si.bm.extras_offset = image_size - boot_size;
++    //     struct stat file_stat;
++    //     for(int i = optind + 3; i < argc; i++) {
++    //         fprintf(out, "    Adding file \"%s\":", argv[i]);
++    //         stat(argv[i], &file_stat);
++    //         image_size += put_number(fd_img, file_stat.st_size);
++    //         image_size += put_file(fd_img, argv[i]);
++    //     }
++    //     // Signalize last application by setting its size to 0
++    //     image_size += put_number(fd_img, 0);
++    // }
+ 
+     // Add the size of the image to the Boot_Map in System_Info (excluding BOOT)
+     si.bm.img_size = image_size - boot_size;
+@@ -579,7 +593,11 @@ template<typename T> bool add_boot_map(int fd, System_Info * si)
+         return false;
+     if(!put_number(fd, static_cast<T>(si->bm.system_offset)))
+         return false;
+-    if(!put_number(fd, static_cast<T>(si->bm.application_offset)))
++    for(int i=0; i<8; i++){
++        if(!put_number(fd, static_cast<T>(si->bm.application_offset[i])))                 
++            return false;
++    }
++    if(!put_number(fd, static_cast<T>(si->bm.n_apps)))
+         return false;
+     if(!put_number(fd, static_cast<T>(si->bm.extras_offset)))
+         return false;
