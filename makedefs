@@ -180,7 +180,7 @@ riscv_CC_FLAGS          := -Wl, -mno-relax -march='rv32g'
 riscv_AS_FLAGS          :=
 riscv_LD_FLAGS          := --no-relax
 # riscv_EMULATOR			= qemu-system-riscv32 -machine virt -cpu rv32gcsu-v1.10.0 -smp $(CPUS) -m $(MEM_SIZE)k -serial mon:stdio -bios none -nographic -no-reboot -kernel 
-riscv_EMULATOR			= qemu-system-riscv32 -d int -D INTS -machine virt -cpu rv32gcsu-v1.10.0 -smp $(CPUS) -m $(MEM_SIZE)k -serial mon:stdio -bios none -nographic -no-reboot -device loader,force-raw=on,addr=0x80000000,file=
+riscv_EMULATOR			= qemu-system-riscv32 -machine virt -cpu rv32gcsu-v1.10.0 -smp $(CPUS) -m $(MEM_SIZE)k -serial mon:stdio -bios none -nographic -no-reboot -device loader,force-raw=on,addr=0x80000000,file=
 riscv_DEBUGGER          := $(COMP_PREFIX)gdb
 riscv_FLASHER           :=
 riscv_MAGIC             := --nmagic

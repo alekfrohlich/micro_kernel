@@ -38,10 +38,11 @@ init_builtin_$(MMOD): $(SRC)/system/system_$(MMOD) $(OBJS) $(LIBINIT)
 		-R $(SRC)/system/system_$(MMOD) \
 		-l$(LUTIL) -lgcc
 		$(INSTALL) init_application.o init_application_$(MMOD).o
-
+# --section-start .init=$(INIT_ADDR) \
+# 
 init_kernel_$(MMOD): $(SRC)/system/system_$(MMOD) $(OBJS) $(LIBINIT)
 		$(LD) $(LDFLAGS) -L$(CCLIB) --omagic \
-		--section-start .init=$(INIT_ADDR) \
+		--section-start $(MACH_CODE_NAME)=$(INIT_ADDR) \
 		--entry=_init -o init_$(MMOD) \
 		$(LIB)/crtbegin_$(MMOD).o \
 		init_first.o init_system.o \

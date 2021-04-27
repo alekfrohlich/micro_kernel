@@ -3,6 +3,8 @@
 #include <architecture/rv32/rv32_cpu.h>
 #include <system.h>
 
+extern "C" { void _exec(void *); }
+
 __BEGIN_SYS
 
 // Class attributes
@@ -50,7 +52,7 @@ void CPU::Context::save() volatile
 }
 
 // Context load does not verify if interrupts were previously enabled by the Context's constructor
-// We are setting sstatus to SPP_S | SPIE, therefore, interrupts will be enabled only after sret
+// We are setting sstatus to SPP_U | SPIE, therefore, interrupts will be enabled only after sret
 void CPU::Context::load() const volatile
 {
     ASM("       mv      sp, %0                  \n"                     // load the stack pointer with the this pointer
@@ -88,6 +90,7 @@ void CPU::Context::load() const volatile
         "       csrs    sstatus,   gp           \n"     // set sstatus for sret
         "       lw       gp, -116(sp)           \n"     // pop pc
         "       csrw     sepc,     gp           \n"     // move pc to sepc for sret
+        // "       li sp, 0xff900000               \n"     //!P4: set user stack
         "       sret                            \n");
 }
 
@@ -126,7 +129,7 @@ void CPU::switch_context(Context ** o, Context * n)
         "       sw      x29,  -12(sp)           \n"
         "       sw      x30,   -8(sp)           \n"
         "       sw      x31,   -4(sp)           \n"
-        "       csrr    x31,  sstatus           \n"     // get mstatus
+        "       csrr    x31,  sstatus           \n"     // get sstatus
         "       sw      x31, -120(sp)           \n"     // push sstatus
         "       addi     sp,      sp,   -120    \n"     // complete the pushes above by adjusting the SP
         "       sw       sp,    0(a0)           \n");   // update Context * volatile * o
@@ -166,13 +169,31 @@ void CPU::switch_context(Context ** o, Context * n)
         "       lw      x29,  -12(sp)           \n"
         "       lw      x31, -120(sp)           \n"     // pop sstatus
         // As we are not handling an interrupt, we need to manually configure SPP_S to avoid
-        // going to user mode.
-        "       li      x30, 0b1 << 8           \n"
-        "       or      x31, x31, x30           \n"   
-        "       csrw     sstatus, x31           \n"
+        // going to user mode. //!P4: Am I right to think that no S-mode int/exc will be received before Context::load?
+        // "       li      x30, 0b1 << 8           \n"
+        // "       or      x31, x31, x30           \n"   
+        // "       csrw     sstatus, x31           \n"
         "       lw      x30,   -8(sp)           \n"
         "       lw      x31,   -4(sp)           \n"
         "       sret                            \n");
 }
+
+
+void CPU::syscall(void * message){
+    ASM("  ecall  \n");
+}
+
+void CPU::syscalled() {
+    ASM(
+        " addi sp, sp, -12   \n"
+        " sw   a0, 4(sp)    \n"
+        " sw   ra, 8(sp)    \n"
+        " call _exec        \n"
+        " lw   a0, 4(sp)    \n"
+        " lw   ra, 8(sp)    \n"
+        " addi sp, sp,  12   \n"
+    );
+}
+
 
 __END_SYS

@@ -54,7 +54,14 @@ void IC::entry()
         "        csrr       x31, sepc                                   \n"
         "        sw         x31, 132(sp)                                \n"
         "        la          ra, .restore                               \n" // Set LR to restore context before returning
+        "        addi       t0, x0, 9                                   \n" // !P3
+        "        csrr       t1, scause                                  \n" // !P3
+        "        beq        t0, t1, .entry_ecall                        \n" // !P3
         "        j          %0                                          \n"
+        ".entry_ecall:                                                  \n"  // !P3
+        "        addi       x31, x31, 4                                  \n" // !P3
+        "        sw         x31, 132(sp)                                \n"  // !P3
+        "        j          %1                                          \n"  // !P3
         "                                                               \n"
         "# Restore context                                              \n"
         ".restore:                                                      \n"
@@ -94,13 +101,23 @@ void IC::entry()
         "        csrw      sepc, x31                                    \n"
         "        lw         x31, 124(sp)                                \n"
         "        addi        sp, sp,    136                             \n"
-        "        sret                                                   \n" : : "i"(&dispatch));
+        "        sret                                                   \n" : : "i"(&dispatch), "i"(&CPU::syscalled));
 }
 
 void IC::dispatch()
 {
     Interrupt_Id id = int_id();
-
+    
+    Reg e_id = CPU::scause();
+    
+    db<IC>(TRC) << "IC::e_id(i=" << e_id << ")" << endl;
+    
+    // !P3 clear
+    if(e_id == 9) {
+        db<IC>(TRC) << "+++++++++++++++++++++++++++++++++++++++++=" << endl;
+        CPU::syscalled();
+    }
+    
     if((id != INT_SYS_TIMER) || Traits<IC>::hysterically_debugged)
         db<IC>(TRC) << "IC::dispatch(i=" << id << ")" << endl;
 

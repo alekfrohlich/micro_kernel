@@ -35,9 +35,10 @@ public:
         MPIE            = 1 << 7,      // Machine Previous Interrupts Enabled
         MPP             = 3 << 11,     // Machine Previous Privilege=Machine
         MPP_S           = 1 << 11,     // Machine Previous Privilege=Supervisor
-        // SPP             = 3 << 8,     // Supervisor Previous Privilege=Machine
-        SPP_S           = 1 << 8,       // Supervisor Previous Privilege=Supervisor
+        SPP_S           = 1 << 8,      // Supervisor Previous Privilege=Supervisor
+        SPP_U           = 0 << 8,      // Supervisor Previous Privilege=User
         MPRV            = 1 << 17,     // Memory Priviledge
+        SUM             = 1 << 18,     // System can access user pages?
         TVM             = 1 << 20      // Trap Virtual Memory //not allow MMU
     };
 
@@ -72,8 +73,8 @@ public:
     class Context
     {
     public:
-        // Contexts are loaded with mret, which gets pc from mepc and updates some bits of mstatus, that's why _st is initialized with MPIE and MPP
-        Context(const Log_Addr & entry, const Log_Addr & exit): _st(SPIE | SPP_S), _pc(entry), _x1(exit) {
+        // Contexts are loaded with sret, which gets pc from sepc and updates some bits of sstatus, that's why _st is initialized with SPIE and SPP
+        Context(const Log_Addr & entry, const Log_Addr & exit): _st(SPIE | SPP_U), _pc(entry), _x1(exit) {
             if(Traits<Build>::hysterically_debugged || Traits<Thread>::trace_idle) {
                                                                         _x5 =  5;  _x6 =  6;  _x7 =  7;  _x8 =  8;  _x9 =  9;
                 _x10 = 10; _x11 = 11; _x12 = 12; _x13 = 13; _x14 = 14; _x15 = 15; _x16 = 16; _x17 = 17; _x18 = 18; _x19 = 19;
@@ -253,10 +254,7 @@ public:
 
     static void halt() { ASM("wfi"); }
 
-    static unsigned int id() {
-        return tp();
-        // return 0;
-    }
+    static unsigned int id() { return tp(); }
 
     static unsigned int mhartid() {
         int id;
@@ -269,6 +267,9 @@ public:
     static void mstatus(Reg value) {       ASM("csrs mstatus, %0" : : "r"(value) : "cc"); }
     static void mstatus_write(Reg value) { ASM("csrw mstatus, %0" : : "r"(value) : "cc"); }
     static void mstatus_clear(Reg value) { ASM("csrc mstatus, %0" : : "r"(value) : "cc"); }
+
+    static void sstatus(Reg value) {       ASM("csrs sstatus, %0" : : "r"(value) : "cc"); }
+    static void sstatus_write(Reg value) { ASM("csrw sstatus, %0" : : "r"(value) : "cc"); }
 
     static Reg mstatus() {
         Reg value;
@@ -327,8 +328,6 @@ public:
     static void mideleg_write(Reg value) { ASM("csrw mideleg, %0" : : "r"(value) : "cc"); }
     static void medeleg_write(Reg value) { ASM("csrw medeleg, %0" : : "r"(value) : "cc"); }
 
-    static void sstatus_write(Reg value) { ASM("csrw sstatus, %0" : : "r"(value) : "cc"); }
-
     static void sie(Reg value) {       ASM("csrs sie, %0" : : "r"(value) : "cc"); }
     static void sie_write(Reg value) { ASM("csrw sie, %0" : : "r"(value) : "cc"); }
     static void sie_clear(Reg value) { ASM("csrc sie, %0" : : "r"(value) : "cc"); }
@@ -383,7 +382,7 @@ public:
         return sp;
     }
 
-    static int syscall(void * message);
+    static void syscall(void * message);
     static void syscalled();
 
     using CPU_Common::htole64;

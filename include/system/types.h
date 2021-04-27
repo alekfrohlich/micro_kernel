@@ -158,17 +158,17 @@ enum
 {
     FIRST_COMPONENT_ID = 0,
     THREAD_ID = FIRST_COMPONENT_ID,
-    TASK_ID,
-    ACTIVE_ID,
-    ADDRESS_SPACE_ID,
-    SEGMENT_ID,
+    // TASK_ID,
+    // ACTIVE_ID,
+    // ADDRESS_SPACE_ID,
+    // SEGMENT_ID,
     MUTEX_ID,
     SEMAPHORE_ID,
     CONDITION_ID,
     CLOCK_ID,
     ALARM_ID,
     CHRONOMETER_ID,
-    IPC_COMMUNICATOR_ID,
+    // IPC_COMMUNICATOR_ID,
     UTILITY_ID,
     LAST_COMPONENT_ID,
 
@@ -221,11 +221,11 @@ template<> struct Type<IEEE802_15_4> { static const Type_Id ID = NIC_ID; };
 template<> struct Type<Thread> { static const Type_Id ID = THREAD_ID; };
 template<> struct Type<Periodic_Thread> { static const Type_Id ID = THREAD_ID; };
 template<> struct Type<RT_Thread> { static const Type_Id ID = THREAD_ID; };
-template<> struct Type<Active> { static const Type_Id ID = ACTIVE_ID; };
-template<> struct Type<Task> { static const Type_Id ID = TASK_ID; };
+// template<> struct Type<Active> { static const Type_Id ID = ACTIVE_ID; };
+// template<> struct Type<Task> { static const Type_Id ID = TASK_ID; };
 
-template<> struct Type<Address_Space> { static const Type_Id ID = ADDRESS_SPACE_ID; };
-template<> struct Type<Segment> { static const Type_Id ID = SEGMENT_ID; };
+// template<> struct Type<Address_Space> { static const Type_Id ID = ADDRESS_SPACE_ID; };
+// template<> struct Type<Segment> { static const Type_Id ID = SEGMENT_ID; };
 
 template<> struct Type<Mutex> { static const Type_Id ID = MUTEX_ID; };
 template<> struct Type<Semaphore> { static const Type_Id ID = SEMAPHORE_ID; };

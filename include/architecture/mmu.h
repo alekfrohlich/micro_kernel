@@ -49,7 +49,7 @@ public:
             EXEC  = 0x080,
             KCODE = (PRE | EXEC),
             KDATA = (PRE | RW),
-            ALL = (PRE | RW | EXEC),
+            ALL = (PRE | RW | EXEC | USR),
         };
 
     public:

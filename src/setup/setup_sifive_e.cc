@@ -20,6 +20,7 @@ extern "C"
 char placeholder[sizeof(System_Info)] = "System_Info placeholder. Actual System_Info will be added by mkbi!";
 System_Info * si;
 
+//!P4: Kernel Stack
 extern "C" [[gnu::interrupt, gnu::aligned(4)]] void _mmode_forward() {
     Reg id = CPU::mcause();
     if((id & IC::INT_MASK) == CLINT::IRQ_MAC_TIMER) {
@@ -220,6 +221,19 @@ void Setup_SifiveE::build_lm()
                 si->lm.sys_data_size += sys_elf->segment_size(i);
             }
         }
+
+        // if(si->lm.sys_code != SYS_CODE) {
+        //     db<Setup>(ERR) << "OS code segment address (" << reinterpret_cast<void *>(si->lm.sys_code) << ") does not match the machine's memory map (" << reinterpret_cast<void *>(SYS_CODE) << ")!" << endl;
+        //     _panic();
+        // }
+        // if(si->lm.sys_code + si->lm.sys_code_size > si->lm.sys_data) {
+        //     db<Setup>(ERR) << "OS code segment is too large!" << endl;
+        //     _panic();
+        // }
+        // if(si->lm.sys_data != SYS_DATA) {
+        //     db<Setup>(ERR) << "OS data segment address (" << reinterpret_cast<void *>(si->lm.sys_data) << ") does not match the machine's memory map (" << reinterpret_cast<void *>(SYS_DATA) << ")!" << endl;
+        //     _panic();
+        // }
     }
 
     // Check APPLICATION integrity and get the size of its segments
@@ -241,12 +255,13 @@ void Setup_SifiveE::build_lm()
             si->lm.app[i].app_code = app_elf->segment_address(0);
             si->lm.app[i].app_code_size = app_elf->segment_size(0);
             if(app_elf->segments() > 1) {
-                for(int i = 1; i < app_elf->segments(); i++) {
-                    if(app_elf->segment_type(i) != PT_LOAD)
+                for(int j = 1; j < app_elf->segments(); j++) {
+                    if(app_elf->segment_type(j) != PT_LOAD) {
                         continue;
-                    if(app_elf->segment_address(i) < si->lm.app[i].app_data)
-                        si->lm.app[i].app_data = app_elf->segment_address(i);
-                    si->lm.app[i].app_data_size += app_elf->segment_size(i);
+                    }
+                    if(app_elf->segment_address(j) < si->lm.app[i].app_data)
+                        si->lm.app[i].app_data = app_elf->segment_address(j);
+                    si->lm.app[i].app_data_size += app_elf->segment_size(j);
                 }
             }
         }
@@ -275,13 +290,15 @@ void Setup_SifiveE::build_page_tables()
 
 extern "C" char __bss_start;
 extern "C" char _end;
+extern "C" char _edata;
 
 void Setup_SifiveE::clean_bss()
 {
     unsigned * bss_start = reinterpret_cast<unsigned *>(&__bss_start);
     unsigned * bss_end = reinterpret_cast<unsigned *>(&_end);
+    unsigned * edata = reinterpret_cast<unsigned *>(&_edata);
     
-    db<Setup>(TRC) << "bss_start=" << bss_start << ", bss_end=" << bss_end << endl;
+    db<Setup>(TRC) << "bss_start=" << bss_start << ", bss_end=" << bss_end << ", data_end=" << edata << endl;
     for (unsigned * word = bss_start; word < bss_end; word++) {
         unsigned * t = new (word) unsigned;
         *t = 0;
@@ -338,7 +355,6 @@ void Setup_SifiveE::setup_machine_environment()
     CPU::satp(0);
 
     // Forward all ints and excs to S-mode.
-    //!ECALLS: Not yet implemented.
     CPU::mideleg_write(CPU::SSI | CPU::STI | CPU::SEI);
     CPU::medeleg_write(0xffff);
 

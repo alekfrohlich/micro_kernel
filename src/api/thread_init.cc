@@ -23,9 +23,10 @@ void Thread::init()
         char * bi = reinterpret_cast<char*>(Memory_Map::MEM_BASE);
         
         for(unsigned i = 0; i < si->bm.n_apps; i++) {
-             // We need W permission to load the segment
-            Segment * code_seg = new (SYSTEM) Segment(64*4096, MMU::Flags::ALL);
-            Segment * data_seg = new (SYSTEM) Segment(64*4096, MMU::Flags::ALL);
+            // We need W permission to load the segment
+            Segment * code_seg = new (SYSTEM) Segment(si->lm.app[i].app_code_size, MMU::Flags::ALL);
+            // Segment * data_seg = new (SYSTEM) Segment(si->lm.app[i].app_data_size, MMU::Flags::ALL); //!P3
+            Segment * data_seg = new (SYSTEM) Segment(8*1024*1024, MMU::Flags::ALL);
             Task * app_task =  new (SYSTEM) Task(code_seg, data_seg);
             
             db<Setup>(TRC) << "app_task = " << hex << app_task << endl;
@@ -38,8 +39,8 @@ void Thread::init()
                     db<Setup>(ERR) << "Application code segment was corrupted during INIT!" << endl;
                     Machine::panic();
                 }
-                for(int i = 1; i < app_elf->segments(); i++)
-                    if(app_elf->load_segment(i) < 0) {
+                for(int j = 1; j < app_elf->segments(); j++)
+                    if(app_elf->load_segment(j) < 0) {
                         db<Setup>(ERR) << "Application data segment was corrupted during INIT!" << endl;
                         Machine::panic();
                     }

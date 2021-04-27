@@ -43,8 +43,9 @@ template <> struct Traits<Machine>: public Traits<Machine_Common>
 
     static const unsigned int APP_LOW           = 0x88000000;
     static const unsigned int APP_CODE          = 0x88000000;
-    static const unsigned int APP_DATA          = 0xffc00000;
-    static const unsigned int APP_HIGH          = 0x87ffffff;
+    static const unsigned int APP_DATA          = 0xff800000;
+    static const unsigned int APP_HEAP          = 0xffc00000;
+    static const unsigned int APP_HIGH          = 0xffffffff;
 
     static const unsigned int PHY_MEM           = NOT_USED;
     static const unsigned int IO_BASE           = NOT_USED;
@@ -58,7 +59,7 @@ template <> struct Traits<Machine>: public Traits<Machine_Common>
 
     // Default Sizes and Quantities
     static const unsigned int STACK_SIZE        = 16 * 1024;
-    static const unsigned int HEAP_SIZE         = 16 * 1024 * 1024;
+    static const unsigned int HEAP_SIZE         = 4 * 1024 * 1024;
     static const unsigned int MAX_THREADS       = 16;
 
     // Clocks

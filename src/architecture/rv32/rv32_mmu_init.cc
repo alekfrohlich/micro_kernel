@@ -17,7 +17,7 @@ void MMU::init()
     unsigned sys_data_end = si->lm.sys_data + si->lm.sys_data_size + 1;
     MMU::_master = reinterpret_cast<Page_Directory*>(Memory_Map::PAGE_TABLES);
 
-    db<Init, MMU>(TRC) << "sys_data= " << si->lm.sys_data << ", begin_free= " << sys_data_end << endl; 
+    db<Init, MMU>(TRC) << "sys_data= " << hex << si->lm.sys_data << ", begin_free= " << hex << sys_data_end << endl; 
 
     // Worst-Fit guarantees this will work
     free(align_page(sys_data_end), pages(Memory_Map::MMODE_F - align_page(sys_data_end))); // [align_page(&_end), 0x87bf9000]

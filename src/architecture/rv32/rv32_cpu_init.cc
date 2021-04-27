@@ -9,6 +9,9 @@ __BEGIN_SYS
 void CPU::init()
 {
     db<Init, CPU>(TRC) << "CPU::init()" << endl;
+    
+    //!P4: SUM is removed after sret
+    CPU::sstatus(CPU::SUM);
 
     if(CPU::id() == 0) {
         if(Traits<MMU>::enabled)

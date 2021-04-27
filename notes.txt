@@ -1,0 +1,9 @@
+P3.
+
+Reduce PAGE_TABLES
+Reactive tests on load_parts
+
+P4.
+Set SUM bit on mstatus during stup_machine_environment
+Set U bit on Segment flags during thread::init
+Wrap _mmode_forward and relloc both
