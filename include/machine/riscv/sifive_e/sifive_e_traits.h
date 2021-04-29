@@ -21,7 +21,6 @@ template <> struct Traits<Machine>: public Traits<Machine_Common>
     // Boot Image
     static const unsigned int BOOT_LENGTH_MIN   = NOT_USED;
     static const unsigned int BOOT_LENGTH_MAX   = NOT_USED;
-    static const unsigned int BOOT_STACK        = 0x87ffffff;
 
     // Physical Memory
     static const unsigned int MEM_BASE          = 0x80000000;
@@ -29,20 +28,21 @@ template <> struct Traits<Machine>: public Traits<Machine_Common>
     static const unsigned int MIO_BASE          = 0x00000000;
     static const unsigned int MIO_TOP           = 0x100081ff;
 
+    //!P3: Shrink PAGE_TABLES
+    static const unsigned int BOOT_STACK        = MEM_TOP;
     static const unsigned int VECTOR_TABLE      = NOT_USED;
-    static const unsigned int PAGE_TABLES       = 0x87ffffff + 1 - 16*1024 - ((1024+1)*4*1024); // 0x87BFB000
+    static const unsigned int PAGE_TABLES       = MEM_TOP + 1 - 16*1024 - ((1024+1)*4*1024); // 0x87BFB000
     static const unsigned int SYS_INFO          = PAGE_TABLES - 4096; 
     static const unsigned int MMODE_F           = SYS_INFO - 4096; // 0x87BF9000
    
     // Logical Memory Map
     static const unsigned int BOOT              = NOT_USED;
     static const unsigned int IMAGE             = NOT_USED;
-    // static const unsigned int SETUP             = 0x80000000 + 0x78; // This controls whether an ELF file is generated for setup; boot + elf header
-    static const unsigned int SETUP             = 0x80000000;
+    static const unsigned int SETUP             = 0x80000000; // SETUP == NOT_USED ? ELF file is generated for setup : setup is a library
     static const unsigned int INIT              = 0x80200000;
 
     static const unsigned int APP_LOW           = 0x88000000;
-    static const unsigned int APP_CODE          = 0x88000000;
+    static const unsigned int APP_CODE          = APP_LOW;
     static const unsigned int APP_DATA          = 0xff800000;
     static const unsigned int APP_HEAP          = 0xffc00000;
     static const unsigned int APP_HIGH          = 0xffffffff;
@@ -55,7 +55,7 @@ template <> struct Traits<Machine>: public Traits<Machine_Common>
     static const unsigned int SYS_CODE          = SYS;
     static const unsigned int SYS_DATA          = 0x80400000;
     static const unsigned int SYS_HEAP          = NOT_USED;
-    static const unsigned int SYS_STACK         = NOT_USED;
+    static const unsigned int SYS_STACK         = BOOT_STACK;
 
     // Default Sizes and Quantities
     static const unsigned int STACK_SIZE        = 16 * 1024;

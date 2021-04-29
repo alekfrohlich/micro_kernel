@@ -20,68 +20,29 @@ extern "C"
 char placeholder[sizeof(System_Info)] = "System_Info placeholder. Actual System_Info will be added by mkbi!";
 System_Info * si;
 
-//!P4: Kernel Stack
-// extern "C" [[gnu::naked, gnu::aligned(4)]] void _mmode_forward() {
-//     ASM("csrw  mscratch, sp           \n"
-//         "li    sp, 0x87ffd000         \n"
-//         "sw    ra, 4(sp)              \n"
-//         "call  ra, _mmode_forward_2   \n"        
-//         "lw    ra, 4(sp)              \n"
-//         "csrr  sp, mscratch           \n");
-// }
-// extern "C" [[gnu::interrupt, gnu::aligned(4)]] void _mmode_forward_2() {
-    
-//     Reg id = CPU::mcause();
-//     if((id & IC::INT_MASK) == CLINT::IRQ_MAC_TIMER) {
-//         Timer::reset();
-//         CPU::sie(CPU::STI);
-//     }
-//     Reg interrupt_id = 1 << ((id & IC::INT_MASK) - 2);
-//     if(CPU::int_enabled() && (CPU::sie() & (interrupt_id)))
-//         CPU::mip(interrupt_id);
-// }
-
-
-extern "C" [[gnu::naked, gnu::aligned(4)]] void _mmode_forward() {
-    ASM("csrw  mscratch, sp           \n"
-        "li    sp, 0x87ffd000         \n");
-    ASM("addi	sp,sp,-16");
-    ASM("sw	a2,12(sp)");
-    ASM("sw	a3,8(sp)");
-    ASM("sw	a4,4(sp)");
-    ASM("sw	a5,0(sp)");
-        
-    Reg id = CPU::mcause();
-    if((id & IC::INT_MASK) == CLINT::IRQ_MAC_TIMER) {
-        Timer::reset();
-        CPU::sie(CPU::STI);
-    }
-    Reg interrupt_id = 1 << ((id & IC::INT_MASK) - 2);
-    if(CPU::int_enabled() && (CPU::sie() & (interrupt_id)))
-        CPU::mip(interrupt_id);
-    
-    ASM("lw	a2,12(sp)");
-    ASM("lw	a3,8(sp)");
-    ASM("lw	a4,4(sp)");
-    ASM("lw	a5,0(sp)");
-    ASM("addi	sp,sp,16");
-    ASM("csrr  sp, mscratch           \n");
-    ASM("mret");
-
-}
-
 __BEGIN_SYS
 EPOS::S::U::OStream kout, kerr;
 char * bi;
 
 class Setup_SifiveE {
 private:
-    // Physical memory map
-    static const unsigned int SYS_INFO = Memory_Map::SYS_INFO;
-    static const unsigned int PAGE_TABLES = Memory_Map::PAGE_TABLES;
-    static const unsigned int MMODE_F = Memory_Map::MMODE_F;
-    static const unsigned int MEM_BASE = Memory_Map::MEM_BASE;
-    static const unsigned int MEM_TOP = Memory_Map::MEM_TOP;
+    // Physical memory map (decreasing)
+    static const unsigned int MEM_TOP       = Memory_Map::MEM_TOP;
+    static const unsigned int BOOT_STACK    = Memory_Map::BOOT_STACK;
+    static const unsigned int PAGE_TABLES   = Memory_Map::PAGE_TABLES;
+    static const unsigned int SYS_INFO      = Memory_Map::SYS_INFO;
+    static const unsigned int MMODE_F       = Memory_Map::MMODE_F;
+    static const unsigned int MEM_BASE      = Memory_Map::MEM_BASE;
+
+    // Logical memory map (decreasing)
+    static const unsigned int APP_DATA      = Memory_Map::APP_DATA;
+    static const unsigned int APP_CODE      = Memory_Map::APP_CODE;
+
+    static const unsigned int SYS_STACK     = Memory_Map::SYS_STACK;
+    static const unsigned int SYS_DATA      = Memory_Map::SYS_DATA;
+    static const unsigned int SYS_CODE      = Memory_Map::SYS_CODE;
+
+    static const unsigned int INIT          = Memory_Map::INIT;
     
     typedef CPU::Reg Reg;
     typedef MMU::RV32_Flags RV32_Flags;
@@ -100,8 +61,39 @@ public:
     static void load_parts();
 };
 
+extern "C" [[gnu::naked, gnu::aligned(4)]] void _mmode_forward() {
+    // Change $sp to system stack and save registers that will be used
+    ASM("   csrw    mscratch, sp        \n"
+        "   li      sp, %0              \n"
+        "   addi	sp, sp, -16         \n"
+        "   sw	    a2, 12(sp)          \n"
+        "   sw	    a3, 8(sp)           \n"
+        "   sw	    a4, 4(sp)           \n"
+        "   sw	    a5, 0(sp)           \n" : : "i"(Memory_Map::BOOT_STACK));
+        
+    Reg id = CPU::mcause();
+    if((id & IC::INT_MASK) == CLINT::IRQ_MAC_TIMER) {
+        Timer::reset();
+        CPU::sie(CPU::STI);
+    }
+    Reg interrupt_id = 1 << ((id & IC::INT_MASK) - 2);
+    if(CPU::int_enabled() && (CPU::sie() & (interrupt_id)))
+        CPU::mip(interrupt_id);
+    
+    // Restore context
+    ASM("   lw	    a2, 12(sp)          \n"
+        "   lw	    a3, 8(sp)           \n"
+        "   lw	    a4, 4(sp)           \n"
+        "   lw	    a5, 0(sp)           \n"
+        "   addi	sp, sp, 16          \n"
+        "   csrr    sp, mscratch        \n"
+        "   mret                        \n");
+}
+
 void Setup_SifiveE::load_parts()
 {
+    db<Setup>(TRC) << "load_parts" << endl;
+
     // Relocate System_Info
     if(sizeof(System_Info) > sizeof(Page)) {
         db<Setup>(ERR) << "System_Info is bigger than a page (" << sizeof(System_Info) << ")!" << endl;
@@ -109,10 +101,10 @@ void Setup_SifiveE::load_parts()
     }
     memcpy(reinterpret_cast<void *>(SYS_INFO), si, sizeof(System_Info));
     
-    // Load INIT
     ELF * ini_elf = reinterpret_cast<ELF *>(&bi[si->bm.init_offset]);
     ELF * sys_elf = reinterpret_cast<ELF *>(&bi[si->bm.system_offset]);
     
+    // Load INIT
     if(si->lm.has_ini) {
         db<Setup>(TRC) << "Setup_SifiveE::load_init()" << endl;
         if(ini_elf->load_segment(0) < 0) {
@@ -126,11 +118,6 @@ void Setup_SifiveE::load_parts()
                 _panic();
             }
     }
-    
-    if((long unsigned int)ini_elf->segment_size(0) > sys_elf->segment_address(0) - ini_elf->segment_address(0)) {
-        db<Setup>(ERR) << "init is larger than its reserved memory" << endl;
-        _panic();
-    } 
     db<Setup>(TRC) << "init has " << hex << sys_elf->segment_address(0) - ini_elf->segment_address(0) - ini_elf->segment_size(0) << " unused bytes of memory" << endl;
     
     // Load SYSTEM
@@ -146,23 +133,15 @@ void Setup_SifiveE::load_parts()
                 _panic();
             }
     }
-    
-    if((long unsigned int)sys_elf->segment_size(0) > sys_elf->segment_address(1) - sys_elf->segment_address(0)) {
-        db<Setup>(ERR) << "sys code is larger than its reserved memory" << endl;
-        _panic();
-    } 
     db<Setup>(TRC) << "sys code has " << hex << sys_elf->segment_address(1) - sys_elf->segment_address(0) - sys_elf->segment_size(0) << " unused bytes of memory" << endl;
-    
-    if((long unsigned int)ini_elf->segment_size(1) > sys_elf->segment_address(1) + 0x00100000 - sys_elf->segment_address(1)) {
-        db<Setup>(ERR) << "init is larger than its reserved memory" << endl;
-        _panic();
-    } 
-    db<Setup>(TRC) << "sys data has " << hex << sys_elf->segment_address(1) + 0x00100000 - sys_elf->segment_address(1) - ini_elf->segment_size(1) << " unused bytes of memory" << endl;
+    db<Setup>(TRC) << "sys data has " << hex << 0x00100000 - sys_elf->segment_size(1) << " unused bytes of memory" << endl;
 }
 
 
 void Setup_SifiveE::build_lm()
 {
+    db<Setup>(TRC) << "build_lm()" << endl;
+
     // Get boot image structure
     si->lm.has_stp = (si->bm.setup_offset != -1u);
     si->lm.has_ini = (si->bm.init_offset != -1u);
@@ -170,36 +149,14 @@ void Setup_SifiveE::build_lm()
     si->lm.has_app = (si->bm.application_offset[0] != -1u);
     si->lm.has_ext = (si->bm.extras_offset != -1u);
 
-    // Check SETUP integrity and get the size of its segments
+    bi = reinterpret_cast<char *>(Traits<Machine>::MEM_BASE); // bi is loaded at MEM_BASE
+    // Setup won't be loaded since it is already present on binary form at the boot image
     si->lm.stp_entry = 0;
     si->lm.stp_segments = 0;
     si->lm.stp_code = ~0U;
     si->lm.stp_code_size = 0;
     si->lm.stp_data = ~0U;
     si->lm.stp_data_size = 0;
-
-    bi = reinterpret_cast<char *>(Traits<Machine>::MEM_BASE); // bi is loaded at MEM_BASE
-    if(si->lm.has_stp) {
-        ELF * stp_elf = reinterpret_cast<ELF *>(&bi[si->bm.setup_offset]);
-        if(!stp_elf->valid()) {
-            db<Setup>(ERR) << "SETUP ELF image is corrupted!" << endl;
-            _panic();
-        }
-
-        si->lm.stp_entry = stp_elf->entry();
-        si->lm.stp_segments = stp_elf->segments();
-        si->lm.stp_code = stp_elf->segment_address(0);
-        si->lm.stp_code_size = stp_elf->segment_size(0);
-        if(stp_elf->segments() > 1) {
-            for(int i = 1; i < stp_elf->segments(); i++) {
-                if(stp_elf->segment_type(i) != PT_LOAD)
-                    continue;
-                if(stp_elf->segment_address(i) < si->lm.stp_data)
-                    si->lm.stp_data = stp_elf->segment_address(i);
-                si->lm.stp_data_size += stp_elf->segment_size(i);
-            }
-        }
-    }
 
     // Check INIT integrity and get the size of its segments
     si->lm.ini_entry = 0;
@@ -228,6 +185,14 @@ void Setup_SifiveE::build_lm()
                 si->lm.ini_data_size += ini_elf->segment_size(i);
             }
         }
+        if(si->lm.ini_code != INIT) {
+            db<Setup>(ERR) << "Init code segment address (" << reinterpret_cast<void *>(si->lm.ini_code) << ") does not match the machine's memory map (" << reinterpret_cast<void *>(INIT) << ")!" << endl;
+            _panic();
+        }
+        if(si->lm.ini_code + si->lm.ini_code_size > SYS_CODE) {
+            db<Setup>(ERR) << "Init code segment is too large!" << endl;
+            _panic();
+        }
     }
 
     // Check SYSTEM integrity and get the size of its segments
@@ -237,8 +202,8 @@ void Setup_SifiveE::build_lm()
     si->lm.sys_code_size = 0;
     si->lm.sys_data = ~0U;
     si->lm.sys_data_size = 0;
-    // si->lm.sys_stack = SYS_STACK;
-    // si->lm.sys_stack_size = Traits<System>::STACK_SIZE * si->bm.n_cpus;
+    si->lm.sys_stack = SYS_STACK;
+    si->lm.sys_stack_size = Traits<System>::STACK_SIZE * si->bm.n_cpus;
     if(si->lm.has_sys) {
         ELF * sys_elf = reinterpret_cast<ELF *>(&bi[si->bm.system_offset]);
         if(!sys_elf->valid()) {
@@ -260,18 +225,22 @@ void Setup_SifiveE::build_lm()
             }
         }
 
-        // if(si->lm.sys_code != SYS_CODE) {
-        //     db<Setup>(ERR) << "OS code segment address (" << reinterpret_cast<void *>(si->lm.sys_code) << ") does not match the machine's memory map (" << reinterpret_cast<void *>(SYS_CODE) << ")!" << endl;
-        //     _panic();
-        // }
-        // if(si->lm.sys_code + si->lm.sys_code_size > si->lm.sys_data) {
-        //     db<Setup>(ERR) << "OS code segment is too large!" << endl;
-        //     _panic();
-        // }
-        // if(si->lm.sys_data != SYS_DATA) {
-        //     db<Setup>(ERR) << "OS data segment address (" << reinterpret_cast<void *>(si->lm.sys_data) << ") does not match the machine's memory map (" << reinterpret_cast<void *>(SYS_DATA) << ")!" << endl;
-        //     _panic();
-        // }
+        if(si->lm.sys_code != SYS_CODE) {
+            db<Setup>(ERR) << "OS code segment address (" << reinterpret_cast<void *>(si->lm.sys_code) << ") does not match the machine's memory map (" << reinterpret_cast<void *>(SYS_CODE) << ")!" << endl;
+            _panic();
+        }
+        if(si->lm.sys_code + si->lm.sys_code_size > si->lm.sys_data) {
+            db<Setup>(ERR) << "OS code segment is too large!" << endl;
+            _panic();
+        }
+        if(si->lm.sys_data + si->lm.sys_data_size > 0x100000) {
+            db<Setup>(ERR) << "OS code data is larger than 1Mb!" << endl;
+            _panic();
+        }
+        if(si->lm.sys_data != SYS_DATA) {
+            db<Setup>(ERR) << "OS data segment address (" << reinterpret_cast<void *>(si->lm.sys_data) << ") does not match the machine's memory map (" << reinterpret_cast<void *>(SYS_DATA) << ")!" << endl;
+            _panic();
+        }
     }
 
     // Check APPLICATION integrity and get the size of its segments
@@ -302,12 +271,25 @@ void Setup_SifiveE::build_lm()
                     si->lm.app[i].app_data_size += app_elf->segment_size(j);
                 }
             }
+            if(si->lm.app[i].app_code != APP_CODE) {
+                db<Setup>(ERR) << "App code segment address (" << reinterpret_cast<void *>(si->lm.app[i].app_code) << ") does not match the machine's memory map (" << reinterpret_cast<void *>(APP_CODE) << ")!" << endl;
+                _panic();
+            }
+            if(si->lm.app[i].app_code + si->lm.app[i].app_code_size > si->lm.app[i].app_data) {
+                db<Setup>(ERR) << "App code segment is too large!" << endl;
+                _panic();
+            }
+            if(si->lm.app[i].app_data != APP_DATA) {
+                db<Setup>(ERR) << "App data segment address (" << reinterpret_cast<void *>(si->lm.app[i].app_data) << ") does not match the machine's memory map (" << reinterpret_cast<void *>(APP_DATA) << ")!" << endl;
+                _panic();
+            }
         }
     }
 }
 
 void Setup_SifiveE::build_page_tables()
 {
+    db<Setup>(TRC) << "build_page_tables()" << endl;
     // Address of the Directory
     Reg page_tables = PAGE_TABLES;
     MMU::_master = new ( (void *) page_tables ) Page_Directory();
@@ -332,6 +314,7 @@ extern "C" char _edata;
 
 void Setup_SifiveE::clean_bss()
 {
+    db<Setup>(TRC) << "clean_bss()" << endl;
     unsigned * bss_start = reinterpret_cast<unsigned *>(&__bss_start);
     unsigned * bss_end = reinterpret_cast<unsigned *>(&_end);
     unsigned * edata = reinterpret_cast<unsigned *>(&_edata);
@@ -346,6 +329,7 @@ void Setup_SifiveE::clean_bss()
 void Setup_SifiveE::setup_supervisor_environment()
 {
     Display::init();
+    db<Setup>(TRC) << "setup_supervisor_environment()" << endl;
     
     // We must clean the bss before setting MMU::_master
     clean_bss();
