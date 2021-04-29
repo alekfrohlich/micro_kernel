@@ -50,6 +50,7 @@ public:
             KCODE = (PRE | EXEC),
             KDATA = (PRE | RW),
             ALL = (PRE | RW | EXEC | USR),
+            UDATA = (PRE | RW | USR),
         };
 
     public:

@@ -25,7 +25,13 @@ void Thread::constructor_prologue(unsigned int stack_size)
     _thread_count++;
     _scheduler.insert(this);
 
-    _stack = new (SYSTEM) char[stack_size];
+    // _stack = new (SYSTEM) char[stack_size];
+    // !P3:
+    if(this->_link.rank() == MAIN) {
+        _stack =  reinterpret_cast<char *>(Traits<Application>::APP_HEAP - 4 - (16 * 1024)); 
+    } else{
+        _stack = reinterpret_cast<char *>(_task->_heap->alloc(stack_size));
+    }
 }
 
 

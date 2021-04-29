@@ -17,7 +17,7 @@ private:
     static const unsigned int STACK_SIZE = Traits<Application>::STACK_SIZE;
 
 public:
-    [[gnu::naked]] Init_Application() {
+    Init_Application() {
         //!P4: temporary
         // ASM("li sp, 0xff9");
         // ASM("slli sp, 20");
@@ -33,6 +33,7 @@ public:
         //         System::_heap->free(MMU::alloc(frames), frames * sizeof(MMU::Page));
         // }
         Application::_heap = new (&Application::_preheap[0]) Heap(APP_HEAP, HEAP_SIZE);
+        
         db<Init>(INF) << "done!" << endl;
     }
 };

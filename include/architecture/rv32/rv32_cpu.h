@@ -320,7 +320,13 @@ public:
         ASM("csrr %0, scause" : "=r"(value) : : );
         return value;
     }
-
+    
+    static Reg satp() {
+        Reg value;
+        ASM("csrr %0, satp" : "=r"(value) : : );
+        return value;
+    }
+    
     //================ supervisor mode
     
     static void satp(Reg value) {       ASM("csrw satp, %0" : : "r"(value) : "cc"); }

@@ -21,7 +21,36 @@ char placeholder[sizeof(System_Info)] = "System_Info placeholder. Actual System_
 System_Info * si;
 
 //!P4: Kernel Stack
-extern "C" [[gnu::interrupt, gnu::aligned(4)]] void _mmode_forward() {
+// extern "C" [[gnu::naked, gnu::aligned(4)]] void _mmode_forward() {
+//     ASM("csrw  mscratch, sp           \n"
+//         "li    sp, 0x87ffd000         \n"
+//         "sw    ra, 4(sp)              \n"
+//         "call  ra, _mmode_forward_2   \n"        
+//         "lw    ra, 4(sp)              \n"
+//         "csrr  sp, mscratch           \n");
+// }
+// extern "C" [[gnu::interrupt, gnu::aligned(4)]] void _mmode_forward_2() {
+    
+//     Reg id = CPU::mcause();
+//     if((id & IC::INT_MASK) == CLINT::IRQ_MAC_TIMER) {
+//         Timer::reset();
+//         CPU::sie(CPU::STI);
+//     }
+//     Reg interrupt_id = 1 << ((id & IC::INT_MASK) - 2);
+//     if(CPU::int_enabled() && (CPU::sie() & (interrupt_id)))
+//         CPU::mip(interrupt_id);
+// }
+
+
+extern "C" [[gnu::naked, gnu::aligned(4)]] void _mmode_forward() {
+    ASM("csrw  mscratch, sp           \n"
+        "li    sp, 0x87ffd000         \n");
+    ASM("addi	sp,sp,-16");
+    ASM("sw	a2,12(sp)");
+    ASM("sw	a3,8(sp)");
+    ASM("sw	a4,4(sp)");
+    ASM("sw	a5,0(sp)");
+        
     Reg id = CPU::mcause();
     if((id & IC::INT_MASK) == CLINT::IRQ_MAC_TIMER) {
         Timer::reset();
@@ -30,6 +59,15 @@ extern "C" [[gnu::interrupt, gnu::aligned(4)]] void _mmode_forward() {
     Reg interrupt_id = 1 << ((id & IC::INT_MASK) - 2);
     if(CPU::int_enabled() && (CPU::sie() & (interrupt_id)))
         CPU::mip(interrupt_id);
+    
+    ASM("lw	a2,12(sp)");
+    ASM("lw	a3,8(sp)");
+    ASM("lw	a4,4(sp)");
+    ASM("lw	a5,0(sp)");
+    ASM("addi	sp,sp,16");
+    ASM("csrr  sp, mscratch           \n");
+    ASM("mret");
+
 }
 
 __BEGIN_SYS
@@ -321,6 +359,7 @@ void Setup_SifiveE::setup_supervisor_environment()
 
     // forward everything
     CPU::satp((0x1 << 31) | (PAGE_TABLES >> 12));
+    db<Setup>(TRC) << "PAGE_TABLES >> 12 = " << hex << (PAGE_TABLES >> 12) << endl;
     
     CPU::sepc_write(si->lm.ini_entry);
 

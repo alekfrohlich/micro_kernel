@@ -54,7 +54,7 @@ void IC::entry()
         "        csrr       x31, sepc                                   \n"
         "        sw         x31, 132(sp)                                \n"
         "        la          ra, .restore                               \n" // Set LR to restore context before returning
-        "        addi       t0, x0, 9                                   \n" // !P3
+        "        addi       t0, x0, 8                                   \n" // !P3
         "        csrr       t1, scause                                  \n" // !P3
         "        beq        t0, t1, .entry_ecall                        \n" // !P3
         "        j          %0                                          \n"

@@ -38,6 +38,7 @@ public:
             KDATA    = VALID | READ | WRITE,
             UCODE    = VALID | READ | EXEC | USR,
             UDATA    = VALID | READ | WRITE | USR,
+            UALL    = VALID | READ | WRITE | EXEC | USR,
         };
 
         RV32_Flags() {}
@@ -61,10 +62,10 @@ public:
     friend class Setup_SifiveE;
 
     private:
-        typedef unsigned int PTE;
-        PTE ptes[1024];
 
     public:
+        typedef unsigned int PTE;
+        PTE ptes[1024];
         Page_Table() {}
 
         PTE & operator[](unsigned int i) { return ptes[i]; }
@@ -88,6 +89,26 @@ public:
                 pte += ((i) << 10);
                 pte = pte | flags;
                 ptes[i] = pte;
+            }
+        }
+        
+        void print_pt(){
+            for(int i=512;i<1024;i++){
+                unsigned int ppn = ptes[i] >> 10;
+                unsigned int rsw = (ptes[i] << 22) >> 30;
+                unsigned int d = (ptes[i] << 24) >> 31;
+                unsigned int a = (ptes[i] << 25) >> 31;
+                unsigned int g = (ptes[i] << 26) >> 31;
+                unsigned int u = (ptes[i] << 27) >> 31;
+                unsigned int x = (ptes[i] << 28) >> 31;
+                unsigned int w = (ptes[i] << 29) >> 31;
+                unsigned int r = (ptes[i] << 30) >> 31;
+                unsigned int v = (ptes[i] << 31) >> 31;
+                db<MMU>(TRC) << "i = " << i << hex << "ppn = " << ppn <<" rsw =" << rsw;
+                db<MMU>(TRC) << " d=" << d << " a=" << a;
+                db<MMU>(TRC) << " g=" << g << " u=" << u;
+                db<MMU>(TRC) << " x=" << x << " w=" << w;
+                db<MMU>(TRC) << " r=" << r << " v=" << v << endl;
             }
         }
     };
@@ -210,6 +231,7 @@ public:
     static Phy_Addr calloc(unsigned int frames = 1) {
         Phy_Addr phy = alloc(frames);
         memset(phy2log(phy), 0, frames*PAGE_SIZE);
+        db<MMU>(TRC) << "-----------CALLOC:  " << hex << phy << endl;
         return phy;
     }
 

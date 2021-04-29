@@ -32,7 +32,7 @@ template <> struct Traits<Machine>: public Traits<Machine_Common>
     static const unsigned int VECTOR_TABLE      = NOT_USED;
     static const unsigned int PAGE_TABLES       = 0x87ffffff + 1 - 16*1024 - ((1024+1)*4*1024); // 0x87BFB000
     static const unsigned int SYS_INFO          = PAGE_TABLES - 4096; 
-    static const unsigned int MMODE_F           = SYS_INFO - 4096;
+    static const unsigned int MMODE_F           = SYS_INFO - 4096; // 0x87BF9000
    
     // Logical Memory Map
     static const unsigned int BOOT              = NOT_USED;

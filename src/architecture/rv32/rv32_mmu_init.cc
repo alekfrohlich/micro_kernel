@@ -21,7 +21,7 @@ void MMU::init()
 
     // Worst-Fit guarantees this will work
     free(align_page(sys_data_end), pages(Memory_Map::MMODE_F - align_page(sys_data_end))); // [align_page(&_end), 0x87bf9000]
-    free(Memory_Map::MEM_TOP + 1 - Traits<Machine>::STACK_SIZE * Traits<Machine>::CPUS, pages(Traits<Machine>::STACK_SIZE * Traits<Machine>::CPUS));
+    // free(Memory_Map::MEM_TOP + 1 - Traits<Machine>::STACK_SIZE * Traits<Machine>::CPUS, pages(Traits<Machine>::STACK_SIZE * Traits<Machine>::CPUS));
     
     // Free init/setup memory
     free(Memory_Map::MEM_BASE, pages(Memory_Map::SYS - Memory_Map::MEM_BASE));
