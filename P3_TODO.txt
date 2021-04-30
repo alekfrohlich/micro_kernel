@@ -1,7 +1,4 @@
 P3.
-
-Reduce PAGE_TABLES
-Reactive tests on load_parts
 Detach unmap
 philosophers
 all syscalls

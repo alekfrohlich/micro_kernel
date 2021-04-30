@@ -10,7 +10,6 @@ __BEGIN_SYS
 class Machine_Common;
 template<> struct Traits<Machine_Common>: public Traits<Build> {};
 
-//!ECALL: When will we allocate a kernel stack? We may repurpose boot_stack by not freeing it.
 template <> struct Traits<Machine>: public Traits<Machine_Common>
 {
     static const bool cpus_use_local_timer      = false;
@@ -31,9 +30,9 @@ template <> struct Traits<Machine>: public Traits<Machine_Common>
     //!P3: Shrink PAGE_TABLES
     static const unsigned int BOOT_STACK        = MEM_TOP;
     static const unsigned int VECTOR_TABLE      = NOT_USED;
-    static const unsigned int PAGE_TABLES       = MEM_TOP + 1 - 16*1024 - ((1024+1)*4*1024); // 0x87BFB000
+    static const unsigned int PAGE_TABLES       = MEM_TOP + 1 - 16*1024 - ((544+1)*4*1024);
     static const unsigned int SYS_INFO          = PAGE_TABLES - 4096; 
-    static const unsigned int MMODE_F           = SYS_INFO - 4096; // 0x87BF9000
+    static const unsigned int MMODE_F           = SYS_INFO - 4096;
    
     // Logical Memory Map
     static const unsigned int BOOT              = NOT_USED;

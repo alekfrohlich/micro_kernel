@@ -10,10 +10,12 @@ void Machine::panic()
     CPU::int_disable();
     if(Traits<Display>::enabled)
         Display::puts("PANIC!\n");
-    if(Traits<System>::reboot)
-        reboot();
-    else
-        poweroff();
+    ASM("wfi");
+    while (true) {};
+    // if(Traits<System>::reboot)
+    //     reboot();
+    // else
+    //     poweroff();
 }
 
 __END_SYS

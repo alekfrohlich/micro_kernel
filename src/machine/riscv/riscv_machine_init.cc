@@ -7,6 +7,8 @@ __BEGIN_SYS
 void Machine::pre_init(System_Info * si)
 {
     CPU::stvec_write((unsigned)&IC::entry & 0xfffffffc);
+    // Allow system to access user pages
+    CPU::sstatus(CPU::SUM);
     IC::init();
 }
 

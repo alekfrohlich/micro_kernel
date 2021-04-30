@@ -54,14 +54,14 @@ void IC::entry()
         "        csrr       x31, sepc                                   \n"
         "        sw         x31, 132(sp)                                \n"
         "        la          ra, .restore                               \n" // Set LR to restore context before returning
-        "        addi       t0, x0, 8                                   \n" // !P3
-        "        csrr       t1, scause                                  \n" // !P3
-        "        beq        t0, t1, .entry_ecall                        \n" // !P3
+        "        addi       t0, x0, 8                                   \n" // Is it an ecall from U-mode?
+        "        csrr       t1, scause                                  \n"
+        "        beq        t0, t1, .entry_ecall                        \n"
         "        j          %0                                          \n"
-        ".entry_ecall:                                                  \n"  // !P3
-        "        addi       x31, x31, 4                                  \n" // !P3
-        "        sw         x31, 132(sp)                                \n"  // !P3
-        "        j          %1                                          \n"  // !P3
+        ".entry_ecall:                                                  \n"
+        "        addi       x31, x31, 4                                 \n"  // We must return to PC+4
+        "        sw         x31, 132(sp)                                \n"
+        "        j          %1                                          \n"
         "                                                               \n"
         "# Restore context                                              \n"
         ".restore:                                                      \n"
@@ -107,17 +107,7 @@ void IC::entry()
 void IC::dispatch()
 {
     Interrupt_Id id = int_id();
-    
-    Reg e_id = CPU::scause();
-    
-    db<IC>(TRC) << "IC::e_id(i=" << e_id << ")" << endl;
-    
-    // !P3 clear
-    if(e_id == 9) {
-        db<IC>(TRC) << "+++++++++++++++++++++++++++++++++++++++++=" << endl;
-        CPU::syscalled();
-    }
-    
+        
     if((id != INT_SYS_TIMER) || Traits<IC>::hysterically_debugged)
         db<IC>(TRC) << "IC::dispatch(i=" << id << ")" << endl;
 
@@ -180,8 +170,11 @@ void IC::exception(Interrupt_Id id)
             break;
     }
 
-    if(Traits<Build>::hysterically_debugged)
+    if(Traits<Build>::hysterically_debugged) {
+        // ERR wasn't working; so force halt
         db<IC>(ERR) << endl;
+        Machine::panic();
+    }
     else
         db<IC>(WRN) << endl;
 }

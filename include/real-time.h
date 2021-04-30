@@ -65,7 +65,6 @@ public:
     //     unsigned int times;
     // };
 
-//!SMODE: 
 struct Configuration {
         Configuration(const Microsecond & p, const unsigned int n = INFINITE, const State & s = READY, const Criterion & c = HIGH, unsigned int ss = STACK_SIZE)
         : period(p), times(n), state(s), criterion(p, c), stack_size(ss) {}

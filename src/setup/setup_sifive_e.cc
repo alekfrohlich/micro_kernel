@@ -233,8 +233,8 @@ void Setup_SifiveE::build_lm()
             db<Setup>(ERR) << "OS code segment is too large!" << endl;
             _panic();
         }
-        if(si->lm.sys_data + si->lm.sys_data_size > 0x100000) {
-            db<Setup>(ERR) << "OS code data is larger than 1Mb!" << endl;
+        if(si->lm.sys_data_size > 0x100000) {
+            db<Setup>(ERR) << "OS data segment is larger than 1Mb!" << endl;
             _panic();
         }
         if(si->lm.sys_data != SYS_DATA) {
@@ -333,6 +333,12 @@ void Setup_SifiveE::setup_supervisor_environment()
     
     // We must clean the bss before setting MMU::_master
     clean_bss();
+
+    //!NOTE: We are not calling the global ctors of Setup; Display::init() is called manually
+    // The last time we've checked, the ctors were the following:
+    // 0x80001718 _print (why is this even here?)
+    // 0x80001740 EPOS::S::Serial_Display::_engine
+    // 0x80001894 EPOS::S::MMU::_free
 
     // This creates and configures the kernel page tables (which map logical==physical)
     build_page_tables();

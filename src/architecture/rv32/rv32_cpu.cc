@@ -94,9 +94,6 @@ void CPU::Context::load() const volatile
         "       sret                            \n");
 }
 
-// NOTE:
-// during the first time switch context is called for a thread, the stack may be dirty
-// what will set the registers with random values, is this a problem?
 void CPU::switch_context(Context ** o, Context * n)
 {   
     // Push the context into the stack and update "o"
