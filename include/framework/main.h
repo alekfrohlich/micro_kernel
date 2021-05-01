@@ -68,6 +68,8 @@ BIND(Chronometer);
 BIND(Alarm);
 BIND(Delay);
 
+BIND(Display);
+
 // EXPORT(IPC);
 
 template<typename Channel, bool connectionless = Channel::connectionless>

@@ -69,7 +69,7 @@ extern "C" [[gnu::naked, gnu::aligned(4)]] void _mmode_forward() {
         "   sw	    a2, 12(sp)          \n"
         "   sw	    a3, 8(sp)           \n"
         "   sw	    a4, 4(sp)           \n"
-        "   sw	    a5, 0(sp)           \n" : : "i"(Memory_Map::BOOT_STACK));
+        "   sw	    a5, 0(sp)           \n" : : "i"(Memory_Map::BOOT_STACK - Traits<Machine>::STACK_SIZE + 0x30));
         
     Reg id = CPU::mcause();
     if((id & IC::INT_MASK) == CLINT::IRQ_MAC_TIMER) {

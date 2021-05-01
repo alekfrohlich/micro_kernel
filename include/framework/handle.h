@@ -68,6 +68,14 @@ public:
 
     static Handle<Component> * self() { return new (_Stub::self()) Handled<Component>; }
 
+    // Display
+    static void putc(char c) {_Stub::putc(c); }
+    static void puts(const char * s) {_Stub::puts(s); }
+    static void clear() {_Stub::clear(); }
+    static void geometry(int * lines, int * columns) { _Stub::geometry(lines, columns); }
+    static void position(int * line, int * column) {_Stub::position(line, column); }
+    static void position(int line, int column) {_Stub::position(line, column); }
+    
     // Process management
     int priority() { return _stub->priority(); }
     void priority(int p) { _stub->priority(p); }

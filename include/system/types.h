@@ -158,6 +158,7 @@ enum
 {
     FIRST_COMPONENT_ID = 0,
     THREAD_ID = FIRST_COMPONENT_ID,
+    DISPLAY_ID,
     // TASK_ID,
     // ACTIVE_ID,
     // ADDRESS_SPACE_ID,
@@ -187,7 +188,7 @@ enum
     EEPROM_ID,
     SCRATCHPAD_ID,
     UART_ID,
-    DISPLAY_ID,
+    // DISPLAY_ID,
     KEYBOARD_ID,
     NIC_ID,
     LAST_MEDIATOR_ID,

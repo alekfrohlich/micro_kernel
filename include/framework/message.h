@@ -43,6 +43,14 @@ public:
         THREAD_YIELD,
         THREAD_EXIT,
         THREAD_WAIT_NEXT,
+        
+        DISPLAY_PUTC = COMPONENT,
+        DISPLAY_PUTS,
+        DISPLAY_CLEAR,
+        DISPLAY_GEOMETRY,
+        DISPLAY_POSITION1,
+        DISPLAY_POSITION2,
+        
 
         TASK_ADDRESS_SPACE = COMPONENT,
         TASK_CODE_SEGMENT,

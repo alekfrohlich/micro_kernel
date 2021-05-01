@@ -57,6 +57,14 @@ public:
 
     static Proxy<Component> * self() { return new (reinterpret_cast<void *>(static_invoke(SELF))) Proxied<Component>; }
 
+    // Display
+    static void putc(char c) { static_invoke(DISPLAY_PUTC, c); }
+    static void puts(const char * s) { static_invoke(DISPLAY_PUTS, s); }
+    static void clear() { static_invoke(DISPLAY_CLEAR); }
+    static void geometry(int * lines, int * columns) { static_invoke(DISPLAY_GEOMETRY, lines, columns); }
+    static void position(int * line, int * column) { static_invoke(DISPLAY_POSITION1, line, column); }
+    static void position(int line, int column) { static_invoke(DISPLAY_POSITION2, line, column); }
+    
     // Process management
     int state() { return invoke(THREAD_STATE); }
     int priority() { return invoke(THREAD_PRIORITY); }
