@@ -74,7 +74,7 @@ public:
     {
     public:
         // Contexts are loaded with sret, which gets pc from sepc and updates some bits of sstatus, that's why _st is initialized with SPIE and SPP
-        Context(const Log_Addr & entry, const Log_Addr & exit): _st(SPIE | SPP_U), _pc(entry), _x1(exit) {
+        Context(const Log_Addr & entry, const Log_Addr & exit): _st(SPIE | SPP_U | SUM), _pc(entry), _x1(exit) {
             if(Traits<Build>::hysterically_debugged || Traits<Thread>::trace_idle) {
                                                                         _x5 =  5;  _x6 =  6;  _x7 =  7;  _x8 =  8;  _x9 =  9;
                 _x10 = 10; _x11 = 11; _x12 = 12; _x13 = 13; _x14 = 14; _x15 = 15; _x16 = 16; _x17 = 17; _x18 = 18; _x19 = 19;

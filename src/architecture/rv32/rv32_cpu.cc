@@ -131,8 +131,8 @@ void CPU::switch_context(Context ** o, Context * n)
         "       addi     sp,      sp,   -120    \n"     // complete the pushes above by adjusting the SP
         "       sw       sp,    0(a0)           \n");   // update Context * volatile * o
         
-    ASM("       li    x31,  0x40000           \n");                   //P3?
-    ASM("       csrs    sstatus,  x31           \n"); //set SUM       //P3?
+    // ASM("       li    x31,  0x40000           \n");                   //P3?
+    // ASM("       csrs    sstatus,  x31           \n"); //set SUM       //P3?
     
     // Set the stack pointer to "n" and pop the context from the stack
     ASM("       mv       sp,      a1            \n"     // get Context * volatile n into SP
@@ -166,14 +166,13 @@ void CPU::switch_context(Context ** o, Context * n)
         "       lw      x28,  -16(sp)           \n"
         "       lw      x29,  -12(sp)           \n"
         "       lw      x31, -120(sp)           \n"     // pop sstatus
-        "       andi    x31, x31, 0xfffffffd \n"     // we need to disable int          //P3?
-        // As we are not handling an interrupt, we need to manually configure SPP_S to avoid
-        // going to user mode. //!P4: Am I right to think that no S-mode int/exc will be received before Context::load?
+        // "       andi    x31, x31, 0xfffffffd \n"     // we need to disable int          //P3?
+        //!P4: Am I right to think that no S-mode int/exc will be received before Context::load?
         // "       li      x30, 0b1 << 8           \n"
         // "       or      x31, x31, x30           \n"   
         "       csrw     sstatus, x31           \n"
-            "       li    x31,  0x40000           \n"   //P3?
-            "       csrs    sstatus,  x31           \n" //P3?
+            // "       li    x31,  0x40000           \n"   //P3?
+            // "       csrs    sstatus,  x31           \n" //P3?
         "       lw      x30,   -8(sp)           \n"
         "       lw      x31,   -4(sp)           \n"
         "       sret                            \n");
