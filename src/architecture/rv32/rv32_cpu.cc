@@ -169,7 +169,7 @@ void CPU::switch_context(Context ** o, Context * n)
         // going to user mode. //!P4: Am I right to think that no S-mode int/exc will be received before Context::load?
         // "       li      x30, 0b1 << 8           \n"
         // "       or      x31, x31, x30           \n"   
-        // "       csrw     sstatus, x31           \n"
+        "       csrw     sstatus, x31           \n"
         "       lw      x30,   -8(sp)           \n"
         "       lw      x31,   -4(sp)           \n"
         "       sret                            \n");

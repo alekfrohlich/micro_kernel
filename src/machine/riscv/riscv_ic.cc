@@ -119,9 +119,17 @@ void IC::dispatch()
 
 void IC::int_not(Interrupt_Id id)
 {
-    db<IC>(WRN) << "IC::int_not(i=" << id << ")";
-    if(Traits<Build>::hysterically_debugged)
+    CPU::Reg sstatus = CPU::sstatus();
+    CPU::Reg scause = CPU::scause();
+    CPU::Reg mhartid = CPU::id();
+    CPU::Reg sepc = CPU::sepc();
+
+    db<IC>(WRN) << "IC::int_not(i=" << id << ") => {" << hex << "sstatus=" << sstatus << ",scause=" << scause << ",mhartid=" << mhartid << ",sepc=" << sepc  << "}" << dec;
+    if(Traits<Build>::hysterically_debugged) {
+        // ERR wasn't working; so force halt
         db<IC>(ERR) << endl;
+        Machine::panic();
+    }
     else
         db<IC>(WRN) << endl;
 }
@@ -131,8 +139,7 @@ void IC::exception(Interrupt_Id id)
     CPU::Reg sstatus = CPU::sstatus();
     CPU::Reg scause = CPU::scause();
     CPU::Reg mhartid = CPU::id();
-    CPU::Reg sepc;
-    ASM("csrr %0, sepc" : "=r"(sepc) : :);
+    CPU::Reg sepc = CPU::sepc();
 
     db<IC>(WRN) << "IC::Exception(" << id << ") => {" << hex << "sstatus=" << sstatus << ",scause=" << scause << ",mhartid=" << mhartid << ",sepc=" << sepc  << "}" << dec;
 
