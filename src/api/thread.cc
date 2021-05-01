@@ -33,6 +33,7 @@ void Thread::constructor_prologue(unsigned int stack_size)
     } else if (this->_link.rank() == IDLE) {
         _stack = new (SYSTEM) char[stack_size];
     } else {
+        // _task->_heap->alloc(stack_size);
         _stack = reinterpret_cast<char *>(_task->_heap->alloc(stack_size));
     }
 }
@@ -40,6 +41,7 @@ void Thread::constructor_prologue(unsigned int stack_size)
 
 void Thread::constructor_epilogue(const Log_Addr & entry, unsigned int stack_size)
 {
+    _context->_st = 0x40020;
     db<Thread>(TRC) << "Thread(entry=" << entry
                     << ",state=" << _state
                     << ",priority=" << _link.rank()

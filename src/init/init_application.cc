@@ -22,7 +22,8 @@ public:
 
         // Initialize Application's heap
         db<Init>(INF) << "Initializing application's heap: " << endl;
-        Application::_heap = new (&Application::_preheap[0]) Heap(APP_HEAP, HEAP_SIZE);
+        // Application::_heap = new (&Application::_preheap[0]) Heap(APP_HEAP, HEAP_SIZE);
+        Application::_heap = new (APP_HEAP) Heap(reinterpret_cast<void*>(Traits<Application>::APP_HEAP+sizeof(Heap)), HEAP_SIZE-sizeof(Heap));
         
         db<Init>(INF) << "done!" << endl;
     }
