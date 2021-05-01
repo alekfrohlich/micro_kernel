@@ -351,6 +351,12 @@ public:
 
     static void sepc_write(Reg value) { ASM("csrw sepc, %0" : : "r"(value) : "cc"); }
 
+    static Reg sepc() {
+        Reg value;
+        ASM("csrr %0, sepc" : "=r"(value) : : );
+        return value;
+    }
+
     static unsigned int cores() {
         return Traits<Build>::CPUS;
     }

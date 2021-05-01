@@ -204,11 +204,6 @@ public:
         Task::_active = t;
         t->_as->activate();
     }
-
-    // void activate() {
-    //     Task::_active = this;
-    //     _as->activate();
-    // }
     
     Address_Space * address_space() const { return _as; }
 

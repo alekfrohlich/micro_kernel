@@ -27,7 +27,6 @@ template <> struct Traits<Machine>: public Traits<Machine_Common>
     static const unsigned int MIO_BASE          = 0x00000000;
     static const unsigned int MIO_TOP           = 0x100081ff;
 
-    //!P3: Shrink PAGE_TABLES
     static const unsigned int BOOT_STACK        = MEM_TOP;
     static const unsigned int VECTOR_TABLE      = NOT_USED;
     static const unsigned int PAGE_TABLES       = MEM_TOP + 1 - 16*1024 - ((544+1)*4*1024);

@@ -11,8 +11,6 @@ _start:
         // Temporary stack(s) for INIT are created and configure by SETUP
 
         // Call _init
-        ; li a0, 0xff800000
-        ; lw a0, 0(a0)
         call      _init
 
         // Call main

@@ -3,7 +3,9 @@ Detach unmap
 philosophers
 all syscalls
 
-P4.
-idle stack
-thread stack
+P4-P5.
+App stack and Heap should be on APP_DATA
+Loader will be a U-mode app which will create the Task objects and attach the previously created Segments
+How can the loader inform Init_Application of the Heap's address? And the Stack?
+Remap pages after load_segment()
  
