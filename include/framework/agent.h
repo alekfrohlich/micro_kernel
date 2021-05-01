@@ -60,61 +60,6 @@ private:
     static Member _handlers[LAST_TYPE_ID];
 };
 
-void Agent::handle_display()
-{
-    // Adapter<Display> * display = reinterpret_cast<Adapter<Display> *>(id().unit());
-    Result res = 0;
-
-    switch(method()) {
-    // case CREATE1: {
-    //     int (*entry)();
-    //     in(entry);
-    //     id(Id(THREAD_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Thread>(Thread::Configuration(Thread::READY), entry))));
-    // } break;
-    // case DESTROY:
-    //     delete thread;
-    //     break;
-    // case SELF:
-    //     id(Id(DISPLAY_ID, reinterpret_cast<Id::Unit_Id>(Adapter<Display>::self())));
-    //     break;
-    case DISPLAY_PUTC: {
-        char c;
-        in(c);
-        Display::putc(c);
-    } break;
-    case DISPLAY_PUTS: {
-        char * s;
-        in(s);
-        Display::puts(s);
-    } break;
-    case DISPLAY_CLEAR: {
-        Display::clear();
-    } break;
-    case DISPLAY_GEOMETRY: {
-        int * lines;
-        int * columns;
-        in(lines, columns);
-        Display::geometry(lines, columns);
-    } break;
-    case DISPLAY_POSITION1: {
-        int * line;
-        int * column;
-        in(line, column);
-        Display::position(line, column);
-    } break;
-    case DISPLAY_POSITION2: {
-        int line;
-        int column;
-        in(line, column);
-        Display::position(line, column);
-    } break;
-    default:
-        res = UNDEFINED;
-    }
-    result(res);
-}
-
-
 void Agent::handle_thread()
 {
     Adapter<Thread> * thread = reinterpret_cast<Adapter<Thread> *>(id().unit());
@@ -169,6 +114,61 @@ void Agent::handle_thread()
 
     result(res);
 };
+
+void Agent::handle_display()
+{
+    // Adapter<Display> * display = reinterpret_cast<Adapter<Display> *>(id().unit());
+    Result res = 0;
+
+    switch(method()) {
+    // case CREATE1: {
+    //     int (*entry)();
+    //     in(entry);
+    //     id(Id(THREAD_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Thread>(Thread::Configuration(Thread::READY), entry))));
+    // } break;
+    // case DESTROY:
+    //     delete thread;
+    //     break;
+    // case SELF:
+    //     id(Id(DISPLAY_ID, reinterpret_cast<Id::Unit_Id>(Adapter<Display>::self())));
+    //     break;
+    case DISPLAY_PUTC: {
+        char c;
+        in(c);
+        Display::putc(c);
+    } break;
+    case DISPLAY_PUTS: {
+        char * s;
+        in(s);
+        Display::puts(s);
+    } break;
+    case DISPLAY_CLEAR: {
+        Display::clear();
+    } break;
+    case DISPLAY_GEOMETRY: {
+        int * lines;
+        int * columns;
+        in(lines, columns);
+        Display::geometry(lines, columns);
+    } break;
+    case DISPLAY_POSITION1: {
+        int * line;
+        int * column;
+        in(line, column);
+        Display::position(line, column);
+    } break;
+    case DISPLAY_POSITION2: {
+        int line;
+        int column;
+        in(line, column);
+        Display::position(line, column);
+    } break;
+    default:
+        res = UNDEFINED;
+    }
+    result(res);
+}
+
 
 
 // void Agent::handle_task()

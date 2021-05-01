@@ -9,6 +9,7 @@ __BEGIN_SYS
 // IPC::Observed IPC::_observed;
 
 Agent::Member Agent::_handlers[] = {&Agent::handle_thread,
+                                    &Agent::handle_display,
                                     // &Agent::handle_task,
                                     // &Agent::handle_active,
                                     // &Agent::handle_address_space,
