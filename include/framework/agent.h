@@ -25,16 +25,6 @@ public:
 
         if(id().type() < LAST_TYPE_ID) // in-kernel services
             (this->*_handlers[id().type()])();
-//        else { // out-of-kernel (i.e. Dom0 or server) services
-//            db<Framework>(TRC) << "P3" << endl;
-//                Message msg(*this); // copy message from user space to kernel
-//                msg.id(Id(IPC_COMMUNICATOR_ID, id().unit()));
-//                if(IPC::send(&msg)) { // 0 => no one listening
-//                    Port<IPC> * comm = reinterpret_cast<Port<IPC> *>(IPC::observer(id().type())); // recall the Port<IPC> that got us here
-//                    comm->receive(this); // copy from kernel to user
-//                } else
-//                    result(UNDEFINED);
-//        }
 
         if(id().type() != UTILITY_ID)
             db<Framework>(TRC) << "<=:" << *reinterpret_cast<Message *>(this) << endl;

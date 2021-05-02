@@ -4,8 +4,14 @@ philosophers
 all syscalls
 
 P4-P5.
+switch context has a bug: sstatus is written directly and no care is taken to avoid reentrancy
+we need to switch address space inside swtich context; for, otherwise, context will be saved in next's.
 App stack and Heap should be on APP_DATA
 Loader will be a U-mode app which will create the Task objects and attach the previously created Segments
 How can the loader inform Init_Application of the Heap's address? And the Stack?
 Remap pages after load_segment()
  
+
+Debug.
+Nao aparece o Thread::dispatch que coloca a idle na cpu; achei isso: Thread::idle(this=0x87dd8eec)e80,next=0x87dd8eec)
+A primeira Thread que volta estará em modo usuário dentro do kernel => access fault

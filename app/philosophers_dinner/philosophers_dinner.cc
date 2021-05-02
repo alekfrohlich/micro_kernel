@@ -36,17 +36,17 @@ int main()
 
     cout << "Philosophers are alive and hungry!" << endl;
 
-    Display::position(7, 44);
-    cout << '/';
-    Display::position(13, 44);
-    cout << '\\';
-    Display::position(16, 35);
-    cout << '|';
-    Display::position(13, 27);
-    cout << '/';
-    Display::position(7, 27);
-    cout << '\\';
-    Display::position(19, 0);
+    // Display::position(7, 44);
+    // cout << '/';
+    // Display::position(13, 44);
+    // cout << '\\';
+    // Display::position(16, 35);
+    // cout << '|';
+    // Display::position(13, 27);
+    // cout << '/';
+    // Display::position(7, 27);
+    // cout << '\\';
+    // Display::position(19, 0);
 
     cout << "The dinner is served ..." << endl;
     table.unlock();
@@ -54,7 +54,7 @@ int main()
     for(int i = 0; i < 5; i++) {
         int ret = phil[i]->join();
         table.lock();
-        Display::position(20 + i, 0);
+        // Display::position(20 + i, 0);
         cout << "Philosopher " << i << " ate " << ret << " times " << endl;
         table.unlock();
     }
@@ -77,14 +77,14 @@ int philosopher(int n, int l, int c)
     for(int i = iterations; i > 0; i--) {
 
         table.lock();
-        Display::position(l, c);
+        // Display::position(l, c);
         cout << "thinking";
         table.unlock();
 
         Delay thinking(1000000);
 
         table.lock();
-        Display::position(l, c);
+        // Display::position(l, c);
         cout << " hungry ";
         table.unlock();
 
@@ -92,14 +92,14 @@ int philosopher(int n, int l, int c)
         chopstick[second]->p();  // get second chopstick
 
         table.lock();
-        Display::position(l, c);
+        // Display::position(l, c);
         cout << " eating ";
         table.unlock();
 
         Delay eating(500000);
 
         table.lock();
-        Display::position(l, c);
+        // Display::position(l, c);
         cout << "  sate  ";
         table.unlock();
 
@@ -108,7 +108,7 @@ int philosopher(int n, int l, int c)
     }
 
     table.lock();
-    Display::position(l, c);
+    // Display::position(l, c);
     cout << "  done  ";
     table.unlock();
 

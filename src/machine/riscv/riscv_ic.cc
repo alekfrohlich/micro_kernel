@@ -6,6 +6,7 @@
 __BEGIN_SYS
 
 extern "C" { [[gnu::alias("_ZN4EPOS1S2IC5entryEv"), gnu::nothrow]] void _int_entry(); }
+extern "C" { void __exit(); }
 
 // Class attributes
 IC::Interrupt_Handler IC::_int_vector[IC::INTS];
@@ -113,6 +114,13 @@ void IC::dispatch()
 
     if(id == INT_SYS_TIMER)
         CPU::sie_clear(CPU::STI);
+
+    //!P4: Sanity check
+    if (id == 11)
+        Machine::panic();
+    
+    if (id == EXC_INSTR_PAGE_FAULT)
+        __exit();
 
     _int_vector[id](id);
 }

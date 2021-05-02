@@ -30,6 +30,11 @@ public:
         INT_MASK                = ~INTERRUPT
     };
 
+    // Exceptions
+    enum : unsigned int {
+        EXC_INSTR_PAGE_FAULT    = 12,
+    };
+
     // Registers offsets from CLINT_BASE
     enum {                                // Description
         MSIP                    = 0x0000, // Generate machine mode software interrupts
