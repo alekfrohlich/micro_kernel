@@ -20,6 +20,7 @@ private:
 
 public:
     void exec() {
+        //!P4: Improve messages
         if(id().type() != UTILITY_ID)
             db<Framework>(TRC) << ":=>" << *reinterpret_cast<Message *>(this) << endl;
 
@@ -60,6 +61,14 @@ void Agent::handle_thread()
         int (*entry)();
         in(entry);
         id(Id(THREAD_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Thread>(Thread::Configuration(Thread::READY), entry))));
+    } break;
+    case CREATE4: {
+        int n, l, c;
+        int (*entry)(int, int, int);
+        in(entry,n,l,c);
+        //!P5: How would this fit with an Application loader which has to inform the priority of the main and idle threads
+        Adapter<Thread> * th = new Adapter<Thread>(Thread::Configuration(Thread::READY), entry, n, l, c);
+        id(Id(THREAD_ID, reinterpret_cast<Id::Unit_Id>(th)));
     } break;
     case DESTROY:
         delete thread;
@@ -107,21 +116,9 @@ void Agent::handle_thread()
 
 void Agent::handle_display()
 {
-    // Adapter<Display> * display = reinterpret_cast<Adapter<Display> *>(id().unit());
     Result res = 0;
 
     switch(method()) {
-    // case CREATE1: {
-    //     int (*entry)();
-    //     in(entry);
-    //     id(Id(THREAD_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Thread>(Thread::Configuration(Thread::READY), entry))));
-    // } break;
-    // case DESTROY:
-    //     delete thread;
-    //     break;
-    // case SELF:
-    //     id(Id(DISPLAY_ID, reinterpret_cast<Id::Unit_Id>(Adapter<Display>::self())));
-    //     break;
     case DISPLAY_PUTC: {
         char c;
         in(c);
@@ -144,8 +141,8 @@ void Agent::handle_display()
     case DISPLAY_POSITION1: {
         int * line;
         int * column;
-        in(line, column);
         Display::position(line, column);
+        out(line, column);
     } break;
     case DISPLAY_POSITION2: {
         int line;
@@ -158,8 +155,6 @@ void Agent::handle_display()
     }
     result(res);
 }
-
-
 
 // void Agent::handle_task()
 // {
@@ -311,30 +306,25 @@ void Agent::handle_display()
 //     result(res);
 // };
 
-
 void Agent::handle_mutex()
 {
     result(UNDEFINED);
 };
-
 
 void Agent::handle_semaphore()
 {
     result(UNDEFINED);
 };
 
-
 void Agent::handle_condition()
 {
     result(UNDEFINED);
 };
 
-
 void Agent::handle_clock()
 {
     result(UNDEFINED);
 };
-
 
 void Agent::handle_alarm()
 {
@@ -381,12 +371,10 @@ void Agent::handle_alarm()
     result(res);
 };
 
-
 void Agent::handle_chronometer()
 {
     result(UNDEFINED);
 };
-
 
 void Agent::handle_utility()
 {

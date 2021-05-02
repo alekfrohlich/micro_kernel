@@ -362,8 +362,6 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         // disrupting the context (it doesn't make a difference for Intel, which already saves
         // parameters on the stack anyway).
         CPU::switch_context(const_cast<Context **>(&prev->_context), next->_context);
-
-        db<Thread>(TRC) << "RETURNED" << endl;
     }
 }
 

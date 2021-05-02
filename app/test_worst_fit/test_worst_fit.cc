@@ -19,7 +19,6 @@ int main()
 {
     // Terminal output is important after the following line
     cout << "Testing Worst-Fit..." << endl;
-    CPU::int_disable();
 
     char * b1 = alloc(15*1024);
     alloc(128);

@@ -9,7 +9,7 @@ __BEGIN_SYS
 template<> struct Traits<Build>: public Traits_Tokens
 {
     // Basic configuration
-    static const unsigned int MODE = BUILTIN;
+    static const unsigned int MODE = KERNEL;
     static const unsigned int ARCHITECTURE = RV32;
     static const unsigned int MACHINE = RISCV;
     static const unsigned int MODEL = SiFive_E;
@@ -95,8 +95,10 @@ __BEGIN_SYS
 // API Components
 template<> struct Traits<Application>: public Traits<Build>
 {
+    //!P3: should not be here
+    static const unsigned int APP_HEAP = Traits<Machine>::APP_HEAP;
     static const unsigned int STACK_SIZE = Traits<Machine>::STACK_SIZE;
-    static const unsigned int HEAP_SIZE = 16*1024;
+    static const unsigned int HEAP_SIZE = Traits<Machine>::HEAP_SIZE;
     static const unsigned int MAX_THREADS = Traits<Machine>::MAX_THREADS;
 };
 
@@ -129,8 +131,7 @@ template<> struct Traits<Thread>: public Traits<Build>
     static const bool trace_idle = hysterically_debugged;
     static const bool simulate_capacity = false;
 
-    // typedef RR Criterion;
-    typedef FCFS Criterion;
+    typedef RR Criterion;
     static const unsigned int QUANTUM = 10000; // us
 };
 
@@ -148,7 +149,6 @@ template<> struct Traits<Alarm>: public Traits<Build>
 {
     static const bool visible = hysterically_debugged;
 };
-
 
 
 __END_SYS

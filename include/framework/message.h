@@ -51,7 +51,6 @@ public:
         DISPLAY_POSITION1,
         DISPLAY_POSITION2,
         
-
         TASK_ADDRESS_SPACE = COMPONENT,
         TASK_CODE_SEGMENT,
         TASK_DATA_SEGMENT,
