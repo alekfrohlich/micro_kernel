@@ -74,16 +74,56 @@ int main()
     // t2->join();
 
     // Test Time
-    cout << "Time:" << endl;
-    cout << "   frequency=" << Alarm::alarm_frequency() << endl;
+    // cout << "Time:" << endl;
+    // cout << "   frequency=" << Alarm::alarm_frequency() << endl;
     //!P4: Fix the vtable bug
     // Function_Handler handler(&alarm_handler);
     // Alarm(400000, &handler, 5);
     // Alarm::delay(5000000);
     // delete a;
 
-    cout << ""
-
+    // Test Chronometer
+    // cout << "Chronometer:" << endl;
+    // Chronometer * chrono = new Chronometer();
+    
+    // unsigned long f = chrono->frequency(); //Hertz
+    // cout << "frequency = " << f << endl; 
+    
+    // // Microseconds read = chrono->read();
+    // // cout << "read = " << read << endl;
+    
+    // chrono->start();
+    // Alarm::delay(1000000);
+    // chrono->stop();
+    // unsigned long long ts = chrono->ticks(); //Time Stamp
+    // cout << "time_stamp = " << ts << endl; //time_stamp is multiplied by ~12
+    
+    // chrono->reset();
+    // chrono->start();
+    // Alarm::delay(500000);
+    // chrono->lap();
+    // ts = chrono->ticks(); //Time Stamp
+    // cout << "time_stamp = " << ts << endl; //time_stamp is multiplied by ~12
+    
+    // delete chrono;
+    
+    // Test Display
+    // cout << "Display:" << endl;
+    // Display::putc('#');
+    // Display::puts("Display::puts($%)\n");
+    // Alarm::delay(1000000);
+    // Display::clear();
+    // cout << "Clear\n\n\n" << endl; 
+    // int l, c;
+    // Display::geometry(&l, &c);
+    // cout << "Display::geometry: l=" << l << "  c=" << c << endl; 
+    // Display::position(20, 50);
+    // Display::putc('#');
+    // Display::position(&l, &c);
+    // cout << "Display::position: l=" << l << "  c=" << c << endl;
+    
+    
+    
     // Display is not part of the API and so is not tested here (but is used at philosophers dinner)
 
     // We now wake suspended

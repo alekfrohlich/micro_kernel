@@ -145,8 +145,8 @@ void Agent::handle_display()
     case DISPLAY_POSITION1: {
         int * line;
         int * column;
+        in(line, column);
         Display::position(line, column);
-        out(line, column);
     } break;
     case DISPLAY_POSITION2: {
         int line;

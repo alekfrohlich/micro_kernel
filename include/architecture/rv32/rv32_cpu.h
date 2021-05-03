@@ -377,7 +377,7 @@ public:
 
     static void fpu_save();
     static void fpu_restore();
-    static void switch_context(Context ** o, Context * n) __attribute__ ((naked));
+    static void switch_context(Context ** o, Context * n, unsigned int change_satp, unsigned int new_satp) __attribute__ ((naked));
 
     template<typename ... Tn>
     static Context * init_stack(const Log_Addr & usp, Log_Addr sp, void (* exit)(), int (* entry)(Tn ...), Tn ... an) {

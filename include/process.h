@@ -205,6 +205,10 @@ public:
         t->_as->activate();
     }
     
+    static unsigned int get_active_pd(){
+        return Task::_active->_as->pd();
+    }
+    
     Address_Space * address_space() const { return _as; }
 
     Segment * code_segment() const { return _cs; }

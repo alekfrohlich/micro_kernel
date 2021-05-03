@@ -116,8 +116,8 @@ public:
     void start() { invoke(CHRONOMETER_START); }
     void lap() { invoke(CHRONOMETER_LAP); }
     void stop() { invoke(CHRONOMETER_STOP); }
-    int frequency() { return invoke(CHRONOMETER_FREQUENCY); }
-    int ticks() { return invoke(CHRONOMETER_TICKS); }
+    unsigned long frequency() { return invoke(CHRONOMETER_FREQUENCY); }
+    Chronometer::Time_Stamp ticks() { return invoke(CHRONOMETER_TICKS); }
     int read() { return invoke(CHRONOMETER_READ); }
     
     Microsecond resolution() { return invoke(CLOCK_RESOLUTION); }

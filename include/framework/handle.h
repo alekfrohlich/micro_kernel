@@ -127,8 +127,8 @@ public:
     void lap() { _stub->lap(); }
     void stop() { _stub->stop(); }
 
-    int frequency() { return _stub->frequency(); }
-    int ticks() { return _stub->ticks(); }
+    unsigned long frequency() { return _stub->frequency(); }
+    Chronometer::Time_Stamp ticks() { return _stub->ticks(); }
     int read() { return _stub->read(); }
     
     Microsecond resolution() { return _stub->resolution(); }

@@ -91,10 +91,10 @@ private:
 
 class TSC_Chronometer
 {
-private:
-    typedef TSC::Time_Stamp Time_Stamp;
+// private:
 
 public:
+    typedef TSC::Time_Stamp Time_Stamp;
     TSC_Chronometer() : _start(0), _stop(0) {}
 
     Hertz frequency() { return tsc.frequency(); }
@@ -124,10 +124,10 @@ private:
 
 class Alarm_Chronometer
 {
-private:
-    typedef Alarm::Tick Time_Stamp;
+// private:
 
 public:
+    typedef Alarm::Tick Time_Stamp;
     Alarm_Chronometer() : _start(0), _stop(0) {}
 
     Hertz frequency() { return Alarm::frequency(); }
