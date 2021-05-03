@@ -62,14 +62,20 @@ void Agent::handle_thread()
         in(entry);
         id(Id(THREAD_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Thread>(Thread::Configuration(Thread::READY), entry))));
     } break;
-    case CREATE4: {
-        int n, l, c;
-        int (*entry)(int, int, int);
-        in(entry,n,l,c);
-        //!P5: How would this fit with an Application loader which has to inform the priority of the main and idle threads
-        Adapter<Thread> * th = new Adapter<Thread>(Thread::Configuration(Thread::READY), entry, n, l, c);
-        id(Id(THREAD_ID, reinterpret_cast<Id::Unit_Id>(th)));
+    case CREATE2: {
+        int (*entry)(void *);
+        void *params;
+        in(entry, params);
+        id(Id(THREAD_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Thread>(Thread::Configuration(Thread::READY), entry, params))));
     } break;
+    // case CREATE4: {
+    //     int n, l, c;
+    //     int (*entry)(int, int, int);
+    //     in(entry,n,l,c);
+    //     //!P5: How would this fit with an Application loader which has to inform the priority of the main and idle threads
+    //     Adapter<Thread> * th = new Adapter<Thread>(Thread::Configuration(Thread::READY), entry, n, l, c);
+    //     id(Id(THREAD_ID, reinterpret_cast<Id::Unit_Id>(th)));
+    // } break;
     case DESTROY:
         delete thread;
         break;
@@ -425,8 +431,6 @@ void Agent::handle_alarm()
         in(time, handler, times);
         id(Id(ALARM_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Alarm>(time, handler, times))));
     } break;
-    case CREATE1:
-        db<Framework>(TRC) << "so memes" << endl;
     case DESTROY:
         delete alarm;
         break;

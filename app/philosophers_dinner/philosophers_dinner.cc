@@ -16,7 +16,13 @@ Semaphore * chopstick[5];
 
 OStream cout;
 
-int philosopher(int n, int l, int c);
+int philosopher(void* params);
+
+struct parameters{
+public:
+  parameters(int _n, int _l, int _c): n(_n), l(_l), c(_c) {}
+  int n, l, c;
+};
 
 int main()
 {
@@ -27,12 +33,16 @@ int main()
 
     for(int i = 0; i < 5; i++)
         chopstick[i] = new Semaphore;
-
-    phil[0] = new Thread(&philosopher, 0,  5, 32);
-    phil[1] = new Thread(&philosopher, 1, 10, 44);
-    phil[2] = new Thread(&philosopher, 2, 16, 39);
-    phil[3] = new Thread(&philosopher, 3, 16, 24);
-    phil[4] = new Thread(&philosopher, 4, 10, 20);
+    parameters p1 = parameters(0,  5, 32);
+    parameters p2 = parameters(1, 10, 44);
+    parameters p3 = parameters(2, 16, 39);
+    parameters p4 = parameters(3, 16, 24);
+    parameters p5 = parameters(4, 10, 20);
+    phil[0] = new Thread(&philosopher, &p1);
+    phil[1] = new Thread(&philosopher, &p2);
+    phil[2] = new Thread(&philosopher, &p3);
+    phil[3] = new Thread(&philosopher, &p4);
+    phil[4] = new Thread(&philosopher, &p5);
 
     cout << "Philosophers are alive and hungry!" << endl;
 
@@ -69,8 +79,13 @@ int main()
     return 0;
 }
 
-int philosopher(int n, int l, int c)
+int philosopher(void * params)
 {
+    parameters * parameters_phi = reinterpret_cast<parameters *>(params);
+    int n = parameters_phi->n;
+    int l = parameters_phi->l;
+    int c = parameters_phi->c;
+    
     int first = (n < 4)? n : 0;
     int second = (n < 4)? n + 1 : 4;
 

@@ -1,0 +1,17 @@
+Patch against c0b8a2517f80f0667ce23e30b51e39c705807a9b: Memory management (multiheap, Address_Space and Segment)
+
+We've implemented the following API interfaces
+
+Thread
+Mutex
+Semaphore
+Clock
+Chronometer
+Display (Shouldn't be on the API, but philosopher_dinner needs it and it is a good test)
+
+We will implement Task/Segment/Address_Space after we've solved a bug of Alarm which is causing us some trouble
+
+Currently, we have the following tests available:
+1) Syscalls: make APPS=test_syscalls run
+2) Switch context: make APPS='test_switch_context test_switch_context test_switch_context' run
+3) philosopher_dinner or producer_consumer, but they have to run separately due to the aforementioned bug on Alarm.

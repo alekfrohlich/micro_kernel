@@ -5,6 +5,7 @@
         "*.cfg": "plaintext",
         "atomic": "cpp",
         "vector": "cpp",
-        "ostream": "cpp"
+        "ostream": "cpp",
+        "*.tcc": "cpp"
     }
 }
