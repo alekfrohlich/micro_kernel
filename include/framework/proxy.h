@@ -110,7 +110,21 @@ public:
     // Timing
     template<typename T>
     static void delay(T t) { static_invoke(ALARM_DELAY, t); }
-
+    static Hertz alarm_frequency() { return static_invoke(ALARM_FREQUENCY); } 
+    
+    void reset() { invoke(CHRONOMETER_RESET); }
+    void start() { invoke(CHRONOMETER_START); }
+    void lap() { invoke(CHRONOMETER_LAP); }
+    void stop() { invoke(CHRONOMETER_STOP); }
+    int frequency() { return invoke(CHRONOMETER_FREQUENCY); }
+    int ticks() { return invoke(CHRONOMETER_TICKS); }
+    int read() { return invoke(CHRONOMETER_READ); }
+    
+    Microsecond resolution() { return invoke(CLOCK_RESOLUTION); }
+    Second now() { return invoke(CLOCK_NOW); }
+    Clock::Date date() { return invoke(CLOCK_DATE); }
+    void date(const Clock::Date & d) { invoke(CLOCK_DATE1, d); }
+    
     template<typename ... Tn>
     int read(Tn ... an) { return receive(an ...); }
     template<typename ... Tn>

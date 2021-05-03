@@ -83,6 +83,7 @@ public:
     int pass() { return _stub->pass(); }
     void suspend() { _stub->suspend(); }
     void resume() { _stub->resume(); }
+    int state() { return _stub->state(); }
     static void yield() { _Stub::yield(); }
     static void exit(int r = 0) { _Stub::exit(r); }
     static volatile bool wait_next() { return _Stub::wait_next(); }
@@ -129,6 +130,11 @@ public:
     int frequency() { return _stub->frequency(); }
     int ticks() { return _stub->ticks(); }
     int read() { return _stub->read(); }
+    
+    Microsecond resolution() { return _stub->resolution(); }
+    Second now() { return _stub->now(); }
+    Clock::Date date() { return _stub->date(); }
+    void date(const Clock::Date & d) { _stub->date(d); }
 
     const Microsecond period() const { return _stub->period(); }
     void period(const Microsecond p) { _stub->period(p); }

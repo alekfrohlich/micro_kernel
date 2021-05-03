@@ -23,7 +23,7 @@ public:
     Second now() { return RTC::seconds_since_epoch(); }
 
     Date date() { return RTC::date(); }
-    void date(const Date & d) { return RTC::date(d); }
+    void date(const Date & d) {  RTC::date(d); }
 };
 
 
@@ -34,6 +34,7 @@ class Alarm
     friend class Periodic_Thread;               // for ticks(), times(), and elapsed()
     friend class FCFS;                          // for ticks() and elapsed()
     friend class EDF;                           // for ticks() and elapsed()
+    friend class RM;                            // for ticks()
 
 private:
     typedef Timer_Common::Tick Tick;
@@ -49,13 +50,13 @@ public:
     void reset();
 
     static Hertz frequency() { return _timer->frequency(); }
-    static Microsecond timer_period() { return 1000000 / frequency(); }
-    static volatile Tick & elapsed() { return _elapsed; }
-    static Tick ticks(const Microsecond & time) { return (time + timer_period() / 2) / timer_period(); }
 
     static void delay(const Microsecond & time);
 
 private:
+    static Tick ticks(const Microsecond & time) { return (time + timer_period() / 2) / timer_period(); }
+    static Microsecond timer_period() { return 1000000 / frequency(); }
+    static volatile Tick & elapsed() { return _elapsed; }
     unsigned int times() const { return _times; }
 
     static void lock();
@@ -139,8 +140,6 @@ public:
     // The parenthesis reduces precision even more, but avoids overflow
     // Casting to LARGER<Ticks> would provide resolution for intermediate calculations, but it is very inefficient on most microcontrollers
     Microsecond read() { return ticks() * (1000000 / frequency()); }
-
-private:
     Time_Stamp ticks() {
         if(_start == 0)
             return 0;

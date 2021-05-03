@@ -1,6 +1,5 @@
 P3.
 Detach unmap
-philosophers
 all syscalls
 
 P4-P5.
@@ -10,3 +9,34 @@ App stack and Heap should be on APP_DATA
 Loader will be a U-mode app which will create the Task objects and attach the previously created Segments
 How can the loader inform Init_Application of the Heap's address? And the Stack?
 Remap pages after load_segment()
+
+Interfaces
+----------
+Thread:
+    // How to distinguish these two?
+    Thread(int (* entry)(Tn ...), Tn ... an);
+    Thread(const Configuration & conf, int (* entry)(Tn ...), Tn ... an);
+
+    ~Thread();
+    static Thread * volatile self() { return running(); }
+    
+    const volatile State & state() const { return _state; }
+    const volatile Priority & priority() const { return _link.rank(); }
+    void priority(const Priority & p);
+    
+    int join();
+    void pass();
+    void suspend();
+    void resume();
+    static void yield();
+    static void exit(int status = 0);
+
+Timing
+-----
+    Alarm(const Microsecond & time, Handler * handler, unsigned int times = 1);
+    ~Alarm();
+    const Microsecond & period() const { return _time; }
+    void period(const Microsecond & p);
+    void reset();
+    static Hertz frequency() { return _timer->frequency(); }
+    static void delay(const Microsecond & time);

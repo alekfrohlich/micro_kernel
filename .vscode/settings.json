@@ -4,6 +4,7 @@
         "makedefs": "makefile",
         "*.cfg": "plaintext",
         "atomic": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "ostream": "cpp"
     }
 }

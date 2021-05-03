@@ -51,22 +51,22 @@ EXPORT(System);
 EXPORT(Application);
 
 BIND(Thread);
-BIND(Active);
-BIND(Periodic_Thread);
-BIND(RT_Thread);
-BIND(Task);
+// BIND(Periodic_Thread);
+// BIND(RT_Thread);
+// BIND(ACTIVE);
+// BIND(Task);
 
-BIND(Address_Space);
-BIND(Segment);
+// BIND(Address_Space);
+// BIND(Segment);
 
 BIND(Mutex);
 BIND(Semaphore);
-BIND(Condition);
+// BIND(Condition);
 
 BIND(Clock);
 BIND(Chronometer);
 BIND(Alarm);
-BIND(Delay);
+// BIND(Delay);
 
 BIND(Display);
 

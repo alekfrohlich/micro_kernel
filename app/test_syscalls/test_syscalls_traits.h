@@ -9,7 +9,7 @@ __BEGIN_SYS
 template<> struct Traits<Build>: public Traits_Tokens
 {
     // Basic configuration
-    static const unsigned int MODE = LIBRARY;
+    static const unsigned int MODE = KERNEL;
     static const unsigned int ARCHITECTURE = RV32;
     static const unsigned int MACHINE = RISCV;
     static const unsigned int MODEL = SiFive_E;
@@ -95,8 +95,9 @@ __BEGIN_SYS
 // API Components
 template<> struct Traits<Application>: public Traits<Build>
 {
+    static const unsigned int APP_HEAP = Traits<Machine>::APP_HEAP;
     static const unsigned int STACK_SIZE = Traits<Machine>::STACK_SIZE;
-    static const unsigned int HEAP_SIZE = Traits<Machine>::HEAP_SIZE;
+    static const unsigned int HEAP_SIZE = 4*1024*1024;
     static const unsigned int MAX_THREADS = Traits<Machine>::MAX_THREADS;
 };
 

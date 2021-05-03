@@ -84,6 +84,9 @@ void Agent::handle_thread()
         in(p);
         thread->priority(Thread::Criterion(p));
     } break;
+    case THREAD_STATE: {
+        res = thread->state();
+    } break;
     case THREAD_JOIN:
         res = thread->join();
         break;
@@ -114,6 +117,7 @@ void Agent::handle_thread()
     result(res);
 };
 
+// This is not part of the API; it is here due to philosophers_dinner, temporarily.
 void Agent::handle_display()
 {
     Result res = 0;
@@ -308,12 +312,60 @@ void Agent::handle_display()
 
 void Agent::handle_mutex()
 {
-    result(UNDEFINED);
+    
+    Adapter<Mutex> * mutex = reinterpret_cast<Adapter<Mutex> *>(id().unit());
+    Result res = 0;
+
+    switch(method()) {
+    case CREATE: {
+        id(Id(MUTEX_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Mutex>())));
+    } break;
+    case DESTROY:
+        delete mutex;
+        break;
+    case SYNCHRONIZER_LOCK:
+        mutex->lock();
+        break;
+    case SYNCHRONIZER_UNLOCK:
+        mutex->unlock();
+        break;
+    default:
+        res = UNDEFINED;
+        break;
+    }
+
+    result(res);    
 };
 
 void Agent::handle_semaphore()
 {
-    result(UNDEFINED);
+    Adapter<Semaphore> * semaphore = reinterpret_cast<Adapter<Semaphore> *>(id().unit());
+    Result res = 0;
+
+    switch(method()) {
+    case CREATE: {
+        id(Id(SEMAPHORE_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Semaphore>())));
+    } break;
+    case CREATE1: {
+        int v;
+        in(v);
+        id(Id(SEMAPHORE_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Semaphore>(v))));
+    } break;
+    case DESTROY:
+        delete semaphore;
+        break;
+    case SYNCHRONIZER_P:
+        semaphore->p();
+        break;
+    case SYNCHRONIZER_V:
+        semaphore->v();
+        break;
+    default:
+        res = UNDEFINED;
+    }
+    
+    result(res);    
+
 };
 
 void Agent::handle_condition()
@@ -323,7 +375,35 @@ void Agent::handle_condition()
 
 void Agent::handle_clock()
 {
-    result(UNDEFINED);
+    Adapter<Clock> * clock = reinterpret_cast<Adapter<Clock> *>(id().unit());
+    Result res = 0;
+
+    switch(method()) {
+    case CREATE: {
+        id(Id(CLOCK_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Clock>())));
+    } break;
+    case DESTROY:
+        delete clock;
+        break;
+    case CLOCK_RESOLUTION:
+        res = clock->resolution();
+    break;
+    case CLOCK_NOW:
+        res = clock->now();
+    break;
+    case CLOCK_DATE:
+        // res = clock->date();
+    break;
+    case CLOCK_DATE1:{
+        // Date d;
+        // in(d);
+        // clock->date(d);
+    } break;
+    default:
+        res = UNDEFINED;
+    }
+
+    result(res);
 };
 
 void Agent::handle_alarm()
@@ -345,6 +425,8 @@ void Agent::handle_alarm()
         in(time, handler, times);
         id(Id(ALARM_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Alarm>(time, handler, times))));
     } break;
+    case CREATE1:
+        db<Framework>(TRC) << "so memes" << endl;
     case DESTROY:
         delete alarm;
         break;
@@ -373,7 +455,42 @@ void Agent::handle_alarm()
 
 void Agent::handle_chronometer()
 {
-    result(UNDEFINED);
+    Adapter<Chronometer> * chronometer = reinterpret_cast<Adapter<Chronometer> *>(id().unit());
+    Result res = 0;
+
+    switch(method()) {
+    case CREATE: {
+        id(Id(CHRONOMETER_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Chronometer>())));
+    } break;
+    case DESTROY:
+        delete chronometer;
+        break;
+    case CHRONOMETER_FREQUENCY:
+        res = chronometer->frequency();
+    break;
+    case CHRONOMETER_RESET: {
+        chronometer->reset();
+    } break;
+    case CHRONOMETER_START:
+        chronometer->start();
+    break;
+    case CHRONOMETER_LAP: {
+        chronometer->lap();
+    } break;
+    case CHRONOMETER_STOP: {
+        chronometer->stop();
+    } break;
+    case CHRONOMETER_READ: {
+        res = chronometer->read();
+    } break;
+    case CHRONOMETER_TICKS: {
+        res = chronometer->ticks();
+    } break;
+    default:
+        res = UNDEFINED;
+    }
+
+    result(res);
 };
 
 void Agent::handle_utility()
