@@ -85,11 +85,6 @@ int main()
     // Test Alarm
     cout << "Time:" << endl;
     cout << "   frequency=" << Alarm::alarm_frequency() << endl;
-    // !P4: Fix the vtable bug
-    // Function_Handler handler(&alarm_handler);
-    // Alarm(400000, &handler, 5);
-    // Alarm::delay(5000000);
-    // delete a;
 
     // Test Chronometer
     cout << "Chronometer:" << endl;

@@ -231,7 +231,6 @@ public:
     static Phy_Addr calloc(unsigned int frames = 1) {
         Phy_Addr phy = alloc(frames);
         memset(phy2log(phy), 0, frames*PAGE_SIZE);
-        db<MMU>(TRC) << "-----------CALLOC:  " << hex << phy << endl;
         return phy;
     }
 
