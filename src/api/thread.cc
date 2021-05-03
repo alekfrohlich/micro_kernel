@@ -22,6 +22,9 @@ void Thread::constructor_prologue(unsigned int stack_size)
     lock();
     
     _task = Task::_active;
+    if(this->_link.rank() == IDLE){
+        _task->has_idle = true;
+    }
     _thread_count++;
     _scheduler.insert(this);
 
@@ -249,7 +252,12 @@ void Thread::exit(int status)
     }
 
     Thread * next = _scheduler.choose(); // at least idle will always be there
-
+    
+    if (prev->_link.rank() == MAIN && prev->_task->has_idle == false) {
+        db<Thread>(TRC) << "Thread::exit(main without idle has exited)" << endl;
+        delete prev->_task;
+    }
+    
     dispatch(prev, next);
 
     unlock();

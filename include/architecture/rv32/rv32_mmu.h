@@ -70,15 +70,17 @@ public:
 
         PTE & operator[](unsigned int i) { return ptes[i]; }
 
-        void map(const RV32_Flags & flags, int from, int to) {
+        bool map(const RV32_Flags & flags, int from, int to) {
             Phy_Addr * addr = alloc(to - from);
             // Try to alloc contiguous
             if (addr) {
                 remap(addr, flags, from , to);
+                return true;
             } else {
                 for(; from < to; from++){
                     ptes[from] = ((alloc(1) >> 12) << 10) | flags ;
                 }
+                return false;
             }
         }
 
@@ -123,7 +125,7 @@ public:
 
         Chunk(unsigned int bytes, const Flags & flags)
         : _from(0), _to(pages(bytes)), _pts(page_tables(_to - _from)), _bytes(bytes), _flags(RV32_Flags(flags)), _pt(calloc(_pts)) {
-            _pt->map(_flags, _from, _to);
+            _contiguous = _pt->map(_flags, _from, _to);
         }
 
         // Chunk(const Phy_Addr & phy_addr, unsigned int bytes, const Flags & flags)
@@ -132,12 +134,28 @@ public:
         // }
 
         // ~Chunk() { free(_phy_addr, _bytes); }
+        // ~Chunk() {
+        //     for( ; _from < _to; _from++)
+        //         free((*static_cast<Page_Table *>(phy2log(_pt)))[_from]);
+        //     free(_pt, _pts);
+        // }
+        
         ~Chunk() {
-            for( ; _from < _to; _from++)
-                free((*static_cast<Page_Table *>(phy2log(_pt)))[_from]);
+            db<Chunk>(TRC) << "Chunk::~(_from=" << _from << " _to=" << _to << ") " << endl;
+            if(_contiguous){
+                unsigned int ppn =  (*_pt)[_from] >> 10;
+                Phy_Addr pt_addr = ppn << 12;
+                free(pt_addr, _to - _from);
+            }else{
+                for( ; _from < _to; _from++){
+                    unsigned int ppn =  (*_pt)[_from] >> 10;
+                    Phy_Addr pt_addr = ppn << 12;
+                    free(pt_addr);
+                }
+            }
+            db<Chunk>(TRC) << "Chunk::~(_pt=" << _pt << " _pts=" << _pts << ") " << endl;
             free(_pt, _pts);
         }
-
         unsigned int pts() const { return _pts; }
         // Flags flags() const { return Flags(_flags); }
         Page_Table * pt() const { return _pt; }
@@ -153,6 +171,7 @@ public:
         unsigned int _bytes;
         RV32_Flags _flags;
         Page_Table * _pt;
+        bool _contiguous;
 
     };
 
@@ -169,6 +188,11 @@ public:
             }
         }
         Directory(Page_Directory * pd) : _pd(pd) {}
+        
+        ~Directory() {
+            db<Directory>(TRC) << "Directory::~(_pd=" << _pd << ") " << endl;
+            free(_pd);
+        }
 
         Phy_Addr pd() const { return _pd; }
 
@@ -193,7 +217,15 @@ public:
         }
 
         void detach(const Chunk & chunk) {}
-        void detach(const Chunk & chunk, Log_Addr addr) {}
+        void detach(const Chunk & chunk, Log_Addr addr) {
+            db<Directory>(TRC) << "Directory::detach(chunk=" << &chunk << " log_addr=" << addr << ") " << endl;
+            unsigned int from = directory(addr);
+            unsigned int n = chunk.pts();
+            db<Directory>(TRC) << "Directory::detach(from=" << from << " n=" << n << ") " << endl;
+            for(unsigned int i = from; i < from + n; i++){
+                (*_pd)[i] = 0;
+            }
+        }
 
         Phy_Addr physical(Log_Addr addr) { return addr; }
 
