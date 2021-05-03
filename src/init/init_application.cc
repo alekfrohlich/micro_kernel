@@ -12,7 +12,6 @@ __BEGIN_SYS
 class Init_Application
 {
 private:
-    void * APP_HEAP = reinterpret_cast<void*>(Traits<Application>::APP_HEAP);
     static const unsigned int HEAP_SIZE = Traits<Application>::HEAP_SIZE;
     static const unsigned int STACK_SIZE = Traits<Application>::STACK_SIZE;
 
@@ -23,8 +22,10 @@ public:
         // Initialize Application's heap
         db<Init>(INF) << "Initializing application's heap: " << endl;
         // Application::_heap = new (&Application::_preheap[0]) Heap(APP_HEAP, HEAP_SIZE);
-        Application::_heap = new (APP_HEAP) Heap(reinterpret_cast<void*>(Traits<Application>::APP_HEAP+sizeof(Heap)), HEAP_SIZE-sizeof(Heap));
-        
+        //!TODO: This could use the apps _end symbol address
+        // Application::_heap = new (APP_HEAP) Heap(reinterpret_cast<void*>(Traits<Application>::APP_HEAP+sizeof(Heap)), HEAP_SIZE-sizeof(Heap));
+        Application::_heap = new (&Application::_preheap[0]) Heap(MMU::align_page(&_end) + Traits<Application>::STACK_SIZE, HEAP_SIZE);
+
         db<Init>(INF) << "done!" << endl;
     }
 };

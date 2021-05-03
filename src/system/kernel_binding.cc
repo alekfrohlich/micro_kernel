@@ -10,10 +10,10 @@ __BEGIN_SYS
 
 Agent::Member Agent::_handlers[] = {&Agent::handle_thread,
                                     &Agent::handle_display,
-                                    // &Agent::handle_task,
+                                    &Agent::handle_task,
                                     // &Agent::handle_active,
-                                    // &Agent::handle_address_space,
-                                    // &Agent::handle_segment,
+                                    &Agent::handle_address_space,
+                                    &Agent::handle_segment,
                                     &Agent::handle_mutex,
                                     &Agent::handle_semaphore,
                                     &Agent::handle_condition,

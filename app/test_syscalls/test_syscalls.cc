@@ -100,7 +100,7 @@ int main()
     chrono->stop();
     unsigned long long ts = chrono->ticks(); //Time Stamp
     cout << "time_stamp = " << ts << endl; //time_stamp is multiplied by ~12
-    
+
     chrono->reset();
     chrono->start();
     Alarm::delay(500000);

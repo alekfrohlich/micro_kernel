@@ -130,7 +130,7 @@ protected:
     static Scheduler<Thread> _scheduler;
 };
 
-
+//!TODO: What is the usage of this ctor?
 template<typename ... Tn>
 inline Thread::Thread(int (* entry)(Tn ...), Tn ... an)
 : _state(READY), _waiting(0), _joining(0), _link(this, NORMAL)
@@ -194,11 +194,13 @@ public:
     : _as (new (SYSTEM) Address_Space), _cs(cs), _ds(ds), _code(_as->attach(_cs, Memory_Map::APP_CODE)), _data(_as->attach(_ds, Memory_Map::APP_DATA)) {
         db<Task>(TRC) << "Task(as=" << _as << ",cs=" << _cs << ",ds=" << _ds <<  ",code=" << _code << ",data=" << _data << ") => " << this << endl;
     }
-    Task(Address_Space * as, Segment * cs, Segment * ds)
-    : _as(as), _cs(cs), _ds(ds), _code(_as->attach(_cs, Memory_Map::APP_CODE)), _data(_as->attach(_ds, Memory_Map::APP_DATA)) {
-        db<Task>(TRC) << "Task(as=" << _as << ",cs=" << _cs << ",ds=" << _ds <<  ",code=" << _code << ",data=" << _data << ") => " << this << endl;
+    // Task(Address_Space * as, Segment * cs, Segment * ds)
+    // : _as(as), _cs(cs), _ds(ds), _code(_as->attach(_cs, Memory_Map::APP_CODE)), _data(_as->attach(_ds, Memory_Map::APP_DATA)) {
+    //     db<Task>(TRC) << "Task(as=" << _as << ",cs=" << _cs << ",ds=" << _ds <<  ",code=" << _code << ",data=" << _data << ") => " << this << endl;
+    // }
+    ~Task(){
+        
     }
-    ~Task();
     
     static void activate(volatile Task * t) {
         Task::_active = t;

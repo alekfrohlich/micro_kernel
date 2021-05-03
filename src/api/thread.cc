@@ -25,17 +25,23 @@ void Thread::constructor_prologue(unsigned int stack_size)
     _thread_count++;
     _scheduler.insert(this);
 
-    // The main stack is statically allocated right bellow its Heap (at the last addresses of APP_DATA).
-    // After Init_Application, newly created Threads will have their stacks located at the App's Heap.
-    // Lastly, the first application has an extra stack for the idle Thread.
-    if (this->_link.rank() == MAIN) {
-        _stack =  reinterpret_cast<char *>(Traits<Application>::APP_HEAP - 4 - (16 * 1024)); 
-    } else if (this->_link.rank() == IDLE) {
-        _stack = new (SYSTEM) char[stack_size];
+    if (_state == RUNNING) {
+        _stack = reinterpret_cast<char*>(System::info()->lm.app_stack);
     } else {
-        // _task->_heap->alloc(stack_size);
-        _stack = reinterpret_cast<char *>(_task->_heap->alloc(stack_size));
+        _stack = new (SYSTEM) char[stack_size];
     }
+
+    // // The main stack is statically allocated right bellow its Heap (at the last addresses of APP_DATA).
+    // // After Init_Application, newly created Threads will have their stacks located at the App's Heap.
+    // // Lastly, the first application has an extra stack for the idle Thread.
+    // if (this->_link.rank() == MAIN) {
+    //     _stack =  reinterpret_cast<char *>(Traits<Application>::APP_HEAP - 4 - (16 * 1024)); 
+    // } else if (this->_link.rank() == IDLE) {
+    //     _stack = new (SYSTEM) char[stack_size];
+    // } else {
+    //     // _task->_heap->alloc(stack_size);
+    //     // _stack = reinterpret_cast<char *>(_task->_heap->alloc(stack_size));
+    // }
 }
 
 

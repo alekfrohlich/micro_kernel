@@ -146,7 +146,7 @@ void Setup_SifiveE::build_lm()
     si->lm.has_stp = (si->bm.setup_offset != -1u);
     si->lm.has_ini = (si->bm.init_offset != -1u);
     si->lm.has_sys = (si->bm.system_offset != -1u);
-    si->lm.has_app = (si->bm.application_offset[0] != -1u);
+    si->lm.has_app = (si->bm.application_offset != -1u);
     si->lm.has_ext = (si->bm.extras_offset != -1u);
 
     bi = reinterpret_cast<char *>(Traits<Machine>::MEM_BASE); // bi is loaded at MEM_BASE
@@ -244,45 +244,55 @@ void Setup_SifiveE::build_lm()
     }
 
     // Check APPLICATION integrity and get the size of its segments
-    for(unsigned i=0; i < si->bm.n_apps; i++){
-        si->lm.app[i].app_entry = 0;
-        si->lm.app[i].app_segments = 0;
-        si->lm.app[i].app_code = ~0U;
-        si->lm.app[i].app_code_size = 0;
-        si->lm.app[i].app_data = ~0U;
-        si->lm.app[i].app_data_size = 0;
-        if(si->lm.has_app) {
-            ELF * app_elf = reinterpret_cast<ELF *>(&bi[si->bm.application_offset[i]]);
-            if(!app_elf->valid()) {
-                db<Setup>(ERR) << "Application ELF image is corrupted!" << endl;
-                _panic();
-            }
-            si->lm.app[i].app_entry = app_elf->entry();
-            si->lm.app[i].app_segments = app_elf->segments();
-            si->lm.app[i].app_code = app_elf->segment_address(0);
-            si->lm.app[i].app_code_size = app_elf->segment_size(0);
-            if(app_elf->segments() > 1) {
-                for(int j = 1; j < app_elf->segments(); j++) {
-                    if(app_elf->segment_type(j) != PT_LOAD) {
-                        continue;
-                    }
-                    if(app_elf->segment_address(j) < si->lm.app[i].app_data)
-                        si->lm.app[i].app_data = app_elf->segment_address(j);
-                    si->lm.app[i].app_data_size += app_elf->segment_size(j);
+    si->lm.app_entry = 0;
+    si->lm.app_segments = 0;
+    si->lm.app_code = ~0U;
+    si->lm.app_code_size = 0;
+    si->lm.app_data = ~0U;
+    si->lm.app_data_size = 0;
+    if(si->lm.has_app) {
+        ELF * app_elf = reinterpret_cast<ELF *>(&bi[si->bm.application_offset]);
+        if(!app_elf->valid()) {
+            db<Setup>(ERR) << "Application ELF image is corrupted!" << endl;
+            _panic();
+        }
+        si->lm.app_entry = app_elf->entry();
+        si->lm.app_segments = app_elf->segments();
+        si->lm.app_code = app_elf->segment_address(0);
+        si->lm.app_code_size = app_elf->segment_size(0);
+        if(app_elf->segments() > 1) {
+            for(int j = 1; j < app_elf->segments(); j++) {
+                if(app_elf->segment_type(j) != PT_LOAD) {
+                    continue;
                 }
+                if(app_elf->segment_address(j) < si->lm.app_data)
+                    si->lm.app_data = app_elf->segment_address(j);
+                si->lm.app_data_size += app_elf->segment_size(j);
             }
-            if(si->lm.app[i].app_code != APP_CODE) {
-                db<Setup>(ERR) << "App code segment address (" << reinterpret_cast<void *>(si->lm.app[i].app_code) << ") does not match the machine's memory map (" << reinterpret_cast<void *>(APP_CODE) << ")!" << endl;
-                _panic();
-            }
-            if(si->lm.app[i].app_code + si->lm.app[i].app_code_size > si->lm.app[i].app_data) {
-                db<Setup>(ERR) << "App code segment is too large!" << endl;
-                _panic();
-            }
-            if(si->lm.app[i].app_data != APP_DATA) {
-                db<Setup>(ERR) << "App data segment address (" << reinterpret_cast<void *>(si->lm.app[i].app_data) << ") does not match the machine's memory map (" << reinterpret_cast<void *>(APP_DATA) << ")!" << endl;
-                _panic();
-            }
+        }
+        if(si->lm.app_code != APP_CODE) {
+            db<Setup>(ERR) << "App code segment address (" << reinterpret_cast<void *>(si->lm.app_code) << ") does not match the machine's memory map (" << reinterpret_cast<void *>(APP_CODE) << ")!" << endl;
+            _panic();
+        }
+        if(si->lm.app_code + si->lm.app_code_size > si->lm.app_data) {
+            db<Setup>(ERR) << "App code segment is too large!" << endl;
+            _panic();
+        }
+        if(si->lm.app_data != APP_DATA) {
+            db<Setup>(ERR) << "App data segment address (" << reinterpret_cast<void *>(si->lm.app_data) << ") does not match the machine's memory map (" << reinterpret_cast<void *>(APP_DATA) << ")!" << endl;
+            _panic();
+        }
+        ASM("app_loader2:");
+        si->lm.app_data_size = MMU::align_page(si->lm.app_data_size);
+        si->lm.app_stack = si->lm.app_data + si->lm.app_data_size;
+        si->lm.app_data_size += MMU::align_page(Traits<Application>::STACK_SIZE);
+        si->lm.app_heap = si->lm.app_data + si->lm.app_data_size;
+        si->lm.app_data_size += MMU::align_page(Traits<Application>::HEAP_SIZE);
+        if(si->lm.has_ext) { // Check for EXTRA data in the boot image
+            si->lm.app_extra = si->lm.app_data + si->lm.app_data_size;
+            si->lm.app_extra_size = si->bm.img_size - si->bm.extras_offset;
+            si->lm.app_extra_size = MMU::align_page(si->lm.app_extra_size);
+            si->lm.app_data_size += si->lm.app_extra_size;
         }
     }
 }
@@ -343,6 +353,7 @@ void Setup_SifiveE::setup_supervisor_environment()
     // This creates and configures the kernel page tables (which map logical==physical)
     build_page_tables();
 
+    ASM("app_loader1:");
     si = reinterpret_cast<System_Info*>(placeholder);
     build_lm();
     load_parts();

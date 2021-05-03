@@ -104,7 +104,7 @@ public:
     CPU::Phy_Addr physical(const CPU::Log_Addr addr) { return _stub->physical(addr); }
 
     unsigned int size() const { return _stub->size(); }
-    CPU::Phy_Addr phy_address() const { return _stub->phy_address(); }
+    // CPU::Phy_Addr phy_address() { return _stub->phy_address(); }
     int resize(int amount) { return _stub->resize(amount); }
 
     // Synchronization

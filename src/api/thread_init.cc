@@ -22,40 +22,42 @@ void Thread::init()
     if(Traits<System>::multitask) {
         char * bi = reinterpret_cast<char*>(Memory_Map::MEM_BASE);
         
-        for(unsigned i = 0; i < si->bm.n_apps; i++) {
-            // We need W permission to load the segment
-            Segment * code_seg = new (SYSTEM) Segment(si->lm.app[i].app_code_size, MMU::Flags::ALL);
-            Segment * data_seg = new (SYSTEM) Segment(8*1024*1024, MMU::Flags::UDATA);
-            Task * app_task =  new (SYSTEM) Task(code_seg, data_seg);
+        // We need W permission to load the segment
+        Segment * code_seg = new (SYSTEM) Segment(si->lm.app_code_size, MMU::Flags::ALL);
+        Segment * data_seg = new (SYSTEM) Segment(si->lm.app_data_size, MMU::Flags::UDATA);
+        Task * app_task =  new (SYSTEM) Task(code_seg, data_seg);
 
-            db<Setup>(TRC) << "app_task = " << app_task << endl;
-            Task::activate(app_task);
-            
-            Task::_active->_heap = reinterpret_cast<Heap *>(Memory_Map::APP_HEAP);
-            
-            if(si->lm.has_app) {
-                ELF * app_elf = reinterpret_cast<ELF *>(&bi[si->bm.application_offset[i]]);
-                db<Setup>(TRC) << "Setup_SifiveE::load_app()" << endl;
-                if(app_elf->load_segment(0) < 0) {
-                    db<Setup>(ERR) << "Application code segment was corrupted during INIT!" << endl;
+        db<Setup>(TRC) << "app_task = " << app_task << endl;
+        Task::activate(app_task);
+        
+        // Task::_active->_heap = reinterpret_cast<Heap *>(Memory_Map::APP_HEAP);
+        
+        // Load App
+        if(si->lm.has_app) {
+            ELF * app_elf = reinterpret_cast<ELF *>(&bi[si->bm.application_offset]);
+            db<Setup>(TRC) << "Setup_SifiveE::load_app()" << endl;
+            if(app_elf->load_segment(0) < 0) {
+                db<Setup>(ERR) << "Application code segment was corrupted during INIT!" << endl;
+                Machine::panic();
+            }
+            for(int j = 1; j < app_elf->segments(); j++)
+                if(app_elf->load_segment(j) < 0) {
+                    db<Setup>(ERR) << "Application data segment was corrupted during INIT!" << endl;
                     Machine::panic();
                 }
-                for(int j = 1; j < app_elf->segments(); j++)
-                    if(app_elf->load_segment(j) < 0) {
-                        db<Setup>(ERR) << "Application data segment was corrupted during INIT!" << endl;
-                        Machine::panic();
-                    }
-            }
-            
-            new (SYSTEM) Thread(Thread::Configuration(Thread::RUNNING, Thread::MAIN), reinterpret_cast<Main *>(si->lm.app[i].app_entry));
         }
+
+        // Load Extra
+        db<Setup>(TRC) << "Setup_SifiveE::load_extra()" << endl;
+        if(si->lm.has_ext)
+            memcpy(reinterpret_cast<void *>(si->lm.app_extra), &bi[si->bm.extras_offset], si->lm.app_extra_size);
         
-        // We need to be in the AS of the first thread.
-        Task::activate(Thread::self()->_task);
+        new (SYSTEM) Thread(Thread::Configuration(Thread::RUNNING, Thread::MAIN), reinterpret_cast<Main *>(si->lm.app_entry));
     }
    
     // Idle thread creation does not cause rescheduling (see Thread::constructor_epilogue)
     Thread * idle = new (SYSTEM) Thread(Thread::Configuration(Thread::READY, Thread::IDLE), Thread::idle);
+    //!TODO: There should be two ctors: one for system threads and another for uthreads
     idle->_context->_st |= CPU::SPP_S;
 
     // The installation of the scheduler timer handler does not need to be done after the

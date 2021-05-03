@@ -19,6 +19,11 @@ class Application
 private:
     static void init();
 
+public:
+    static const unsigned int STACK_SIZE = Traits<Machine>::STACK_SIZE;
+    static const unsigned int HEAP_SIZE = 4*1024*1024;
+    static const unsigned int MAX_THREADS = Traits<Machine>::MAX_THREADS;
+
 private:
     static char _preheap[sizeof(Heap)];
     static Heap * _heap;

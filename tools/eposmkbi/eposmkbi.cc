@@ -220,6 +220,7 @@ int main(int argc, char **argv)
         si.bm.setup_offset = -1;
         fprintf(out, "    Adding setup \"%s\":", file);
         image_size += put_file(fd_img, file);
+        // Add room for System_Info
         image_size += pad(fd_img, 4*4096 - (image_size % 4096));
     } else
         si.bm.setup_offset = -1;
@@ -243,17 +244,22 @@ int main(int argc, char **argv)
     }
 
     // Add application(s) and data
-    si.bm.application_offset[0] = image_size - boot_size;
+    si.bm.application_offset = image_size - boot_size;
     fprintf(out, "    Adding application \"%s\":", argv[optind + 2]);
     image_size += put_file(fd_img, argv[optind + 2]);
     if((argc - optind) == 3) // single APP
         si.bm.extras_offset = -1;
     else{
-        for(int i=4; i<argc; i++){
-            si.bm.application_offset[i-3] = image_size - boot_size;
-            fprintf(out, "    Adding application \"%s\":", argv[i]);
+        si.bm.extras_offset = image_size - boot_size;
+        struct stat file_stat;
+        for(int i = optind + 3; i < argc; i++) {
+            fprintf(out, "    Adding file \"%s\":", argv[i]);
+            stat(argv[i], &file_stat);
+            image_size += put_number(fd_img, file_stat.st_size);
             image_size += put_file(fd_img, argv[i]);
         }
+        // Signalize last application by setting its size to 0
+        image_size += put_number(fd_img, 0);
     }
 
     // Add the size of the image to the Boot_Map in System_Info (excluding BOOT)
@@ -333,8 +339,8 @@ int main(int argc, char **argv)
     fprintf(out, "\n    si.bm.setup_offset %08x",       si.bm.setup_offset);
     fprintf(out, "\n    si.bm.init_offset %08x",        si.bm.init_offset);
     fprintf(out, "\n    si.bm.system_offset %08x",      si.bm.system_offset);
-    for (unsigned i = 0; i < si.bm.n_apps; i++)
-        fprintf(out, "\n    si.bm.application_offset[%u] %08x", i, si.bm.application_offset[0]);
+    // for (unsigned i = 0; i < si.bm.n_apps; i++)
+    fprintf(out, "\n    si.bm.application_offset %08x", si.bm.application_offset);
     fprintf(out, "\n    si.bm.n_apps %u",             si.bm.n_apps);
     fprintf(out, "\n    si.bm.extras_offset %08x",      si.bm.extras_offset);
 
@@ -582,10 +588,8 @@ template<typename T> bool add_boot_map(int fd, System_Info * si)
         return false;
     if(!put_number(fd, static_cast<T>(si->bm.system_offset)))
         return false;
-    for(int i=0; i<8; i++){
-        if(!put_number(fd, static_cast<T>(si->bm.application_offset[i])))                 
-            return false;
-    }
+    if(!put_number(fd, static_cast<T>(si->bm.application_offset)))                 
+        return false;
     if(!put_number(fd, static_cast<T>(si->bm.n_apps)))
         return false;
     if(!put_number(fd, static_cast<T>(si->bm.extras_offset)))

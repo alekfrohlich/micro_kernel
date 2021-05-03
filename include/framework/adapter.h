@@ -64,7 +64,7 @@ public:
     CPU::Phy_Addr physical(const CPU::Log_Addr & addr) { enter(); CPU::Phy_Addr res = Component::physical(addr); leave(); return res; }
 
     unsigned int size() { enter(); unsigned int res = Component::size(); leave(); return res; }
-    CPU::Phy_Addr phy_address() { enter(); CPU::Phy_Addr res = Component::phy_address(); leave(); return res; }
+    // CPU::Phy_Addr phy_address() { enter(); CPU::Phy_Addr res = Component::phy_address(); leave(); return res; }
     int resize(int amount) { enter(); int res = Component::resize(amount); leave(); return res; }
 
     // Synchronization
