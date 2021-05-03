@@ -80,11 +80,14 @@ void Alarm::period(const Microsecond & p)
 void Alarm::delay(const Microsecond & time)
 {
     db<Alarm>(TRC) << "Alarm::delay(time=" << time << ")" << endl;
-
-    Semaphore semaphore(0);
-    Semaphore_Handler handler(&semaphore);
-    Alarm alarm(time, &handler, 1); // if time < tick trigger v()
-    semaphore.p();
+    //!TODO: Kernel stack
+    Semaphore * semaphore = new (SYSTEM) Semaphore(0);
+    Semaphore_Handler * handler = new (SYSTEM) Semaphore_Handler(semaphore);
+    Alarm * alarm = new (SYSTEM) Alarm(time, handler, 1); // if time < tick trigger v()
+    semaphore->p();
+    delete alarm;
+    delete handler;
+    delete semaphore;
 }
 
 

@@ -177,7 +177,7 @@ void CPU::switch_context(Context ** o, Context * n, unsigned int change_satp, un
         "       sret                            \n");
 }
 
-
+//!TODO: write message to a0
 void CPU::syscall(void * message){
     ASM("  ecall  \n");
 }
