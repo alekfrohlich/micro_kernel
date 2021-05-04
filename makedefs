@@ -176,16 +176,16 @@ cortex_IMG_SUFFIX	:= .img
 endif
 
 ifeq ($(MMOD),sifive_e)
-riscv_CC_FLAGS          := -Wl, -mno-relax -march='rv32g'
+riscv_CC_FLAGS          := -Wl, -mno-relax -march='rv32g' -mno-shorten-memrefs -msmall-data-limit=0
 riscv_AS_FLAGS          :=
-riscv_LD_FLAGS          := --no-relax
+riscv_LD_FLAGS          := --no-relax -z norelro
 # riscv_EMULATOR			= qemu-system-riscv32 -machine virt -cpu rv32gcsu-v1.10.0 -smp $(CPUS) -m $(MEM_SIZE)k -serial mon:stdio -bios none -nographic -no-reboot -kernel 
 riscv_EMULATOR			= qemu-system-riscv32 -machine virt -cpu rv32gcsu-v1.10.0 -smp $(CPUS) -m $(MEM_SIZE)k -serial mon:stdio -bios none -nographic -no-reboot -device loader,force-raw=on,addr=0x80000000,file=
 riscv_DEBUGGER          := $(COMP_PREFIX)gdb
 riscv_FLASHER           :=
 riscv_MAGIC             := --nmagic
 riscv_CODE_NAME 		:= .init
-riscv_DATA_NAME 		:= .sdata
+riscv_DATA_NAME 		:= .data
 riscv_IMG_SUFFIX        := .img
 endif
 
