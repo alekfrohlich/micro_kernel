@@ -123,7 +123,7 @@ protected:
     Context * volatile _context;
     volatile State _state;
     
-    volatile Task * _task;
+    Task * _task;
     
     Queue * _waiting;
     Thread * volatile _joining;
@@ -175,13 +175,11 @@ protected:
     Task(Address_Space * as, Segment * cs, Segment * ds, int (* entry)())
     : _as(as), _cs(cs), _ds(ds), _code(_as->attach(_cs, Memory_Map::APP_CODE)), _data(_as->attach(_ds, Memory_Map::APP_DATA)) {
         db<Task>(TRC) << "Task(as=" << _as << ",cs=" << _cs << ",ds=" << _ds <<  ",code=" << _code << ",data=" << _data << ") => " << this << endl;
+        activate(this);
         _main = new (SYSTEM) Thread(Thread::Configuration(Thread::RUNNING, Thread::MAIN, this), entry);
     }
 
 public:
-    // static volatile Task * _active;
-    // Heap * _heap;
-    
     Task(Segment * cs, Segment * ds)
     : _as (new (SYSTEM) Address_Space), _cs(cs), _ds(ds), _code(_as->attach(_cs, Memory_Map::APP_CODE)), _data(_as->attach(_ds, Memory_Map::APP_DATA)) {
         db<Task>(TRC) << "Task(as=" << _as << ",cs=" << _cs << ",ds=" << _ds <<  ",code=" << _code << ",data=" << _data << ") => " << this << endl;
@@ -238,7 +236,15 @@ inline Thread::Thread(const Configuration & conf, int (* entry)(Tn ...), Tn ... 
 : _state(conf.state), _task(conf.task? conf.task : Task::active()), _waiting(0), _joining(0), _link(this, conf.criterion)
 {
     constructor_prologue(conf.stack_size);
-    _context = CPU::init_stack(0, _stack + conf.stack_size, &__exit, entry, an ...);
+    _ustack = new (SYSTEM) Segment(Traits<Machine>::STACK_SIZE, MMU::Flags::ALL);
+    auto usp = Task::active()->address_space()->attach(_ustack);
+    db<Thread>(WRN) << "usp=" << usp << endl;
+    usp = CPU::init_user_stack(usp+Traits<Machine>::STACK_SIZE, &__exit, an ...);
+    db<Thread>(WRN) << "usp=" << usp << endl;    
+    Task::active()->address_space()->detach(_ustack);
+    db<Thread>(WRN) << _task->address_space()->attach(_ustack) << endl;
+
+    _context = CPU::init_stack(usp, _stack + conf.stack_size, &__exit, entry, an ...);
     constructor_epilogue(entry, conf.stack_size);
 }
 

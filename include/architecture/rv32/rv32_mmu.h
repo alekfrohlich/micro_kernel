@@ -192,7 +192,16 @@ public:
             return from << DIRECTORY_SHIFT;
         }
 
-        void detach(const Chunk & chunk) {}
+        void detach(const Chunk & chunk) {
+            // db<Directory>(TRC) << "Directory::detach(this=" << (void*)this << ", chunk=" << chunk << ")" << endl;
+            for(unsigned int i = 0; i < PD_ENTRIES; i++) {
+                if (reinterpret_cast<Page_Table*>((*_pd)[i]) == chunk.pt()) {
+                    for (unsigned int j = 0; j < chunk.pts(); j++)
+                        (*_pd)[i+j] = 0;
+                }
+            }
+        }
+
         void detach(const Chunk & chunk, Log_Addr addr) {}
 
         Phy_Addr physical(Log_Addr addr) { return addr; }

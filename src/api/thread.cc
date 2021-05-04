@@ -21,15 +21,14 @@ void Thread::constructor_prologue(unsigned int stack_size)
 {
     lock();
     
-    _task = Task::_active;
     _thread_count++;
     _scheduler.insert(this);
 
-    if (_state == RUNNING) {
-        _stack = reinterpret_cast<char*>(System::info()->lm.app_stack);
-    } else {
-        _stack = new (SYSTEM) char[stack_size];
-    }
+    // if (_state == RUNNING) {
+    //     _stack = reinterpret_cast<char*>(System::info()->lm.app_stack);
+    // } else {
+    _stack = new (SYSTEM) char[stack_size];
+    // }
 
     // // The main stack is statically allocated right bellow its Heap (at the last addresses of APP_DATA).
     // // After Init_Application, newly created Threads will have their stacks located at the App's Heap.

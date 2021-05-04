@@ -8,14 +8,16 @@ using namespace EPOS;
 
 OStream cout;
 
-extern "C" char * _end;
+extern "C" char _end;
 
 int main()
 {
     cout << "Loading beginned" << endl;
-    unsigned * extras = static_cast<unsigned*>(MMU::align_page(&_end) + Application::STACK_SIZE + Application::HEAP_SIZE);
+    unsigned end = ((unsigned)&_end < Application::APP_DATA) ? Application::APP_DATA : (unsigned)MMU::align_page(&_end);
+    int * extras = static_cast<int*>(MMU::align_page(end) + Application::HEAP_SIZE);
+    cout << "end=" << end << endl;
     cout << "Extras is located at addr=" << extras << endl;
-    for (int app_size = *reinterpret_cast<int*>(extras); app_size; extras += app_size/4, app_size = *reinterpret_cast<int*>(extras)) {
+    for (int app_size = *extras; app_size; extras += app_size/4, app_size = *reinterpret_cast<int*>(extras)) {
         ELF * app_elf = reinterpret_cast<ELF *>(++extras);
         if (!app_elf->valid()) {
             cout << "Skipping corrupted App" << endl;

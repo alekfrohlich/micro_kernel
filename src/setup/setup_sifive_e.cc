@@ -270,6 +270,18 @@ void Setup_SifiveE::build_lm()
                 si->lm.app_data_size += app_elf->segment_size(j);
             }
         }
+        if(si->lm.app_data == ~0U)
+            si->lm.app_data = APP_DATA;
+        si->lm.app_data_size = MMU::align_page(si->lm.app_data_size);
+        si->lm.app_heap = si->lm.app_data + si->lm.app_data_size;
+        si->lm.app_data_size += MMU::align_page(Traits<Application>::HEAP_SIZE);
+        if(si->lm.has_ext) { // Check for EXTRA data in the boot image
+            si->lm.app_extra = si->lm.app_data + si->lm.app_data_size;
+            si->lm.app_extra_size = si->bm.img_size - si->bm.extras_offset;
+            si->lm.app_extra_size = MMU::align_page(si->lm.app_extra_size);
+            si->lm.app_data_size += si->lm.app_extra_size;
+        }
+
         if(si->lm.app_code != APP_CODE) {
             db<Setup>(ERR) << "App code segment address (" << reinterpret_cast<void *>(si->lm.app_code) << ") does not match the machine's memory map (" << reinterpret_cast<void *>(APP_CODE) << ")!" << endl;
             _panic();
@@ -281,18 +293,6 @@ void Setup_SifiveE::build_lm()
         if(si->lm.app_data != APP_DATA) {
             db<Setup>(ERR) << "App data segment address (" << reinterpret_cast<void *>(si->lm.app_data) << ") does not match the machine's memory map (" << reinterpret_cast<void *>(APP_DATA) << ")!" << endl;
             _panic();
-        }
-        ASM("app_loader2:");
-        si->lm.app_data_size = MMU::align_page(si->lm.app_data_size);
-        si->lm.app_stack = si->lm.app_data + si->lm.app_data_size;
-        si->lm.app_data_size += MMU::align_page(Traits<Application>::STACK_SIZE);
-        si->lm.app_heap = si->lm.app_data + si->lm.app_data_size;
-        si->lm.app_data_size += MMU::align_page(Traits<Application>::HEAP_SIZE);
-        if(si->lm.has_ext) { // Check for EXTRA data in the boot image
-            si->lm.app_extra = si->lm.app_data + si->lm.app_data_size;
-            si->lm.app_extra_size = si->bm.img_size - si->bm.extras_offset;
-            si->lm.app_extra_size = MMU::align_page(si->lm.app_extra_size);
-            si->lm.app_data_size += si->lm.app_extra_size;
         }
     }
 }

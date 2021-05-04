@@ -56,7 +56,7 @@ void CPU::Context::save() volatile //!P4: Unused, as of now
 void CPU::Context::load() const volatile
 {
     ASM("       mv      sp, %0                  \n"                     // load the stack pointer with the this pointer
-        "       addi    sp, sp, 120             \n" : : "r"(this));     // adjust the stack pointer to match the subsequent series of pops
+        "       addi    sp, sp, %1              \n" : : "r"(this), "i"(sizeof(CPU::Context)));     // adjust the stack pointer to match the subsequent series of pops
 
     ASM("       lw       x1, -112(sp)           \n"     // pop ra
         "       lw       x5, -108(sp)           \n"     // pop x5-x31
@@ -90,6 +90,7 @@ void CPU::Context::load() const volatile
         "       csrs    sstatus,   gp           \n"     // set sstatus for sret
         "       lw       gp, -116(sp)           \n"     // pop pc
         "       csrw     sepc,     gp           \n"     // move pc to sepc for sret
+        "       lw      sp,  -124(sp)           \n"     // Load user stack pointer
         "       sret                            \n");
 }
 

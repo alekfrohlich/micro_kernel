@@ -24,7 +24,7 @@ void Thread::init()
         Machine::panic();
     }
 
-    // We need W permission to load the segment
+    //!TMP: We need W permission to load the segment; _end might be on code segment if App has no data
     Task * loader_task = new (SYSTEM) Task( new (SYSTEM) Address_Space(MMU::current()),
                                             new (SYSTEM) Segment(si->lm.app_code_size, MMU::Flags::ALL),
                                             new (SYSTEM) Segment(si->lm.app_data_size, MMU::Flags::UDATA),
@@ -40,18 +40,20 @@ void Thread::init()
         db<Task>(ERR) << "Application code segment was corrupted during INIT!" << endl;
         Machine::panic();
     }
-    for(int j = 1; j < app_elf->segments(); j++)
+    for(int j = 1; j < app_elf->segments(); j++) {
+        if(app_elf->segment_type(j) != PT_LOAD)
+            continue;
         if(app_elf->load_segment(j) < 0) {
             db<Task>(ERR) << "Application data segment was corrupted during INIT!" << endl;
             Machine::panic();
         }
+    }
 
     // Load Extra
     db<Task>(TRC) << "load_extra()" << endl;
     if(si->lm.has_ext)
         memcpy(reinterpret_cast<void *>(si->lm.app_extra), &bi[si->bm.extras_offset], si->lm.app_extra_size);
     
-    // new (SYSTEM) Thread(Thread::Configuration(Thread::RUNNING, Thread::MAIN), reinterpret_cast<Main *>(si->lm.app_entry));
 
     // Idle thread creation does not cause rescheduling (see Thread::constructor_epilogue)
     // Thread * idle = new (SYSTEM) Thread(Thread::Configuration(Thread::READY, Thread::IDLE), Thread::idle);
