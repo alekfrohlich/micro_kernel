@@ -41,9 +41,6 @@ public:
     }
 
     int load_segment(int i, Elf32_Addr addr = 0);
-
-    int file_size() { return e_shoff + e_shnum*e_shentsize; }
-
 private:
     Elf32_Phdr * pht() { return (Elf32_Phdr *)(((char *) this) + e_phoff); }
     Elf32_Phdr * seg(int i) { return &pht()[i];  }

@@ -2,7 +2,7 @@ P3.
 
 
 P4-P5.
-Detach unmap
 switch context has a bug: sstatus is written directly and no care is taken to avoid reentrancy
 we need to switch address space inside swtich context; for, otherwise, context will be saved in next's.
+
 Remap pages after load_segment()
