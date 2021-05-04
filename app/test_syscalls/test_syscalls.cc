@@ -128,6 +128,57 @@ int main()
     
     // We now wake suspended
     suspended->resume();
+    
+    // Test Segment
+    cout << "Segment:" << endl;
+    Segment * seg = new Segment(1024, MMU::Flags::ALL);
+    unsigned int seg_size = seg->size();
+    cout << "seg_size=" << seg_size << endl;
+    CPU::Phy_Addr phy_addr = seg->phy_address();
+    cout << "phy_addr=" << phy_addr << endl;
+    delete seg;
+    
+    // Test Address Space
+    cout << "Address Space:" << endl;
+    Address_Space * addr_s = new Address_Space(MMU::current());
+    
+    CPU::Phy_Addr pd = addr_s->pd();
+    cout << "MMU::current=" << MMU::current() << "  pd=" << pd << endl;
+    
+    Address_Space * addr_s2 = new Address_Space();
+    Segment * seg2 = new Segment(1024, MMU::Flags::ALL);
+    addr_s2->attach(seg2, 0xb0000000);
+    
+    CPU::Phy_Addr phy_addr2 = seg2->phy_address();
+    cout << "phy_add2r=" << phy_addr2 << endl;
+    CPU::Phy_Addr physical = addr_s2->physical(0xb0000000);
+    cout << "physical=" << physical << endl;
+    cout << "physical=" << physical+1 << endl;
+    cout << "physical=" << physical+4 << endl;
+    
+    addr_s2->detach(seg2, 0xb0000000);
+    delete seg2;
+    delete addr_s2;
+    
+    // Test Task
+    cout << "Task:" << endl;
+    Segment * cs = new Segment(2048, MMU::Flags::ALL);
+    Segment * ds = new Segment(4096, MMU::Flags::ALL);
+    Task * task = new Task(cs, ds);
+    
+    CPU::Log_Addr code = task->code();
+    CPU::Log_Addr data = task->data();
+    cout << "code segment starts at " << code << endl;
+    cout << "data segment starts at " << data << endl;
+    
+    Segment * task_cs = task->code_segment();
+    Segment * task_ds = task->data_segment();
+    cout << "task->_cs points to " << task_cs << "  original cs points to " << cs << endl;
+    cout << "task->_ds points to " << task_ds << "  original ds points to " << ds << endl;
+    Address_Space * task_as = task->address_space();
+    cout << "task->_as points to " << task_as << endl;
+    
+    delete task;    
 
     return 0;
 }

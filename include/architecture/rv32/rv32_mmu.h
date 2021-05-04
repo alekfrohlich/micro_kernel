@@ -126,6 +126,12 @@ public:
         Chunk(unsigned int bytes, const Flags & flags)
         : _from(0), _to(pages(bytes)), _pts(page_tables(_to - _from)), _bytes(bytes), _flags(RV32_Flags(flags)), _pt(calloc(_pts)) {
             _contiguous = _pt->map(_flags, _from, _to);
+            if(_contiguous){
+                unsigned int ppn =  (*_pt)[_from] >> 10;
+                _phy_addr =  ppn << 12;
+            } else {
+                _phy_addr = 0;
+            }
         }
 
         // Chunk(const Phy_Addr & phy_addr, unsigned int bytes, const Flags & flags)
@@ -160,14 +166,14 @@ public:
         // Flags flags() const { return Flags(_flags); }
         Page_Table * pt() const { return _pt; }
         unsigned int size() const { return _bytes; }
-        // Phy_Addr phy_address() const { return _phy_addr; } // always CT
+        Phy_Addr phy_address() const { return _phy_addr; } // always CT
         int resize(unsigned int amount) { return 0; } // no resize in CT
 
     private:
         unsigned int _from;
         unsigned int _to;
         unsigned int _pts;
-        // Phy_Addr _phy_addr;
+        Phy_Addr _phy_addr;
         unsigned int _bytes;
         RV32_Flags _flags;
         Page_Table * _pt;
@@ -227,7 +233,20 @@ public:
             }
         }
 
-        Phy_Addr physical(Log_Addr addr) { return addr; }
+        Phy_Addr physical(Log_Addr addr) { 
+            unsigned int vpnr = addr >> 22;
+            unsigned int vpnl = (addr << 10) >> 22;
+            unsigned int offset = (addr << 20) >> 20;
+            
+            unsigned int ppn =  (*_pd)[vpnr] >> 10;
+            Page_Table * pt_addr = reinterpret_cast<Page_Table *>(ppn << 12);
+            
+            unsigned ppn2 = (*pt_addr)[vpnl] >> 10;
+            // Phy_Addr phy_addr = reinterpret_cast<Phy_Addr>((ppn2 << 12) + offset);
+            Phy_Addr phy_addr = Phy_Addr((ppn2 << 12) + offset);
+            
+            return phy_addr; 
+        }
 
     private:
         bool attach(unsigned int from, const Page_Table * pt, unsigned int n, RV32_Flags flags) {
@@ -279,7 +298,8 @@ public:
     static unsigned int allocable() { return _free.head() ? _free.head()->size() : 0; }
 
     static Page_Directory * volatile current() { return _master; }
-
+    // static Page_Directory * volatile current() { return reinterpret_cast<Page_Directory *>(((Thread::self())->task())->get_active_pd()); }
+    
     static Phy_Addr physical(Log_Addr addr) { return addr; }
 
     static void flush_tlb() {}

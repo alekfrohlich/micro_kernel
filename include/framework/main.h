@@ -49,15 +49,16 @@ EXPORT(Function_Handler);
 
 EXPORT(System);
 EXPORT(Application);
+EXPORT(MMU);
 
 BIND(Thread);
 // BIND(Periodic_Thread);
 // BIND(RT_Thread);
 // BIND(ACTIVE);
-// BIND(Task);
+BIND(Task);
 
-// BIND(Address_Space);
-// BIND(Segment);
+BIND(Address_Space);
+BIND(Segment);
 
 BIND(Mutex);
 BIND(Semaphore);

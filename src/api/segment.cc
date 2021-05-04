@@ -37,10 +37,10 @@ unsigned int Segment::size() const
 }
 
 
-// Segment::Phy_Addr Segment::phy_address() const
-// {
-//     return Chunk::phy_address();
-// }
+Segment::Phy_Addr Segment::phy_address() const
+{
+    return Chunk::phy_address();
+}
 
 
 int Segment::resize(int amount)
