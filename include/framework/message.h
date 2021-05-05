@@ -57,6 +57,7 @@ public:
         TASK_CODE,
         TASK_DATA,
         TASK_MAIN,
+        TASK_ACTIVE,
 
         ADDRESS_SPACE_PD = COMPONENT,
         ADDRESS_SPACE_ATTACH1,

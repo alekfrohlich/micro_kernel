@@ -15,3 +15,7 @@ Currently, we have the following tests available:
 1) Syscalls: make APPS=test_syscalls run
 2) Switch context: make APPS='test_switch_context test_switch_context test_switch_context' run
 3) philosopher_dinner or producer_consumer, but they have to run separately due to the aforementioned bug on Alarm.
+
+
+remove-symbol-file /home/ngoeldner/Desktop/6semestre/so2/micro_kernel/app/loader/loader
+add-symbol-file /home/ngoeldner/Desktop/6semestre/so2/micro_kernel/app/hello/hello

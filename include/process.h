@@ -50,6 +50,7 @@ public:
         NORMAL  = Criterion::NORMAL,
         LOW     = Criterion::LOW,
         MAIN    = Criterion::MAIN,
+        LOADER  = Criterion::LOADER,
         IDLE    = Criterion::IDLE
     };
 
@@ -176,16 +177,18 @@ protected:
     : _as(as), _cs(cs), _ds(ds), _code(_as->attach(_cs, Memory_Map::APP_CODE)), _data(_as->attach(_ds, Memory_Map::APP_DATA)) {
         db<Task>(TRC) << "Task(as=" << _as << ",cs=" << _cs << ",ds=" << _ds <<  ",code=" << _code << ",data=" << _data << ") => " << this << endl;
         activate(this);
-        _main = new (SYSTEM) Thread(Thread::Configuration(Thread::RUNNING, Thread::MAIN, this), entry);
+        _main = new (SYSTEM) Thread(Thread::Configuration(Thread::RUNNING, Thread::LOADER, this), entry);
     }
 
 public:
-    Task(Segment * cs, Segment * ds)
+    Task(Segment * cs, Segment * ds, int (* entry)())
     : _as (new (SYSTEM) Address_Space), _cs(cs), _ds(ds), _code(_as->attach(_cs, Memory_Map::APP_CODE)), _data(_as->attach(_ds, Memory_Map::APP_DATA)) {
         db<Task>(TRC) << "Task(as=" << _as << ",cs=" << _cs << ",ds=" << _ds <<  ",code=" << _code << ",data=" << _data << ") => " << this << endl;
+        _main = new (SYSTEM) Thread(Thread::Configuration(Thread::READY, Thread::MAIN, this), entry);
     }
     
     ~Task(){
+        delete _main;
         _as->detach(_cs, Memory_Map::APP_CODE);
         _as->detach(_ds, Memory_Map::APP_DATA);
         delete _cs;
@@ -242,12 +245,13 @@ inline Thread::Thread(const Configuration & conf, int (* entry)(Tn ...), Tn ... 
 {
     constructor_prologue(conf.stack_size);
     _ustack = new (SYSTEM) Segment(Traits<Machine>::STACK_SIZE, MMU::Flags::ALL);
-    auto usp = Task::active()->address_space()->attach(_ustack);
-    db<Thread>(WRN) << "usp=" << usp << endl;
-    usp = CPU::init_user_stack(usp+Traits<Machine>::STACK_SIZE, &__exit, an ...);
-    db<Thread>(WRN) << "usp=" << usp << endl;    
-    Task::active()->address_space()->detach(_ustack);
-    db<Thread>(WRN) << _task->address_space()->attach(_ustack) << endl;
+    // auto usp = Task::active()->address_space()->attach(_ustack);
+    // db<Thread>(WRN) << "usp=" << usp << endl;
+    // usp = CPU::init_user_stack(usp+Traits<Machine>::STACK_SIZE, &__exit, an ...);
+    // db<Thread>(WRN) << "usp=" << usp << endl;    
+    // Task::active()->address_space()->detach(_ustack);
+    CPU::Log_Addr usp = _task->address_space()->attach(_ustack);
+    db<Thread>(WRN) << usp << endl;
 
     _context = CPU::init_stack(usp, _stack + conf.stack_size, &__exit, entry, an ...);
     constructor_epilogue(entry, conf.stack_size);

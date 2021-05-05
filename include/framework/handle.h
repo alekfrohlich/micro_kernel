@@ -94,6 +94,7 @@ public:
     CPU::Log_Addr code() const { return _stub->code(); }
     CPU::Log_Addr data() const { return _stub->data(); }
     Handle<Thread> * main() const { return new (_stub->main()) Handled<Thread>; }
+    static Handle<Task> * active() { return new (_Stub::active()) Handled<Task>; }
 
     // Memory Management
     CPU::Phy_Addr pd() { return _stub->pd(); }
@@ -104,7 +105,7 @@ public:
     CPU::Phy_Addr physical(const CPU::Log_Addr addr) { return _stub->physical(addr); }
 
     unsigned int size() const { return _stub->size(); }
-    // CPU::Phy_Addr phy_address() { return _stub->phy_address(); }
+    CPU::Phy_Addr phy_address() const { return _stub->phy_address(); }
     int resize(int amount) { return _stub->resize(amount); }
 
     // Synchronization

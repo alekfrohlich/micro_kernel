@@ -255,7 +255,7 @@ public:
 
     static void halt() { ASM("wfi"); }
 
-    static unsigned int id() { return tp(); }
+    static unsigned int id() { return 0; }
 
     static unsigned int mhartid() {
         int id;

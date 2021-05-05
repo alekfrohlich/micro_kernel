@@ -18,7 +18,10 @@ void IC::entry()
     ASM("        .align 4                                               \n"
         "                                                               \n"
         "# Save context                                                 \n"
-        "        addi        sp,     sp,   -136                         \n"          // 32 regs of 4 bytes each = 128 Bytes
+        "        mv          tp,     sp                                 \n"
+        "        csrr        sp,    sscratch                            \n"
+        "        csrw        sscratch,    tp                            \n"
+        "        addi        sp,     sp,   -136                   \n"          // 32 regs of 4 bytes each = 128 Bytes
         "        sw          x1,   4(sp)                                \n"
         "        sw          x2,   8(sp)                                \n"
         "        sw          x3,  12(sp)                                \n"
@@ -102,6 +105,7 @@ void IC::entry()
         "        csrw      sepc, x31                                    \n"
         "        lw         x31, 124(sp)                                \n"
         "        addi        sp, sp,    136                             \n"
+        "        mv          sp, tp                                     \n"
         "        sret                                                   \n" : : "i"(&dispatch), "i"(&CPU::syscalled));
 }
 

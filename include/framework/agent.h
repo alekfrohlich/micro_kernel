@@ -172,10 +172,16 @@ void Agent::handle_task()
     Result res = 0;
 
     switch(method()) {
-    case CREATE2: {
+    // case CREATE2: {
+    //     Segment * cs, * ds;
+    //     in(cs, ds);
+    //     id(Id(TASK_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Task>(cs, ds))));
+    // } break;
+    case CREATE3: {
         Segment * cs, * ds;
-        in(cs, ds);
-        id(Id(TASK_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Task>(cs, ds))));
+        int (*entry)();
+        in(cs, ds, entry);
+        id(Id(TASK_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Task>(cs, ds, entry))));
     } break;
     case DESTROY:
         delete task;
@@ -198,6 +204,9 @@ void Agent::handle_task()
     // case TASK_MAIN:
     //     res = reinterpret_cast<int>(task->main());
     //     break;
+    case TASK_ACTIVE:
+        res = reinterpret_cast<int>(Task::active());
+        break;
     default:
         res = UNDEFINED;
     }

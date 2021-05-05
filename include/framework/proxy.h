@@ -83,6 +83,7 @@ public:
     CPU::Log_Addr code() { return invoke(TASK_CODE); }
     CPU::Log_Addr data() { return invoke(TASK_DATA); }
     Proxy<Thread> * main() { return new (reinterpret_cast<Adapter<Thread> *>(invoke(TASK_MAIN))) Proxied<Thread>; }
+    static Proxy<Task> * active() { return new (reinterpret_cast<Adapter<Task> *>(static_invoke(TASK_ACTIVE))) Proxied<Task>; }
 
     // Memory management
     CPU::Phy_Addr pd() { return invoke(ADDRESS_SPACE_PD); }

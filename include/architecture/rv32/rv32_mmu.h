@@ -210,6 +210,7 @@ public:
             for(unsigned int i = from; i < PD_ENTRIES - chunk.pts(); i++)
                 if(attach(i, chunk.pt(), chunk.pts(), RV32_Flags::VALID))
                     return i << DIRECTORY_SHIFT;
+            ASM("sfence.vma"); //P5
             return false;
         }
 
@@ -218,6 +219,7 @@ public:
             unsigned int from = directory(addr);
             if(!attach(from, chunk.pt(), chunk.pts(), RV32_Flags::VALID))
                 return Log_Addr(false);
+            ASM("sfence.vma"); //P5
             return from << DIRECTORY_SHIFT;
         }
 
@@ -229,6 +231,7 @@ public:
                         (*_pd)[i+j] = 0;
                 }
             }
+            ASM("sfence.vma"); // P5
         }
 
         void detach(const Chunk & chunk, Log_Addr addr) {
@@ -239,6 +242,7 @@ public:
             for(unsigned int i = from; i < from + n; i++){
                 (*_pd)[i] = 0;
             }
+            ASM("sfence.vma"); // P5
         }
 
         Phy_Addr physical(Log_Addr addr) { 

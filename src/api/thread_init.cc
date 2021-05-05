@@ -25,8 +25,8 @@ void Thread::init()
     }
 
     //!TMP: We need W permission to load the segment; _end might be on code segment if App has no data
-    Task * loader_task = new (SYSTEM) Task( new (SYSTEM) Address_Space(MMU::current()),
-                                            new (SYSTEM) Segment(si->lm.app_code_size, MMU::Flags::ALL),
+    // Task * loader_task = new (SYSTEM) Task( new (SYSTEM) Address_Space(MMU::current()),
+    Task * loader_task = new (SYSTEM) Task( new (SYSTEM) Segment(si->lm.app_code_size, MMU::Flags::ALL),
                                             new (SYSTEM) Segment(si->lm.app_data_size, MMU::Flags::UDATA),
                                             reinterpret_cast<Main *>(si->lm.app_entry));
    

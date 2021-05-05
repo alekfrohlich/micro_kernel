@@ -109,6 +109,10 @@ Thread::~Thread()
     unlock();
 
     delete _stack;
+    
+    // P5
+    _task->address_space()->detach(_ustack);
+    delete _ustack;
 }
 
 
@@ -255,8 +259,9 @@ void Thread::exit(int status)
 
     Thread * next = _scheduler.choose(); // at least idle will always be there
     
-    // if (prev->_link.rank() == MAIN && prev->_task->has_idle == false) {
-    //     db<Thread>(TRC) << "Thread::exit(main without idle has exited)" << endl;
+    //!TODO:
+    // if (prev->_link.rank() == MAIN || prev->_link.rank() == LOADER) {
+    //     db<Thread>(TRC) << "Task will be deleted" << endl;
     //     delete prev->_task;
     // }
 
