@@ -1,0 +1,735 @@
+diff --git a/app/test_syscalls/test_syscalls.cc b/app/test_syscalls/test_syscalls.cc
+index b6365ba..c651bc7 100644
+--- a/app/test_syscalls/test_syscalls.cc
++++ b/app/test_syscalls/test_syscalls.cc
+@@ -128,6 +128,57 @@ int main()
+     
+     // We now wake suspended
+     suspended->resume();
++    
++    // Test Segment
++    cout << "Segment:" << endl;
++    Segment * seg = new Segment(1024, MMU::Flags::ALL);
++    unsigned int seg_size = seg->size();
++    cout << "seg_size=" << seg_size << endl;
++    CPU::Phy_Addr phy_addr = seg->phy_address();
++    cout << "phy_addr=" << phy_addr << endl;
++    delete seg;
++    
++    // Test Address Space
++    cout << "Address Space:" << endl;
++    Address_Space * addr_s = new Address_Space(MMU::current());
++    
++    CPU::Phy_Addr pd = addr_s->pd();
++    cout << "MMU::current=" << MMU::current() << "  pd=" << pd << endl;
++    
++    Address_Space * addr_s2 = new Address_Space();
++    Segment * seg2 = new Segment(1024, MMU::Flags::ALL);
++    addr_s2->attach(seg2, 0xb0000000);
++    
++    CPU::Phy_Addr phy_addr2 = seg2->phy_address();
++    cout << "phy_add2r=" << phy_addr2 << endl;
++    CPU::Phy_Addr physical = addr_s2->physical(0xb0000000);
++    cout << "physical=" << physical << endl;
++    cout << "physical=" << physical+1 << endl;
++    cout << "physical=" << physical+4 << endl;
++    
++    addr_s2->detach(seg2, 0xb0000000);
++    delete seg2;
++    delete addr_s2;
++    
++    // Test Task
++    cout << "Task:" << endl;
++    Segment * cs = new Segment(2048, MMU::Flags::ALL);
++    Segment * ds = new Segment(4096, MMU::Flags::ALL);
++    Task * task = new Task(cs, ds);
++    
++    CPU::Log_Addr code = task->code();
++    CPU::Log_Addr data = task->data();
++    cout << "code segment starts at " << code << endl;
++    cout << "data segment starts at " << data << endl;
++    
++    Segment * task_cs = task->code_segment();
++    Segment * task_ds = task->data_segment();
++    cout << "task->_cs points to " << task_cs << "  original cs points to " << cs << endl;
++    cout << "task->_ds points to " << task_ds << "  original ds points to " << ds << endl;
++    Address_Space * task_as = task->address_space();
++    cout << "task->_as points to " << task_as << endl;
++    
++    delete task;    
+ 
+     return 0;
+ }
+diff --git a/app/test_syscalls/test_syscalls_traits.h b/app/test_syscalls/test_syscalls_traits.h
+index b0ef66b..5225867 100644
+--- a/app/test_syscalls/test_syscalls_traits.h
++++ b/app/test_syscalls/test_syscalls_traits.h
+@@ -34,7 +34,7 @@ template<> struct Traits<Debug>: public Traits<Build>
+     static const bool error   = true;
+     static const bool warning = true;
+     static const bool info    = false;
+-    static const bool trace   = true;
++    static const bool trace   = false;
+ };
+ 
+ template<> struct Traits<Lists>: public Traits<Build>
+
+diff --git a/include/architecture/rv32/rv32_mmu.h b/include/architecture/rv32/rv32_mmu.h
+index 401d0a6..045a2f5 100644
+--- a/include/architecture/rv32/rv32_mmu.h
++++ b/include/architecture/rv32/rv32_mmu.h
+@@ -70,15 +70,17 @@ public:
+ 
+         PTE & operator[](unsigned int i) { return ptes[i]; }
+ 
+-        void map(const RV32_Flags & flags, int from, int to) {
++        bool map(const RV32_Flags & flags, int from, int to) {
+             Phy_Addr * addr = alloc(to - from);
+             // Try to alloc contiguous
+             if (addr) {
+                 remap(addr, flags, from , to);
++                return true;
+             } else {
+                 for(; from < to; from++){
+                     ptes[from] = ((alloc(1) >> 12) << 10) | flags ;
+                 }
++                return false;
+             }
+         }
+ 
+@@ -123,7 +125,13 @@ public:
+ 
+         Chunk(unsigned int bytes, const Flags & flags)
+         : _from(0), _to(pages(bytes)), _pts(page_tables(_to - _from)), _bytes(bytes), _flags(RV32_Flags(flags)), _pt(calloc(_pts)) {
+-            _pt->map(_flags, _from, _to);
++            _contiguous = _pt->map(_flags, _from, _to);
++            if(_contiguous){
++                unsigned int ppn =  (*_pt)[_from] >> 10;
++                _phy_addr =  ppn << 12;
++            } else {
++                _phy_addr = 0;
++            }
+         }
+ 
+         // Chunk(const Phy_Addr & phy_addr, unsigned int bytes, const Flags & flags)
+@@ -132,27 +140,44 @@ public:
+         // }
+ 
+         // ~Chunk() { free(_phy_addr, _bytes); }
++        // ~Chunk() {
++        //     for( ; _from < _to; _from++)
++        //         free((*static_cast<Page_Table *>(phy2log(_pt)))[_from]);
++        //     free(_pt, _pts);
++        // }
++        
+         ~Chunk() {
+-            for( ; _from < _to; _from++)
+-                free((*static_cast<Page_Table *>(phy2log(_pt)))[_from]);
++            db<Chunk>(TRC) << "Chunk::~(_from=" << _from << " _to=" << _to << ") " << endl;
++            if(_contiguous){
++                unsigned int ppn =  (*_pt)[_from] >> 10;
++                Phy_Addr pt_addr = ppn << 12;
++                free(pt_addr, _to - _from);
++            }else{
++                for( ; _from < _to; _from++){
++                    unsigned int ppn =  (*_pt)[_from] >> 10;
++                    Phy_Addr pt_addr = ppn << 12;
++                    free(pt_addr);
++                }
++            }
++            db<Chunk>(TRC) << "Chunk::~(_pt=" << _pt << " _pts=" << _pts << ") " << endl;
+             free(_pt, _pts);
+         }
+-
+         unsigned int pts() const { return _pts; }
+         // Flags flags() const { return Flags(_flags); }
+         Page_Table * pt() const { return _pt; }
+         unsigned int size() const { return _bytes; }
+-        // Phy_Addr phy_address() const { return _phy_addr; } // always CT
++        Phy_Addr phy_address() const { return _phy_addr; } // always CT
+         int resize(unsigned int amount) { return 0; } // no resize in CT
+ 
+     private:
+         unsigned int _from;
+         unsigned int _to;
+         unsigned int _pts;
+-        // Phy_Addr _phy_addr;
++        Phy_Addr _phy_addr;
+         unsigned int _bytes;
+         RV32_Flags _flags;
+         Page_Table * _pt;
++        bool _contiguous;
+ 
+     };
+ 
+@@ -169,6 +194,11 @@ public:
+             }
+         }
+         Directory(Page_Directory * pd) : _pd(pd) {}
++        
++        ~Directory() {
++            db<Directory>(TRC) << "Directory::~(_pd=" << _pd << ") " << endl;
++            free(_pd);
++        }
+ 
+         Phy_Addr pd() const { return _pd; }
+ 
+@@ -193,9 +223,30 @@ public:
+         }
+ 
+         void detach(const Chunk & chunk) {}
+-        void detach(const Chunk & chunk, Log_Addr addr) {}
++        void detach(const Chunk & chunk, Log_Addr addr) {
++            db<Directory>(TRC) << "Directory::detach(chunk=" << &chunk << " log_addr=" << addr << ") " << endl;
++            unsigned int from = directory(addr);
++            unsigned int n = chunk.pts();
++            db<Directory>(TRC) << "Directory::detach(from=" << from << " n=" << n << ") " << endl;
++            for(unsigned int i = from; i < from + n; i++){
++                (*_pd)[i] = 0;
++            }
++        }
+ 
+-        Phy_Addr physical(Log_Addr addr) { return addr; }
++        Phy_Addr physical(Log_Addr addr) { 
++            unsigned int vpnr = addr >> 22;
++            unsigned int vpnl = (addr << 10) >> 22;
++            unsigned int offset = (addr << 20) >> 20;
++            
++            unsigned int ppn =  (*_pd)[vpnr] >> 10;
++            Page_Table * pt_addr = reinterpret_cast<Page_Table *>(ppn << 12);
++            
++            unsigned ppn2 = (*pt_addr)[vpnl] >> 10;
++            // Phy_Addr phy_addr = reinterpret_cast<Phy_Addr>((ppn2 << 12) + offset);
++            Phy_Addr phy_addr = Phy_Addr((ppn2 << 12) + offset);
++            
++            return phy_addr; 
++        }
+ 
+     private:
+         bool attach(unsigned int from, const Page_Table * pt, unsigned int n, RV32_Flags flags) {
+@@ -247,7 +298,8 @@ public:
+     static unsigned int allocable() { return _free.head() ? _free.head()->size() : 0; }
+ 
+     static Page_Directory * volatile current() { return _master; }
+-
++    // static Page_Directory * volatile current() { return reinterpret_cast<Page_Directory *>(((Thread::self())->task())->get_active_pd()); }
++    
+     static Phy_Addr physical(Log_Addr addr) { return addr; }
+ 
+     static void flush_tlb() {}
+diff --git a/include/framework/agent.h b/include/framework/agent.h
+index 60cee10..cc21a47 100644
+--- a/include/framework/agent.h
++++ b/include/framework/agent.h
+@@ -34,10 +34,10 @@ public:
+ private:
+     void handle_thread();
+     void handle_display();
+-    // void handle_task();
++    void handle_task();
+     // void handle_active();
+-    // void handle_address_space();
+-    // void handle_segment();
++    void handle_address_space();
++    void handle_segment();
+     void handle_mutex();
+     void handle_semaphore();
+     void handle_condition();
+@@ -166,48 +166,44 @@ void Agent::handle_display()
+     result(res);
+ }
+ 
+-// void Agent::handle_task()
+-// {
+-//     Adapter<Task> * task = reinterpret_cast<Adapter<Task> *>(id().unit());
+-//     Result res = 0;
+-
+-//     switch(method()) {
+-//     case CREATE3: {
+-//         Segment * cs, * ds;
+-//         int (*entry)();
+-//         in(cs, ds, entry);
+-//         id(Id(TASK_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Task>(cs, ds, entry))));
+-//     } break;
+-//     case DESTROY:
+-//         delete task;
+-//         break;
+-//     case SELF:
+-//         id(Id(TASK_ID, reinterpret_cast<Id::Unit_Id>(Adapter<Task>::self())));
+-//         break;
+-//     case TASK_ADDRESS_SPACE:
+-//         res = reinterpret_cast<int>(task->address_space());
+-//         break;
+-//     case TASK_CODE_SEGMENT:
+-//         res = reinterpret_cast<int>(task->code_segment());
+-//         break;
+-//     case TASK_DATA_SEGMENT:
+-//         res = reinterpret_cast<int>(task->data_segment());
+-//         break;
+-//     case TASK_CODE:
+-//         res = task->code();
+-//         break;
+-//     case TASK_DATA:
+-//         res = task->data();
+-//         break;
+-//     case TASK_MAIN:
+-//         res = reinterpret_cast<int>(task->main());
+-//         break;
+-//     default:
+-//         res = UNDEFINED;
+-//     }
+-
+-//     result(res);
+-// };
++void Agent::handle_task()
++{
++    Adapter<Task> * task = reinterpret_cast<Adapter<Task> *>(id().unit());
++    Result res = 0;
++
++    switch(method()) {
++    case CREATE2: {
++        Segment * cs, * ds;
++        in(cs, ds);
++        id(Id(TASK_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Task>(cs, ds))));
++    } break;
++    case DESTROY:
++        delete task;
++        break;
++    case TASK_ADDRESS_SPACE:
++        res = reinterpret_cast<int>(task->address_space());
++        break;
++    case TASK_CODE_SEGMENT:
++        res = reinterpret_cast<int>(task->code_segment());
++        break;
++    case TASK_DATA_SEGMENT:
++        res = reinterpret_cast<int>(task->data_segment());
++        break;
++    case TASK_CODE:
++        res = task->code();
++        break;
++    case TASK_DATA:
++        res = task->data();
++        break;
++    // case TASK_MAIN:
++    //     res = reinterpret_cast<int>(task->main());
++    //     break;
++    default:
++        res = UNDEFINED;
++    }
++
++    result(res);
++};
+ 
+ 
+ // void Agent::handle_active()
+@@ -216,105 +212,105 @@ void Agent::handle_display()
+ // };
+ 
+ 
+-// void Agent::handle_address_space()
+-// {
+-//     Adapter<Address_Space> * as = reinterpret_cast<Adapter<Address_Space> *>(id().unit());
+-//     Result res = 0;
+-
+-//     switch(method()) {
+-//     case CREATE:
+-//         id(Id(ADDRESS_SPACE_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Address_Space>())));
+-//         break;
+-//     case CREATE1:
+-//         MMU::Page_Directory * pd;
+-//         in(pd);
+-//         id(Id(ADDRESS_SPACE_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Address_Space>(pd))));
+-//         break;
+-//     case DESTROY:
+-//         delete as;
+-//         break;
+-//     case ADDRESS_SPACE_PD:
+-//         res = as->pd();
+-//         break;
+-//     case ADDRESS_SPACE_ATTACH1: {
+-//         Segment * seg;
+-//         in(seg);
+-//         res = as->attach(seg);
+-//     } break;
+-//     case ADDRESS_SPACE_ATTACH2: {
+-//         Segment * seg;
+-//         CPU::Log_Addr addr;
+-//         in(seg, addr);
+-//         res = as->attach(seg, addr);
+-//     } break;
+-//     case ADDRESS_SPACE_DETACH1: {
+-//         Segment * seg;
+-//         in(seg);
+-//         as->detach(seg);
+-//     } break;
+-//     case ADDRESS_SPACE_DETACH2: {
+-//         Segment * seg;
+-//         CPU::Log_Addr addr;
+-//         in(seg, addr);
+-//         as->detach(seg, addr);
+-//     } break;
+-//     case ADDRESS_SPACE_PHYSICAL: {
+-//         CPU::Log_Addr addr;
+-//         in(addr);
+-//         res = as->physical(addr);
+-//     } break;
+-//     default:
+-//         res = UNDEFINED;
+-//     }
+-
+-//     result(res);
+-// };
++void Agent::handle_address_space()
++{
++    Adapter<Address_Space> * as = reinterpret_cast<Adapter<Address_Space> *>(id().unit());
++    Result res = 0;
+ 
++    switch(method()) {
++    case CREATE:
++        id(Id(ADDRESS_SPACE_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Address_Space>())));
++        break;
++    case CREATE1:
++        MMU::Page_Directory * pd;
++        in(pd);
++        id(Id(ADDRESS_SPACE_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Address_Space>(pd))));
++        break;
++    case DESTROY:
++        delete as;
++        break;
++    case ADDRESS_SPACE_PD:
++        res = as->pd();
++        break;
++    case ADDRESS_SPACE_ATTACH1: {
++        Segment * seg;
++        in(seg);
++        res = as->attach(seg);
++    } break;
++    case ADDRESS_SPACE_ATTACH2: {
++        Segment * seg;
++        CPU::Log_Addr addr;
++        in(seg, addr);
++        res = as->attach(seg, addr);
++    } break;
++    case ADDRESS_SPACE_DETACH1: {
++        Segment * seg;
++        in(seg);
++        as->detach(seg);
++    } break;
++    case ADDRESS_SPACE_DETACH2: {
++        Segment * seg;
++        CPU::Log_Addr addr;
++        in(seg, addr);
++        as->detach(seg, addr);
++    } break;
++    case ADDRESS_SPACE_PHYSICAL: {
++        CPU::Log_Addr addr;
++        in(addr);
++        res = as->physical(addr);
++    } break;
++    default:
++        res = UNDEFINED;
++    }
+ 
+-// void Agent::handle_segment()
+-// {
+-//     Adapter<Segment> * seg = reinterpret_cast<Adapter<Segment> *>(id().unit());
+-//     Result res = 0;
+-
+-//     switch(method()) {
+-//     case CREATE1: {
+-//         unsigned int bytes;
+-//         in(bytes);
+-//         id(Id(SEGMENT_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Segment>(bytes))));
+-//     } break;
+-//     case CREATE2: { // *** indistinguishable ***
+-//         unsigned int bytes;
+-//     Segment::Flags flags;
+-//     in(bytes, flags);
+-//     id(Id(SEGMENT_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Segment>(bytes, WHITE, flags))));
+-//     } break;
+-//     case CREATE3: { // *** indistinguishable ***
+-//         Segment::Phy_Addr phy_addr;
+-//     unsigned int bytes;
+-//     Segment::Flags flags;
+-//     in(phy_addr, bytes, flags);
+-//     id(Id(SEGMENT_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Segment>(phy_addr, bytes, flags))));
+-//     } break;
+-//     case DESTROY:
+-//         delete seg;
+-//         break;
+-//     case SEGMENT_SIZE:
+-//         res = seg->size();
+-//         break;
+-//     case SEGMENT_PHY_ADDRESS:
+-//         res = seg->phy_address();
+-//         break;
+-//     case SEGMENT_RESIZE: {
+-//         int amount;
+-//         in(amount);
+-//         res = seg->resize(amount);
+-//     } break;
+-//     default:
+-//         res = UNDEFINED;
+-//     }
+-
+-//     result(res);
+-// };
++    result(res);
++};
++
++
++void Agent::handle_segment()
++{
++    Adapter<Segment> * seg = reinterpret_cast<Adapter<Segment> *>(id().unit());
++    Result res = 0;
++
++    switch(method()) {
++    // case CREATE1: {
++    //     unsigned int bytes;
++    //     in(bytes);
++    //     id(Id(SEGMENT_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Segment>(bytes))));
++    // } break;
++    case CREATE2: { // *** indistinguishable ***
++        unsigned int bytes;
++    Segment::Flags flags;
++    in(bytes, flags);
++    id(Id(SEGMENT_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Segment>(bytes, flags))));
++    } break;
++    // case CREATE3: { // *** indistinguishable ***
++    //     Segment::Phy_Addr phy_addr;
++    // unsigned int bytes;
++    // Segment::Flags flags;
++    // in(phy_addr, bytes, flags);
++    // id(Id(SEGMENT_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Segment>(phy_addr, bytes, flags))));
++    // } break;
++    case DESTROY:
++        delete seg;
++        break;
++    case SEGMENT_SIZE:
++        res = seg->size();
++        break;
++    case SEGMENT_PHY_ADDRESS:
++        res = seg->phy_address();
++        break;
++    case SEGMENT_RESIZE: {
++        int amount;
++        in(amount);
++        res = seg->resize(amount);
++    } break;
++    default:
++        res = UNDEFINED;
++    }
++
++    result(res);
++};
+ 
+ void Agent::handle_mutex()
+ {
+@@ -516,4 +512,4 @@ void Agent::handle_utility()
+ 
+ __END_SYS
+ 
+-#endif
++#endif
+\ No newline at end of file
+diff --git a/include/framework/handle.h b/include/framework/handle.h
+index ade7d03..8e8443e 100644
+--- a/include/framework/handle.h
++++ b/include/framework/handle.h
+@@ -159,4 +159,4 @@ private:
+ 
+ __END_SYS
+ 
+-#endif
++#endif
+\ No newline at end of file
+diff --git a/include/framework/main.h b/include/framework/main.h
+index 5817742..146793e 100644
+--- a/include/framework/main.h
++++ b/include/framework/main.h
+@@ -49,15 +49,16 @@ EXPORT(Function_Handler);
+ 
+ EXPORT(System);
+ EXPORT(Application);
++EXPORT(MMU);
+ 
+ BIND(Thread);
+ // BIND(Periodic_Thread);
+ // BIND(RT_Thread);
+ // BIND(ACTIVE);
+-// BIND(Task);
++BIND(Task);
+ 
+-// BIND(Address_Space);
+-// BIND(Segment);
++BIND(Address_Space);
++BIND(Segment);
+ 
+ BIND(Mutex);
+ BIND(Semaphore);
+diff --git a/include/process.h b/include/process.h
+index 0364c86..d1e6283 100644
+--- a/include/process.h
++++ b/include/process.h
+@@ -83,10 +83,11 @@ public:
+     void pass();
+     void suspend();
+     void resume();
+-
++    
+     static Thread * volatile self() { return running(); }
+     static void yield();
+     static void exit(int status = 0);
++    
+ 
+ protected:
+     void constructor_prologue(unsigned int stack_size);
+@@ -189,16 +190,36 @@ private:
+ public:
+     static volatile Task * _active;
+     Heap * _heap;
++    bool has_idle;
+     
+     Task(Segment * cs, Segment * ds)
+     : _as (new (SYSTEM) Address_Space), _cs(cs), _ds(ds), _code(_as->attach(_cs, Memory_Map::APP_CODE)), _data(_as->attach(_ds, Memory_Map::APP_DATA)) {
+         db<Task>(TRC) << "Task(as=" << _as << ",cs=" << _cs << ",ds=" << _ds <<  ",code=" << _code << ",data=" << _data << ") => " << this << endl;
++        // // P4444:
++        has_idle = false;
++        // _as->detach(_cs, Memory_Map::APP_CODE);
++        // _as->detach(_ds, Memory_Map::APP_DATA);
++        // _code = _as->attach(_cs, Memory_Map::APP_CODE);
++        // _data = _as->attach(_ds, Memory_Map::APP_DATA);
++        
++        // db<Task>(TRC) << "Task(as=" << _as << ",cs=" << _cs << ",ds=" << _ds <<  ",code=" << _code << ",data=" << _data << ") => " << this << endl;
++
++        
+     }
+     Task(Address_Space * as, Segment * cs, Segment * ds)
+     : _as(as), _cs(cs), _ds(ds), _code(_as->attach(_cs, Memory_Map::APP_CODE)), _data(_as->attach(_ds, Memory_Map::APP_DATA)) {
+         db<Task>(TRC) << "Task(as=" << _as << ",cs=" << _cs << ",ds=" << _ds <<  ",code=" << _code << ",data=" << _data << ") => " << this << endl;
++        // // P4444:
++        has_idle = false;
++    }
++    
++    ~Task(){
++        _as->detach(_cs, Memory_Map::APP_CODE);
++        _as->detach(_ds, Memory_Map::APP_DATA);
++        delete _cs;
++        delete _ds;
++        delete _as;
+     }
+-    ~Task();
+     
+     static void activate(volatile Task * t) {
+         Task::_active = t;
+diff --git a/include/system/types.h b/include/system/types.h
+index 0c58488..9239cbc 100644
+--- a/include/system/types.h
++++ b/include/system/types.h
+@@ -159,10 +159,10 @@ enum
+     FIRST_COMPONENT_ID = 0,
+     THREAD_ID = FIRST_COMPONENT_ID,
+     DISPLAY_ID,
+-    // TASK_ID,
++    TASK_ID,
+     // ACTIVE_ID,
+-    // ADDRESS_SPACE_ID,
+-    // SEGMENT_ID,
++    ADDRESS_SPACE_ID,
++    SEGMENT_ID,
+     MUTEX_ID,
+     SEMAPHORE_ID,
+     CONDITION_ID,
+@@ -223,10 +223,10 @@ template<> struct Type<Thread> { static const Type_Id ID = THREAD_ID; };
+ template<> struct Type<Periodic_Thread> { static const Type_Id ID = THREAD_ID; };
+ template<> struct Type<RT_Thread> { static const Type_Id ID = THREAD_ID; };
+ // template<> struct Type<Active> { static const Type_Id ID = ACTIVE_ID; };
+-// template<> struct Type<Task> { static const Type_Id ID = TASK_ID; };
++template<> struct Type<Task> { static const Type_Id ID = TASK_ID; };
+ 
+-// template<> struct Type<Address_Space> { static const Type_Id ID = ADDRESS_SPACE_ID; };
+-// template<> struct Type<Segment> { static const Type_Id ID = SEGMENT_ID; };
++template<> struct Type<Address_Space> { static const Type_Id ID = ADDRESS_SPACE_ID; };
++template<> struct Type<Segment> { static const Type_Id ID = SEGMENT_ID; };
+ 
+ template<> struct Type<Mutex> { static const Type_Id ID = MUTEX_ID; };
+ template<> struct Type<Semaphore> { static const Type_Id ID = SEMAPHORE_ID; };
+@@ -243,4 +243,4 @@ template<> struct Type<Utility> { static const Type_Id ID = UTILITY_ID; };
+ 
+ __END_SYS
+ 
+-#endif
++#endif
+\ No newline at end of file
+diff --git a/src/api/segment.cc b/src/api/segment.cc
+index 8ef60ff..bb218b2 100644
+--- a/src/api/segment.cc
++++ b/src/api/segment.cc
+@@ -37,10 +37,10 @@ unsigned int Segment::size() const
+ }
+ 
+ 
+-// Segment::Phy_Addr Segment::phy_address() const
+-// {
+-//     return Chunk::phy_address();
+-// }
++Segment::Phy_Addr Segment::phy_address() const
++{
++    return Chunk::phy_address();
++}
+ 
+ 
+ int Segment::resize(int amount)
+diff --git a/src/api/thread.cc b/src/api/thread.cc
+index ee7fb5c..c4fbbd4 100644
+--- a/src/api/thread.cc
++++ b/src/api/thread.cc
+@@ -22,6 +22,9 @@ void Thread::constructor_prologue(unsigned int stack_size)
+     lock();
+     
+     _task = Task::_active;
++    if(this->_link.rank() == IDLE){
++        _task->has_idle = true;
++    }
+     _thread_count++;
+     _scheduler.insert(this);
+ 
+@@ -249,7 +252,12 @@ void Thread::exit(int status)
+     }
+ 
+     Thread * next = _scheduler.choose(); // at least idle will always be there
+-
++    
++    if (prev->_link.rank() == MAIN && prev->_task->has_idle == false) {
++        db<Thread>(TRC) << "Thread::exit(main without idle has exited)" << endl;
++        delete prev->_task;
++    }
++    
+     dispatch(prev, next);
+ 
+     unlock();
+diff --git a/src/system/kernel_binding.cc b/src/system/kernel_binding.cc
+index d46df3b..196842a 100644
+--- a/src/system/kernel_binding.cc
++++ b/src/system/kernel_binding.cc
+@@ -10,10 +10,10 @@ __BEGIN_SYS
+ 
+ Agent::Member Agent::_handlers[] = {&Agent::handle_thread,
+                                     &Agent::handle_display,
+-                                    // &Agent::handle_task,
++                                    &Agent::handle_task,
+                                     // &Agent::handle_active,
+-                                    // &Agent::handle_address_space,
+-                                    // &Agent::handle_segment,
++                                    &Agent::handle_address_space,
++                                    &Agent::handle_segment,
+                                     &Agent::handle_mutex,
+                                     &Agent::handle_semaphore,
+                                     &Agent::handle_condition,
+@@ -27,4 +27,4 @@ Agent::Member Agent::_handlers[] = {&Agent::handle_thread,
+ __END_SYS
+ 
+ __USING_SYS;
+-extern "C" { void _exec(void * m) { reinterpret_cast<Agent *>(m)->exec(); } }
++extern "C" { void _exec(void * m) { reinterpret_cast<Agent *>(m)->exec(); } }
+\ No newline at end of file

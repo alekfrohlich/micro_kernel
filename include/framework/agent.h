@@ -216,7 +216,7 @@ void Agent::handle_address_space()
 {
     Adapter<Address_Space> * as = reinterpret_cast<Adapter<Address_Space> *>(id().unit());
     Result res = 0;
-
+ 
     switch(method()) {
     case CREATE:
         id(Id(ADDRESS_SPACE_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Address_Space>())));
@@ -262,7 +262,7 @@ void Agent::handle_address_space()
     default:
         res = UNDEFINED;
     }
-
+    
     result(res);
 };
 
@@ -298,7 +298,7 @@ void Agent::handle_segment()
         res = seg->size();
         break;
     case SEGMENT_PHY_ADDRESS:
-        // res = seg->phy_address();
+        res = seg->phy_address();
         break;
     case SEGMENT_RESIZE: {
         int amount;

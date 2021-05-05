@@ -184,8 +184,13 @@ public:
     : _as (new (SYSTEM) Address_Space), _cs(cs), _ds(ds), _code(_as->attach(_cs, Memory_Map::APP_CODE)), _data(_as->attach(_ds, Memory_Map::APP_DATA)) {
         db<Task>(TRC) << "Task(as=" << _as << ",cs=" << _cs << ",ds=" << _ds <<  ",code=" << _code << ",data=" << _data << ") => " << this << endl;
     }
+    
     ~Task(){
-        
+        _as->detach(_cs, Memory_Map::APP_CODE);
+        _as->detach(_ds, Memory_Map::APP_DATA);
+        delete _cs;
+        delete _ds;
+        delete _as;
     }
     
     static void activate(volatile Task * t) {
