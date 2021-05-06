@@ -56,8 +56,8 @@ void CPU::Context::save() volatile //!P4: Unused, as of now
 void CPU::Context::load() const volatile
 {
     ASM("       mv      sp, %0                  \n"                     // load the stack pointer with the this pointer
-        "       csrw    sscratch,  sp           \n"
-        "       addi    sp, sp, %1              \n" : : "r"(this), "i"(sizeof(CPU::Context)));     // adjust the stack pointer to match the subsequent series of pops
+        "       addi    sp, sp, %1              \n" 
+        "       csrw    sscratch,  sp           \n": : "r"(this), "i"(sizeof(CPU::Context)));     // adjust the stack pointer to match the subsequent series of pops
 
     ASM("       lw       x1, -112(sp)           \n"     // pop ra
         "       lw       x5, -108(sp)           \n"     // pop x5-x31
@@ -131,7 +131,8 @@ void CPU::switch_context(Context ** o, Context * n, unsigned int change_satp, un
         "       csrs    sstatus, x31            \n"
         "       csrr    x31,  sstatus           \n"     // get sstatus
         "       sw      x31, -120(sp)           \n"     // push sstatus
-        "       addi     sp,      sp,   -120    \n"     // complete the pushes above by adjusting the SP
+        "       sw      tp, -124(sp)           \n"     // user stack pointer
+        "       addi     sp,      sp,   -124    \n"     // complete the pushes above by adjusting the SP
         "       sw       sp,    0(a0)           \n");   // update Context * volatile * o
         
     //!P4: We should switch AS here
@@ -143,8 +144,8 @@ void CPU::switch_context(Context ** o, Context * n, unsigned int change_satp, un
     ASM("load_new_context:");
     // Set the stack pointer to "n" and pop the context from the stack
     ASM("       mv       sp,      a1            \n"     // get Context * volatile n into SP
+        "       addi     sp,      sp,    124    \n"     // adjust stack pointer as part of the subsequent pops
         "       csrw     sscratch, sp           \n"
-        "       addi     sp,      sp,    120    \n"     // adjust stack pointer as part of the subsequent pops
         "       lw      x31, -116(sp)           \n"     // pop pc to a temporary
         "       csrw    sepc, x31               \n"
         "       lw       x1, -112(sp)           \n"     // pop ra
@@ -177,7 +178,8 @@ void CPU::switch_context(Context ** o, Context * n, unsigned int change_satp, un
         "       csrw     sstatus, x31           \n"
         "       lw      x30,   -8(sp)           \n"
         "       lw      x31,   -4(sp)           \n"
-        "       sret                            \n");
+        "       lw      sp, -124(sp)            \n"     
+        "       sret                            \n"); //sret to user
 }
 
 //!TODO: write message to a0

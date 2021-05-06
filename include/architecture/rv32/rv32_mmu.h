@@ -207,10 +207,12 @@ public:
         }
 
         Log_Addr attach(const Chunk & chunk, unsigned int from = 0) {
-            for(unsigned int i = from; i < PD_ENTRIES - chunk.pts(); i++)
-                if(attach(i, chunk.pt(), chunk.pts(), RV32_Flags::VALID))
+            for(unsigned int i = from; i < PD_ENTRIES - chunk.pts(); i++){
+                if(attach(i, chunk.pt(), chunk.pts(), RV32_Flags::VALID)){
+                    ASM("sfence.vma"); //P5
                     return i << DIRECTORY_SHIFT;
-            ASM("sfence.vma"); //P5
+                }
+            }
             return false;
         }
 

@@ -18,9 +18,13 @@ void IC::entry()
     ASM("        .align 4                                               \n"
         "                                                               \n"
         "# Save context                                                 \n"
+        "        csrr        tp, sstatus                                \n"
+        "        andi        tp, tp, 0x1 << 8                           \n"
+        "        bne         tp, x0, in_super                           \n"  // branch only before load() ?
         "        mv          tp,     sp                                 \n"
         "        csrr        sp,    sscratch                            \n"
-        "        csrw        sscratch,    tp                            \n"
+        // "        csrw        sscratch,    tp                            \n"
+        "in_super:                                                      \n"
         "        addi        sp,     sp,   -136                   \n"          // 32 regs of 4 bytes each = 128 Bytes
         "        sw          x1,   4(sp)                                \n"
         "        sw          x2,   8(sp)                                \n"
@@ -103,9 +107,16 @@ void IC::entry()
         "        csrw   sstatus, x31                                    \n"
         "        lw         x31, 132(sp)                                \n"
         "        csrw      sepc, x31                                    \n"
-        "        lw         x31, 124(sp)                                \n"
+        // "        lw         x31, 124(sp)                                \n"
         "        addi        sp, sp,    136                             \n"
+        "        csrr    x31, sstatus                                   \n"
+        "        andi        x31, x31, 0x1 << 8                         \n"
+        "        bne         x31, x0, in_super2                         \n"
+        "        lw         x31, 124(sp)                                \n"
         "        mv          sp, tp                                     \n"
+        "        sret                                                   \n"
+        "in_super2:                                                     \n"
+        "        lw         x31, 124(sp)                                \n"
         "        sret                                                   \n" : : "i"(&dispatch), "i"(&CPU::syscalled));
 }
 

@@ -61,7 +61,7 @@ void Thread::constructor_epilogue(const Log_Addr & entry, unsigned int stack_siz
 
     if(preemptive && (_state == READY) && (_link.rank() != IDLE))
         reschedule();
-
+    
     unlock();
 }
 

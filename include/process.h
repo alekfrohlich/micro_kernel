@@ -252,8 +252,9 @@ inline Thread::Thread(const Configuration & conf, int (* entry)(Tn ...), Tn ... 
     // Task::active()->address_space()->detach(_ustack);
     CPU::Log_Addr usp = _task->address_space()->attach(_ustack);
     db<Thread>(WRN) << usp << endl;
+    
 
-    _context = CPU::init_stack(usp, _stack + conf.stack_size, &__exit, entry, an ...);
+    _context = CPU::init_stack(usp + conf.stack_size - 4, _stack + conf.stack_size - 4, &__exit, entry, an ...);
     constructor_epilogue(entry, conf.stack_size);
 }
 
