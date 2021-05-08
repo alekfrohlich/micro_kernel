@@ -25,13 +25,11 @@ void Thread::init()
     }
 
     //!TMP: We need W permission to load the segment; _end might be on code segment if App has no data
-    Task * loader_task = new (SYSTEM) Task( new (SYSTEM) Address_Space(MMU::current()),
-                                            new (SYSTEM) Segment(si->lm.app_code_size, MMU::Flags::ALL),
-                                            new (SYSTEM) Segment(si->lm.app_data_size, MMU::Flags::UDATA),
-                                            reinterpret_cast<Main *>(si->lm.app_entry));
+    new (SYSTEM) Task( new (SYSTEM) Address_Space(MMU::current()),
+                       new (SYSTEM) Segment(si->lm.app_code_size, MMU::Flags::ALL),
+                       new (SYSTEM) Segment(si->lm.app_data_size, MMU::Flags::UDATA),
+                       reinterpret_cast<Main *>(si->lm.app_entry));
    
-   db<Task>(TRC) << loader_task << endl;
-
     // Load App
     char * bi = reinterpret_cast<char*>(Memory_Map::MEM_BASE);
     ELF * app_elf = reinterpret_cast<ELF *>(&bi[si->bm.application_offset]);
@@ -57,9 +55,11 @@ void Thread::init()
     
 
     // Idle thread creation does not cause rescheduling (see Thread::constructor_epilogue)
-    // Thread * idle = new (SYSTEM) Thread(Thread::Configuration(Thread::READY, Thread::IDLE), Thread::idle);
-    //!TODO: There should be two ctors: one for system threads and another for uthreads
-    // idle->_context->_st |= CPU::SPP_S;
+    new (SYSTEM) Thread(Thread::Configuration(Thread::READY, Thread::IDLE), Thread::idle);
+
+    //!TODO: We are actually receiving timer ints during this ctor; it seems fine
+    // Thread::ctor_epilogue turned ints up, we want them down till Context::load
+    CPU::int_disable();
 
     // The installation of the scheduler timer handler does not need to be done after the
     // creation of threads, since the constructor won't call reschedule() which won't call
@@ -69,9 +69,6 @@ void Thread::init()
     // has a lower priority)
     if(Criterion::timed)
         _timer = new (SYSTEM) Scheduler_Timer(QUANTUM, time_slicer);
-
-    // No more interrupts until we reach init_first
-    CPU::int_disable();
 
     // Transition from CPU-based locking to thread-based locking
     This_Thread::not_booting();

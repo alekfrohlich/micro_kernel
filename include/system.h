@@ -20,6 +20,7 @@ private:
     static void init();
 
 public:
+    static const unsigned int APP_CODE = Traits<Machine>::APP_CODE;
     static const unsigned int APP_DATA = Traits<Machine>::APP_DATA;
     static const unsigned int STACK_SIZE = Traits<Machine>::STACK_SIZE;
     static const unsigned int HEAP_SIZE = 4*1024*1024;

@@ -131,7 +131,7 @@ void CPU::switch_context(Context ** o, Context * n, unsigned int change_satp, un
         "       csrs    sstatus, x31            \n"
         "       csrr    x31,  sstatus           \n"     // get sstatus
         "       sw      x31, -120(sp)           \n"     // push sstatus
-        "       sw      tp, -124(sp)           \n"     // user stack pointer
+        "       sw      tp,  -124(sp)           \n"     // user stack pointer
         "       addi     sp,      sp,   -124    \n"     // complete the pushes above by adjusting the SP
         "       sw       sp,    0(a0)           \n");   // update Context * volatile * o
         

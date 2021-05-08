@@ -1,0 +1,16 @@
+Before the Task ctor on Thread::init(), no S-mode int takes place
+For a short period during the creation of the Loader's Task, we receive a few i=17 ints
+Until Context::load(), no more S-mode int takes place // sie.S_TIMER will be on, but sstatus.SIE will be off; right?
+
+Then, we load the first thread in U-mode, and the following may happen until it reaches its quantum
+
+- nonblocking syscall
+- time tick
+- blocking syscall
+- end-of-quantum
+
+Switch context has to deal with two cases: new thread vs old thread
+A new thread is one that has never executed switch_context.
+
+Bizarrices
+Thread::dispatch(change_satp=1,new_satp=0x80087103)

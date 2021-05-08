@@ -244,17 +244,20 @@ inline Thread::Thread(const Configuration & conf, int (* entry)(Tn ...), Tn ... 
 : _state(conf.state), _task(conf.task? conf.task : Task::active()), _waiting(0), _joining(0), _link(this, conf.criterion)
 {
     constructor_prologue(conf.stack_size);
-    _ustack = new (SYSTEM) Segment(Traits<Machine>::STACK_SIZE, MMU::Flags::ALL);
-    // auto usp = Task::active()->address_space()->attach(_ustack);
-    // db<Thread>(WRN) << "usp=" << usp << endl;
-    // usp = CPU::init_user_stack(usp+Traits<Machine>::STACK_SIZE, &__exit, an ...);
-    // db<Thread>(WRN) << "usp=" << usp << endl;    
-    // Task::active()->address_space()->detach(_ustack);
-    CPU::Log_Addr usp = _task->address_space()->attach(_ustack);
-    db<Thread>(WRN) << usp << endl;
-    
 
-    _context = CPU::init_stack(usp + conf.stack_size - 4, _stack + conf.stack_size - 4, &__exit, entry, an ...);
+    if (conf.criterion == IDLE) {
+        db<Thread>(TRC) << "Creating Idle thread..." << endl;
+        // _context = CPU::init_stack(0, _stack + conf.stack_size - 4, &__exit, entry, an ...);
+        _context =  CPU::init_system_stack(_stack + conf.stack_size - 4, &__exit, entry, an ...)
+        //!TODO: There should be two ctors: one for system threads and another for uthreads
+        // _context->_st |= CPU::SPP_S;
+    } else {
+        _ustack = new (SYSTEM) Segment(Traits<Machine>::STACK_SIZE, MMU::Flags::ALL);
+        CPU::Log_Addr usp = _task->address_space()->attach(_ustack);
+        db<Thread>(TRC) << "UStack attached at vaddr=" << usp << endl;
+        _context = CPU::init_stack(usp + conf.stack_size - 4, _stack + conf.stack_size - 4, &__exit, entry, an ...);
+    }
+    
     constructor_epilogue(entry, conf.stack_size);
 }
 

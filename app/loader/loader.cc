@@ -68,9 +68,9 @@ int main()
         ASM("test123:");
         Task * app = new Task(cs, ds, reinterpret_cast<Main *>(app_elf->entry()));
         volatile CPU::Phy_Addr phy_cs1 = app->code_segment()->phy_address();
-        volatile CPU::Phy_Addr phy_cs2 = app->address_space()->physical(0x88000000);
+        volatile CPU::Phy_Addr phy_cs2 = app->address_space()->physical(Application::APP_CODE);
         volatile CPU::Phy_Addr phy_ds1 = app->data_segment()->phy_address();
-        volatile CPU::Phy_Addr phy_ds2 = app->address_space()->physical(0xff800000);
+        volatile CPU::Phy_Addr phy_ds2 = app->address_space()->physical(Application::APP_DATA);
         
         cout << "Seg says that cs' physical address is: " << *const_cast<CPU::Log_Addr*>(&phy_cs1) << endl;
         cout << "AS says that  cs physical address is: " << *const_cast<CPU::Log_Addr*>(&phy_cs2) << endl;

@@ -20,12 +20,14 @@ void IC::entry()
         "# Save context                                                 \n"
         "        csrr        tp, sstatus                                \n"
         "        andi        tp, tp, 0x1 << 8                           \n"
-        "        bne         tp, x0, in_super                           \n"  // branch only before load() ?
+        "        bne         tp, x0, in_super                           \n"
         "        mv          tp,     sp                                 \n"
+                                                                             // If coming from U-mode, place $usp on tp, which will be saved ahead, and use sscratch
+                                                                             // as $sp (sscratch has the value of $ssp before leaving switch_context)
+                                                                             // Idle is a system thread, and so needs its kstack to be in $usp.
         "        csrr        sp,    sscratch                            \n"
-        // "        csrw        sscratch,    tp                            \n"
         "in_super:                                                      \n"
-        "        addi        sp,     sp,   -136                   \n"          // 32 regs of 4 bytes each = 128 Bytes
+        "        addi        sp,     sp,   -136                         \n"  // Saves all 31 registers + sepc + sstatus; 33 regs of 4 bytes each = 132 Bytes
         "        sw          x1,   4(sp)                                \n"
         "        sw          x2,   8(sp)                                \n"
         "        sw          x3,  12(sp)                                \n"

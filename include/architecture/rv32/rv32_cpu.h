@@ -74,7 +74,7 @@ public:
     {
     public:
         // Contexts are loaded with sret, which gets pc from sepc and updates some bits of sstatus, that's why _st is initialized with SPIE and SPP
-        Context(const Log_Addr & usp, const Log_Addr & entry, const Log_Addr & exit):  _usp(usp), _st(SPIE | SPP_U | SUM), _pc(entry), _x1(exit) {
+        Context(const Log_Addr & usp, const Log_Addr & entry, const Log_Addr & exit, bool in_system):  _usp(usp), _st(SPIE | (in_system? SPP_S : SPP_U) | SUM), _pc(entry), _x1(exit) {
             if(Traits<Build>::hysterically_debugged || Traits<Thread>::trace_idle) {
                                                                         _x5 =  5;  _x6 =  6;  _x7 =  7;  _x8 =  8;  _x9 =  9;
                 _x10 = 10; _x11 = 11; _x12 = 12; _x13 = 13; _x14 = 14; _x15 = 15; _x16 = 16; _x17 = 17; _x18 = 18; _x19 = 19;
@@ -383,19 +383,30 @@ public:
     template<typename ... Tn>
     static Context * init_stack(const Log_Addr & usp, Log_Addr sp, void (* exit)(), int (* entry)(Tn ...), Tn ... an) {
         sp -= sizeof(Context);
-        Context * ctx = new (sp) Context(usp, entry, exit);
+        Context * ctx = new (sp) Context(usp, entry, exit, false);
+        // Pass parameters according to the calling convention
         init_stack_helper(&ctx->_x10, an ...); // x10 is a0
         return ctx;
     }
+
     template<typename ... Tn>
-    static Log_Addr init_user_stack(Log_Addr sp, void (* exit)(), Tn ... an) {
+    static Context * init_system_stack(Log_Addr sp, void (* exit)(), int (* entry)(Tn ...), Tn ... an) {
         sp -= sizeof(Context);
-        //!TODO: What needs to be in the user stack?
-        //!TODO: Better still, how does the finishing program get its $ra back from ctx?
-        Context * ctx = new(sp) Context(0, 0, exit);
+        Context * ctx = new (sp) Context(sp, entry, exit, true);
+        // Pass parameters according to the calling convention
         init_stack_helper(&ctx->_x10, an ...); // x10 is a0
-        return sp;
+        return ctx;
     }
+
+    // template<typename ... Tn>
+    // static Log_Addr init_user_stack(Log_Addr sp, void (* exit)(), Tn ... an) {
+    //     sp -= sizeof(Context);
+    //     //!TODO: What needs to be in the user stack?
+    //     //!TODO: Better still, how does the finishing program get its $ra back from ctx?
+    //     Context * ctx = new(sp) Context(0, 0, exit);
+    //     init_stack_helper(&ctx->_x10, an ...); // x10 is a0
+    //     return sp;
+    // }
 
     static void syscall(void * message);
     static void syscalled();
