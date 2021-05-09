@@ -24,9 +24,11 @@ void IC::entry()
         "        mv          tp,     sp                                 \n"
                                                                              // If coming from U-mode, place $usp on tp, which will be saved ahead, and use sscratch
                                                                              // as $sp (sscratch has the value of $ssp before leaving switch_context)
-                                                                             // Idle is a system thread, and so needs its kstack to be in $usp.
         "        csrr        sp,    sscratch                            \n"
+        "        j common                                               \n"
         "in_super:                                                      \n"
+        "        mv          tp,     sp                                 \n"  // Idle is a system thread, and so needs its kstack to be in $usp.
+        "common:                                                        \n"
         "        addi        sp,     sp,   -136                         \n"  // Saves all 31 registers + sepc + sstatus; 33 regs of 4 bytes each = 132 Bytes
         "        sw          x1,   4(sp)                                \n"
         "        sw          x2,   8(sp)                                \n"
@@ -109,16 +111,18 @@ void IC::entry()
         "        csrw   sstatus, x31                                    \n"
         "        lw         x31, 132(sp)                                \n"
         "        csrw      sepc, x31                                    \n"
-        // "        lw         x31, 124(sp)                                \n"
-        "        addi        sp, sp,    136                             \n"
-        "        csrr    x31, sstatus                                   \n"
+        // If in user, switch back to usp
+        "        csrr       x31, sstatus                                \n"
         "        andi        x31, x31, 0x1 << 8                         \n"
         "        bne         x31, x0, in_super2                         \n"
+        //
         "        lw         x31, 124(sp)                                \n"
+        "        addi        sp, sp,    136                             \n"
         "        mv          sp, tp                                     \n"
         "        sret                                                   \n"
         "in_super2:                                                     \n"
         "        lw         x31, 124(sp)                                \n"
+        "        addi        sp, sp,    136                             \n"
         "        sret                                                   \n" : : "i"(&dispatch), "i"(&CPU::syscalled));
 }
 

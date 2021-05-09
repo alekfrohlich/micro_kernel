@@ -21,7 +21,7 @@ template<> struct Traits<Build>: public Traits_Tokens
     static const bool enabled = true;
     static const bool monitored = false;
     static const bool debugged = true;
-    static const bool hysterically_debugged = true;
+    static const bool hysterically_debugged = false;
 
     // Default aspects
     typedef ALIST<> ASPECTS;
@@ -128,6 +128,7 @@ template<> struct Traits<Thread>: public Traits<Build>
     static const bool smp = Traits<System>::multicore;
     static const bool trace_idle = hysterically_debugged;
     static const bool simulate_capacity = false;
+    static const bool debugged = true;
 
     typedef RR Criterion;
     static const unsigned int QUANTUM = 10000; // us

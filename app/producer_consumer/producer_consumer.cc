@@ -42,6 +42,7 @@ int main()
         empty.p();
         Alarm::delay(100000);
         buffer[in] = 'a' + in;
+        ASM("beforep:");
         cout << "P->" << buffer[in] << "\n";
         in = (in + 1) % BUF_SIZE;
         full.v();

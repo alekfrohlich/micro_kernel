@@ -248,7 +248,7 @@ inline Thread::Thread(const Configuration & conf, int (* entry)(Tn ...), Tn ... 
     if (conf.criterion == IDLE) {
         db<Thread>(TRC) << "Creating Idle thread..." << endl;
         // _context = CPU::init_stack(0, _stack + conf.stack_size - 4, &__exit, entry, an ...);
-        _context =  CPU::init_system_stack(_stack + conf.stack_size - 4, &__exit, entry, an ...)
+        _context =  CPU::init_system_stack(_stack + conf.stack_size - 4, &__exit, entry, an ...);
         //!TODO: There should be two ctors: one for system threads and another for uthreads
         // _context->_st |= CPU::SPP_S;
     } else {

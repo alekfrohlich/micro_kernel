@@ -14,3 +14,26 @@ A new thread is one that has never executed switch_context.
 
 Bizarrices
 Thread::dispatch(change_satp=1,new_satp=0x80087103)
+
+IC::entry pseudocode
+
+if (in_user) {
+    tp = usp
+    sp = ssp
+} else {
+    tp = ssp
+}
+
+save_all()
+
+if (ecall) {
+    syscalled()
+} else {
+    dispatch()
+}
+
+load_all()
+if (in_user) {
+    sp = tp (usp)
+}
+return
