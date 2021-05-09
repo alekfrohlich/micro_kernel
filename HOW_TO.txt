@@ -18,4 +18,4 @@ Currently, we have the following tests available:
 
 
 remove-symbol-file /home/ngoeldner/Desktop/6semestre/so2/micro_kernel/app/loader/loader
-add-symbol-file /home/ngoeldner/Desktop/6semestre/so2/micro_kernel/app/hello/hello
+add-symbol-file /home/ngoeldner/Desktop/6semestre/so2/micro_kernel/app/hello/producer_consumer
