@@ -177,9 +177,19 @@ void CPU::switch_context(Context ** o, Context * n, unsigned int change_satp, un
         "       lw      x31, -120(sp)           \n"     // pop sstatus
         "       csrw     sstatus, x31           \n"
         "       lw      x30,   -8(sp)           \n"
+        
+        "        andi        x31, x31, 0x1 << 8                         \n"
+        "        bne         x31, x0, switch_in_super                         \n"
+        
+        
         "       lw      x31,   -4(sp)           \n"
-        "       lw      sp, -124(sp)            \n"     
-        "       sret                            \n"); //sret to user
+        "       lw      sp, -124(sp)            \n"
+        "       j      switch_common            \n"
+        
+        "switch_in_super:                       \n"
+        "       lw      x31,   -4(sp)           \n" 
+        "switch_common:                         \n"
+        "       sret                            \n"); 
 }
 
 //!TODO: write message to a0

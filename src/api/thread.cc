@@ -335,6 +335,7 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
     }
 
     if(prev != next) {
+        ASM("change_thread:");
         if(prev->_state == RUNNING)
             prev->_state = READY;
         next->_state = RUNNING;
