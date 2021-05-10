@@ -94,6 +94,11 @@ void CPU::Context::load() const volatile
         "       lw      sp,  -124(sp)           \n"     // Load user stack pointer
         "       sret                            \n");
 }
+// stack topo -4
+// ic entry
+// ...
+// switch
+
 
 void CPU::switch_context(Context ** o, Context * n, unsigned int change_satp, unsigned int new_satp)
 {   
@@ -145,7 +150,7 @@ void CPU::switch_context(Context ** o, Context * n, unsigned int change_satp, un
     // Set the stack pointer to "n" and pop the context from the stack
     ASM("       mv       sp,      a1            \n"     // get Context * volatile n into SP
         "       addi     sp,      sp,    124    \n"     // adjust stack pointer as part of the subsequent pops
-        "       csrw     sscratch, sp           \n"
+        // "       csrw     sscratch, sp           \n"
         "       lw      x31, -116(sp)           \n"     // pop pc to a temporary
         "       csrw    sepc, x31               \n"
         "       lw       x1, -112(sp)           \n"     // pop ra
@@ -183,6 +188,7 @@ void CPU::switch_context(Context ** o, Context * n, unsigned int change_satp, un
         
         
         "       lw      x31,   -4(sp)           \n"
+        "       csrw     sscratch, sp           \n"
         "       lw      sp, -124(sp)            \n"
         "       j      switch_common            \n"
         

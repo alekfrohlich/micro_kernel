@@ -739,16 +739,21 @@ public:
         db<Lists>(TRC) << "List::remove_head()" << endl;
 
         print_head();
+        db<Lists>(TRC) << "List::remove_head(1)" << endl;
         print_tail();
+        db<Lists>(TRC) << "List::remove_head(2)" << endl;
 
         if(empty())
             return 0;
         if(last())
             return remove_last();
+        db<Lists>(TRC) << "List::remove_head(3)" << endl;
         Element * e = _head;
         _head = _head->next();
+        db<Lists>(TRC) << "List::remove_head(4)" << endl;
         _head->prev(0);
         _size--;
+        db<Lists>(TRC) << "List::remove_head(5)" << endl;
 
         print_head();
         print_tail();

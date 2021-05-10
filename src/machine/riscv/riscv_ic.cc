@@ -118,6 +118,7 @@ void IC::entry()
         //
         "        lw         x31, 124(sp)                                \n"
         "        addi        sp, sp,    136                             \n"
+        "        csrw        sscratch, sp                               \n"
         "        mv          sp, tp                                     \n"
         "        sret                                                   \n"
         "in_super2:                                                     \n"

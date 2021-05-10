@@ -258,6 +258,7 @@ void Thread::sleep(Queue * q)
     _scheduler.suspend(prev);
     prev->_state = WAITING;
     prev->_waiting = q;
+    db<Thread>(TRC) << "Thread::sleep111("<< &prev->_link << ")" << endl;
     q->insert(&prev->_link);
 
     Thread * next = _scheduler.chosen();
@@ -328,6 +329,10 @@ void Thread::time_slicer(IC::Interrupt_Id i)
 void Thread::dispatch(Thread * prev, Thread * next, bool charge)
 {
     // "next" is not in the scheduler's queue anymore. It's already "chosen"
+    db<Thread>(TRC) << "Thread::dispatch(prev=" << prev << ",next=" << next << ")" << endl;
+    db<Thread>(INF) << "prev={" << prev << ",ctx=" << *prev->_context << "}" << endl;
+    db<Thread>(INF) << "next={" << next << ",ctx=" << *next->_context << "}" << endl;    
+
 
     if(charge) {
         if(Criterion::timed)
@@ -340,9 +345,9 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
             prev->_state = READY;
         next->_state = RUNNING;
 
-        db<Thread>(TRC) << "Thread::dispatch(prev=" << prev << ",next=" << next << ")" << endl;
-        db<Thread>(INF) << "prev={" << prev << ",ctx=" << *prev->_context << "}" << endl;
-        db<Thread>(INF) << "next={" << next << ",ctx=" << *next->_context << "}" << endl;
+        // db<Thread>(TRC) << "Thread::dispatch(prev=" << prev << ",next=" << next << ")" << endl;
+        // db<Thread>(INF) << "prev={" << prev << ",ctx=" << *prev->_context << "}" << endl;
+        // db<Thread>(INF) << "next={" << next << ",ctx=" << *next->_context << "}" << endl;
         
         unsigned int change_satp = 0;
         unsigned int new_satp = 0;
