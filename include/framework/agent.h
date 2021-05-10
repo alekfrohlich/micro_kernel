@@ -68,14 +68,6 @@ void Agent::handle_thread()
         in(entry, params);
         id(Id(THREAD_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Thread>(Thread::Configuration(Thread::READY), entry, params))));
     } break;
-    // case CREATE4: {
-    //     int n, l, c;
-    //     int (*entry)(int, int, int);
-    //     in(entry,n,l,c);
-    //     //!P5: How would this fit with an Application loader which has to inform the priority of the main and idle threads
-    //     Adapter<Thread> * th = new Adapter<Thread>(Thread::Configuration(Thread::READY), entry, n, l, c);
-    //     id(Id(THREAD_ID, reinterpret_cast<Id::Unit_Id>(th)));
-    // } break;
     case DESTROY:
         delete thread;
         break;
@@ -172,11 +164,6 @@ void Agent::handle_task()
     Result res = 0;
 
     switch(method()) {
-    // case CREATE2: {
-    //     Segment * cs, * ds;
-    //     in(cs, ds);
-    //     id(Id(TASK_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Task>(cs, ds))));
-    // } break;
     case CREATE3: {
         Segment * cs, * ds;
         int (*entry)();

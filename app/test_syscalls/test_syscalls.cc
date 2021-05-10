@@ -42,9 +42,9 @@ int wait_on_the_semaphore(void * params) {
     return 0;
 }
 
-void alarm_handler() {
-    cout << "********************";
-    // cout << "The clock is ticking..." << endl;
+int task_main() {
+    cout << "New Task" << endl;
+    return 0;
 }
 
 int main()
@@ -162,24 +162,24 @@ int main()
     delete addr_s2;
     
     // Test Task
-    cout << "Task:" << endl;
-    Segment * cs = new Segment(2048, MMU::Flags::ALL);
-    Segment * ds = new Segment(4096, MMU::Flags::ALL);
-    Task * task = new Task(cs, ds);
+    // cout << "Task:" << endl;
+    // Segment * cs = new Segment(2048, MMU::Flags::ALL);
+    // Segment * ds = new Segment(4096, MMU::Flags::ALL);
+    // Task * task = new Task(cs, ds, &alarm_handler);
     
-    CPU::Log_Addr code = task->code();
-    CPU::Log_Addr data = task->data();
-    cout << "code segment starts at " << code << endl;
-    cout << "data segment starts at " << data << endl;
+    // CPU::Log_Addr code = task->code();
+    // CPU::Log_Addr data = task->data();
+    // cout << "code segment starts at " << code << endl;
+    // cout << "data segment starts at " << data << endl;
     
-    Segment * task_cs = task->code_segment();
-    Segment * task_ds = task->data_segment();
-    cout << "task->_cs points to " << task_cs << "  original cs points to " << cs << endl;
-    cout << "task->_ds points to " << task_ds << "  original ds points to " << ds << endl;
-    Address_Space * task_as = task->address_space();
-    cout << "task->_as points to " << task_as << endl;
+    // Segment * task_cs = task->code_segment();
+    // Segment * task_ds = task->data_segment();
+    // cout << "task->_cs points to " << task_cs << "  original cs points to " << cs << endl;
+    // cout << "task->_ds points to " << task_ds << "  original ds points to " << ds << endl;
+    // Address_Space * task_as = task->address_space();
+    // cout << "task->_as points to " << task_as << endl;
     
-    delete task;  
+    // delete task;  
 
     return 0;
 }

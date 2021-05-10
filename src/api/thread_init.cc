@@ -24,7 +24,7 @@ void Thread::init()
         Machine::panic();
     }
 
-    //!TMP: We need W permission to load the segment; _end might be on code segment if App has no data
+    //!NOTE: _end might be on code segment if App has no data
     new (SYSTEM) Task( new (SYSTEM) Address_Space(MMU::current()),
                        new (SYSTEM) Segment(si->lm.app_code_size, MMU::Flags::ALL),
                        new (SYSTEM) Segment(si->lm.app_data_size, MMU::Flags::UDATA),

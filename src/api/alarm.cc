@@ -127,7 +127,6 @@ void Alarm::handler(IC::Interrupt_Id i)
 
     if(alarm) {
         db<Alarm>(TRC) << "Alarm::handler(this=" << alarm << ",e=" << _elapsed << ",h=" << reinterpret_cast<void*>(alarm->_handler) << ")" << endl;
-        ASM("alarm_bk:");
         (*alarm->_handler)();
     }
 }

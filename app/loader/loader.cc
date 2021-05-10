@@ -65,7 +65,6 @@ int main()
         }
         Task::active()->address_space()->detach(cs, cs_log_addr);
         
-        ASM("test123:");
         Task * app = new Task(cs, ds, reinterpret_cast<Main *>(app_elf->entry()));
         volatile CPU::Phy_Addr phy_cs1 = app->code_segment()->phy_address();
         volatile CPU::Phy_Addr phy_cs2 = app->address_space()->physical(Application::APP_CODE);

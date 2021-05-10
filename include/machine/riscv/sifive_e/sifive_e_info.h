@@ -8,24 +8,6 @@
 __BEGIN_SYS
 
 
-// struct App_Load_Map
-// {
-// private:
-//     typedef unsigned int LAddr;
-//     typedef unsigned int PAddr;
-//     typedef unsigned int Size;
-
-// public:
-//     LAddr app_entry;
-//     Size  app_segments;
-//     LAddr app_code;
-//     Size  app_code_size;
-//     LAddr app_data;
-//     LAddr app_stack;
-//     LAddr app_heap;
-//     Size  app_data_size;
-// };
-
 struct System_Info
 {
 private:
@@ -52,7 +34,6 @@ public:
         Size setup_offset;                // Image offsets (-1 => not present)
         Size init_offset;
         Size system_offset;
-        // Size application_offset[8];
         Size application_offset;
         unsigned int n_apps;
         Size extras_offset;
@@ -85,7 +66,6 @@ public:
         Size  sys_data_size;
         LAddr sys_stack;
         Size  sys_stack_size;
-        // App_Load_Map app[8];
         LAddr app_entry;
         Size  app_segments;
         LAddr app_code;

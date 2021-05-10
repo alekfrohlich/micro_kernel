@@ -20,6 +20,7 @@ public:
         db<Init>(TRC) << "Init_Application()" << endl;
 
         db<Init>(INF) << "Initializing application's heap: " << endl;
+        //!NOTE: _end might be on code segment if App has no data
         void * end = ((void*)&_end < (void*)Traits<Machine>::APP_DATA) ? (void*)Traits<Machine>::APP_DATA : (void*)&_end;
         Application::_heap = new (&Application::_preheap[0]) Heap(MMU::align_page(end), HEAP_SIZE);
         db<Init>(INF) << "done!" << endl;

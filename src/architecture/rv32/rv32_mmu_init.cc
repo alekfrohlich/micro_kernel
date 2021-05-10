@@ -18,7 +18,7 @@ void MMU::init()
     MMU::_master = reinterpret_cast<Page_Directory*>(Memory_Map::PAGE_TABLES);
 
     free(align_page(sys_data_end), pages(Memory_Map::MMODE_F - align_page(sys_data_end)));
-    // Worst-Fit guarantees this will work; we plan to leave the boot stack as a System stack
+    // This region is used by _mmode_forward as a M-mode stack
     // free(Memory_Map::MEM_TOP + 1 - Traits<Machine>::STACK_SIZE * Traits<Machine>::CPUS, pages(Traits<Machine>::STACK_SIZE * Traits<Machine>::CPUS));
     
     // Free init/setup memory
