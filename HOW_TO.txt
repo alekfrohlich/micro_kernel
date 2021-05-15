@@ -18,4 +18,4 @@ Currently, we have the following tests available:
 3) philosophers_dinner + hello: make APPS='loader hello philosophers_dinner' run
 4) test_switch_context: make APPS='loader test_switch_context test_switch_context' run
 
-make APPS='loader hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello' run
+make APPS='loader hello hello hello hello hello hello' run

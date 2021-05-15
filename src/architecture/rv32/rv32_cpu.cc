@@ -100,7 +100,8 @@ void CPU::Context::load() const volatile
 // switch
 
 
-void CPU::switch_context(Context ** o, Context * n, unsigned int change_satp, unsigned int new_satp)
+// void CPU::switch_context(Context ** o, Context * n, unsigned int change_satp, unsigned int new_satp)
+void CPU::switch_context(Context ** o, Context * n)
 {   
     // Push the context into the stack and update "o"
     ASM("       sw       x1, -116(sp)           \n"     // push the return address as pc
@@ -140,13 +141,13 @@ void CPU::switch_context(Context ** o, Context * n, unsigned int change_satp, un
         "       addi     sp,      sp,   -124    \n"     // complete the pushes above by adjusting the SP
         "       sw       sp,    0(a0)           \n");   // update Context * volatile * o
         
-    //!P4: We should switch AS here
-    ASM("       beq     a2,  x0, load_new_context      \n"
-        "       csrw    satp, a3                       \n"
-        "       sfence.vma                             \n");
+    // //!P4: We should switch AS here
+    // ASM("       beq     a2,  x0, load_new_context      \n"
+    //     "       csrw    satp, a3                       \n"
+    //     "       sfence.vma                             \n");
     
     
-    ASM("load_new_context:");
+    // ASM("load_new_context:");
     // Set the stack pointer to "n" and pop the context from the stack
     ASM("       mv       sp,      a1            \n"     // get Context * volatile n into SP
         "       addi     sp,      sp,    124    \n"     // adjust stack pointer as part of the subsequent pops
