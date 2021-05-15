@@ -20,5 +20,5 @@ _start:
 __epos_app_entry:
         call      main
         lw        a0, 0(sp)         // save main's return value to be used by exit()
-# call      _fini
+        call      _fini
         call      _exit

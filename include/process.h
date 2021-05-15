@@ -209,6 +209,8 @@ public:
         return const_cast<Task*>(_active);
     }
     
+    Thread * main() { return _main; }
+
     Address_Space * address_space() const { return _as; }
 
     Segment * code_segment() const { return _cs; }
