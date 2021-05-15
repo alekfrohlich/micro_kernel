@@ -507,14 +507,11 @@ void Agent::handle_shared_segment()
         unsigned int bytes;
         Shared_Segment::Flags flags;
         in(port, bytes, flags);
-        if(!Shared_Segment::get_sseg(port)){
+        Shared_Segment * sseg = Shared_Segment::get_sseg(port);
+        if(!sseg) {
             id(Id(SHARED_SEGMENT_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Shared_Segment>(port, bytes, flags))));
-            // kout << "KKKKKKKKKKKKK  " <<  _id.unit() << endl;
-            // Shared_Segment::tttest = id().unit();
-            kout << "KKKKKKKKKKKKK  " << endl;
-        }else{
-            kout << "LLLLLLLLLLLLL  " << endl;
-            // kout << "LLLLLLLLLLLLL  " <<  _id.unit() << endl;
+        } else {
+            id(Id(SHARED_SEGMENT_ID, reinterpret_cast<Id::Unit_Id>( sseg )));
         }
     } break;
     // case CREATE3: { // *** indistinguishable ***

@@ -1041,8 +1041,9 @@ public:
     typedef typename List<T>::Element Element;
     typedef List<T> Base;
     using Base::head;
+    using Base::insert;
 
-    Element * find(unsigned int port){
+    Element * find(unsigned int port) {
         Element * e = head();
         for(; e && (e->object()->port != port); e = e->next());
         return e;

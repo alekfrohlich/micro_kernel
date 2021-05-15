@@ -54,47 +54,30 @@ public:
 class Shared_Segment_Port
 {
 public:
-    Shared_Segment * sseg;
+    Shared_Segment_Port(unsigned int p, Shared_Segment * s) : port(p), sseg(s) {}
     unsigned int port;
+    Shared_Segment * sseg;
 };
-
-// class 
 
 class Shared_Segment: public Segment
 {
 private:
     typedef MMU::Chunk Chunk;
-    
-    // Thread Queue
-    // typedef Ordered_Queue<Thread, Criterion, Scheduler<Thread>::Element> Queue;
     typedef Port_List<Shared_Segment_Port> List;
-    
-    // static Shared_Segment * tttest;
-    
 
 public:
     typedef CPU::Phy_Addr Phy_Addr;
     typedef MMU::Flags Flags;
-    static List _list;
-    unsigned int tasks;
 
 public:
     Shared_Segment(unsigned int port, unsigned int bytes, const Flags & flags);
-    // Segment(const Phy_Addr & phy_addr, unsigned int bytes, const Flags & flags);
-    // ~Segment();
+    static Shared_Segment * get_sseg(unsigned int port);
+    static List _list;
+    unsigned int tasks;
 
-    // unsigned int size() const;
-    // Phy_Addr phy_address() const;
-    // int resize(int amount);
-    // static unsigned int get_sseg(unsigned int port) { 
-    //     Queue::Element * el = _queue.search(port);
-    //     kout << "QQQQQQQQQQQQQQQ" << endl;
-    //     kout << el->object2();
-    //     // kout << this << endl;
-    //     return 0; 
-    // }
-    static unsigned int get_sseg(unsigned int port);
-    // unsigned int add_task();
+    //!TODO: Using ...
+protected:
+
 };
 
 
