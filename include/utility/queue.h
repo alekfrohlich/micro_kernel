@@ -74,6 +74,8 @@ public:
     Element * choose(const Object_Type * obj) {	return T::choose(obj); }
 };
 
+// Simple_List_Double
+// class Simple_List_Double2:
 
 // Queue
 template<typename T,

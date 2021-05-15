@@ -95,6 +95,10 @@ public:
     const Microsecond period() { enter(); Microsecond res = Component::period(); leave(); return res; }
     void period(const Microsecond p) { enter(); Component::period(p); leave(); }
     static Hertz alarm_frequency() { static_enter(); Hertz res = Component::frequency(); static_leave(); return res; }
+    
+    // IPC
+    CPU::Log_Addr shared_seg(unsigned int port, unsigned int frames) { static_enter(); CPU::Log_Addr res = Component::shared_seg(port, frames); static_leave(); return res; }
+    CPU::Log_Addr shared_seg(unsigned int port) { static_enter(); CPU::Log_Addr res = Component::shared_seg(port); static_leave(); return res; }
 
     // Communication
     template<typename ... Tn>

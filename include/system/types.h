@@ -170,6 +170,7 @@ enum
     ALARM_ID,
     CHRONOMETER_ID,
     // IPC_COMMUNICATOR_ID,
+    SHARED_SEGMENT_ID,
     UTILITY_ID,
     LAST_COMPONENT_ID,
 
@@ -237,7 +238,12 @@ template<> struct Type<Chronometer> { static const Type_Id ID = CHRONOMETER_ID; 
 template<> struct Type<Alarm> { static const Type_Id ID = ALARM_ID; };
 template<> struct Type<Delay> { static const Type_Id ID = ALARM_ID; };
 
+template<> struct Type<Shared_Segment> { static const Type_Id ID = SHARED_SEGMENT_ID; };
+// template<> struct Type<IPC> { static const Type_Id ID = IPC_ID; };
+
+
 template<> struct Type<Utility> { static const Type_Id ID = UTILITY_ID; };
+
 
 // Type IDs for system components whose parameters are themselves components are defined where they are declared.
 

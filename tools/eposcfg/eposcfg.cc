@@ -23,7 +23,7 @@ using namespace EPOS::S::U;
 
 // Constants
 const unsigned int TOKENS = 32;
-const unsigned int COMPONENTS = 62;
+const unsigned int COMPONENTS = 63;
 const unsigned int STRING_SIZE = 128;
 
 // Configuration tokens (integer tokens first, marked by INT_TOKENS)
@@ -126,6 +126,7 @@ char components[COMPONENTS][STRING_SIZE] = {
     "TCP",
     "DHCP",
     "IPC",
+    "Shared_Segment",
     "Link",
     "Port",
     "SmartData",
@@ -424,6 +425,7 @@ void populate_strings()
     if(Traits<TCP>::enabled)            enable_component("TCP");
     if(Traits<DHCP>::enabled)           enable_component("DHCP");
     if(Traits<IPC>::enabled)            enable_component("IPC");
+    if(Traits<Shared_Segment>::enabled) enable_component("Shared_Segment");
     if(Traits<SmartData>::enabled)      enable_component("SmartData");
 }
 

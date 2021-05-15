@@ -70,6 +70,7 @@ BIND(Alarm);
 // BIND(Delay);
 
 BIND(Display);
+BIND(Shared_Segment);
 
 // EXPORT(IPC);
 

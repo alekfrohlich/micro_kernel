@@ -140,6 +140,11 @@ public:
     const Microsecond period() const { return _stub->period(); }
     void period(const Microsecond p) { _stub->period(p); }
     static Hertz alarm_frequency() { return _Stub::alarm_frequency(); }
+    
+    // Shared_Segment
+    // CPU::Log_Addr shared_seg(unsigned int port, unsigned int frames) { return _Stub::shared_seg(port, frames); }
+    // CPU::Log_Addr shared_seg(unsigned int port) { return _Stub::shared_seg(port); }
+    // CPU::Log_Addr get_sseg(unsigned int port) { return _Stub::get_sseg(port); }
 
     // Communication
     template<typename ... Tn>

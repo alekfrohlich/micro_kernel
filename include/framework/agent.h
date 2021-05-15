@@ -45,6 +45,7 @@ private:
     void handle_alarm();
     void handle_chronometer();
     // void handle_ipc();
+    void handle_shared_segment();
     void handle_utility();
 
 private:
@@ -482,6 +483,64 @@ void Agent::handle_chronometer()
     case CHRONOMETER_TICKS: {
         res = chronometer->ticks();
     } break;
+    default:
+        res = UNDEFINED;
+    }
+
+    result(res);
+};
+
+
+void Agent::handle_shared_segment()
+{
+    Adapter<Shared_Segment> * sseg = reinterpret_cast<Adapter<Shared_Segment> *>(id().unit());
+    Result res = 0;
+
+    switch(method()) {
+    // case CREATE1: {
+    //     unsigned int bytes;
+    //     in(bytes);
+    //     id(Id(SEGMENT_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Segment>(bytes))));
+    // } break;
+    case CREATE3: { // *** indistinguishable ***
+        unsigned int port;
+        unsigned int bytes;
+        Shared_Segment::Flags flags;
+        in(port, bytes, flags);
+        if(!Shared_Segment::get_sseg(port)){
+            id(Id(SHARED_SEGMENT_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Shared_Segment>(port, bytes, flags))));
+            // kout << "KKKKKKKKKKKKK  " <<  _id.unit() << endl;
+            // Shared_Segment::tttest = id().unit();
+            kout << "KKKKKKKKKKKKK  " << endl;
+        }else{
+            kout << "LLLLLLLLLLLLL  " << endl;
+            // kout << "LLLLLLLLLLLLL  " <<  _id.unit() << endl;
+        }
+    } break;
+    // case CREATE3: { // *** indistinguishable ***
+    //     Segment::Phy_Addr phy_addr;
+    // unsigned int bytes;
+    // Segment::Flags flags;
+    // in(phy_addr, bytes, flags);
+    // id(Id(SEGMENT_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Segment>(phy_addr, bytes, flags))));
+    // } break;
+    case DESTROY:
+        sseg->tasks--;
+        if(!sseg->tasks){
+            delete sseg;
+        }
+        break;
+    // case SEGMENT_SIZE:
+    //     res = seg->size();
+    //     break;
+    // case SEGMENT_PHY_ADDRESS:
+    //     res = seg->phy_address();
+    //     break;
+    // case SEGMENT_RESIZE: {
+    //     int amount;
+    //     in(amount);
+    //     res = seg->resize(amount);
+    // } break;
     default:
         res = UNDEFINED;
     }

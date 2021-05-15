@@ -143,6 +143,7 @@ class TCP;
 class DHCP;
 class HTTP;
 class IPC;
+class Shared_Segment;
 template<typename Channel, bool connectionless = Channel::connectionless> class Link;
 template<typename Channel, bool connectionless = Channel::connectionless> class Port;
 

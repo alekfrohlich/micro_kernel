@@ -126,6 +126,11 @@ public:
     Clock::Date date() { return invoke(CLOCK_DATE); }
     void date(const Clock::Date & d) { invoke(CLOCK_DATE1, d); }
     
+    // Shared_Segment
+    // CPU::Log_Addr shared_seg(unsigned int port, unsigned int frames) { return static_invoke(SHARED_SEG1, port, frames); }
+    // CPU::Log_Addr shared_seg(unsigned int port) { return static_invoke(SHARED_SEG2, port); }
+    // CPU::Log_Addr get_sseg(unsigned int port) { return static_invoke(GET_SSEG, port); }
+    
     template<typename ... Tn>
     int read(Tn ... an) { return receive(an ...); }
     template<typename ... Tn>

@@ -21,6 +21,7 @@ Agent::Member Agent::_handlers[] = {&Agent::handle_thread,
                                     &Agent::handle_alarm,
                                     &Agent::handle_chronometer,
                                     // &Agent::handle_ipc,
+                                    &Agent::handle_shared_segment,
                                     &Agent::handle_utility
 };
 
