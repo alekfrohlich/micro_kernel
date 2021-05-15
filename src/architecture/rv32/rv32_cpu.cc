@@ -141,13 +141,6 @@ void CPU::switch_context(Context ** o, Context * n)
         "       addi     sp,      sp,   -124    \n"     // complete the pushes above by adjusting the SP
         "       sw       sp,    0(a0)           \n");   // update Context * volatile * o
         
-    // //!P4: We should switch AS here
-    // ASM("       beq     a2,  x0, load_new_context      \n"
-    //     "       csrw    satp, a3                       \n"
-    //     "       sfence.vma                             \n");
-    
-    
-    // ASM("load_new_context:");
     // Set the stack pointer to "n" and pop the context from the stack
     ASM("       mv       sp,      a1            \n"     // get Context * volatile n into SP
         "       addi     sp,      sp,    124    \n"     // adjust stack pointer as part of the subsequent pops

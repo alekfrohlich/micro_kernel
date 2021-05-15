@@ -200,10 +200,6 @@ public:
         Task::_active = t;
         t->_as->activate();
     }
-    
-    // static unsigned int get_active_pd() {
-    //     return Task::_active->_as->pd();
-    // }
 
     static Task * active() {
         return const_cast<Task*>(_active);

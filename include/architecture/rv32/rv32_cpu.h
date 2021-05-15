@@ -378,7 +378,6 @@ public:
 
     static void fpu_save();
     static void fpu_restore();
-    // static void switch_context(Context ** o, Context * n, unsigned int change_satp, unsigned int new_satp) __attribute__ ((naked));
     [[gnu::naked]] static void switch_context(Context ** o, Context * n);
 
 
@@ -399,17 +398,7 @@ public:
         init_stack_helper(&ctx->_x10, an ...); // x10 is a0
         return ctx;
     }
-
-    // template<typename ... Tn>
-    // static Log_Addr init_user_stack(Log_Addr sp, void (* exit)(), Tn ... an) {
-    //     sp -= sizeof(Context);
-    //     //!TODO: What needs to be in the user stack?
-    //     //!TODO: Better still, how does the finishing program get its $ra back from ctx?
-    //     Context * ctx = new(sp) Context(0, 0, exit);
-    //     init_stack_helper(&ctx->_x10, an ...); // x10 is a0
-    //     return sp;
-    // }
-
+    
     static void syscall(void * message);
     static void syscalled();
 
