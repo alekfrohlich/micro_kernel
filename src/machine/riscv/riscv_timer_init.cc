@@ -9,7 +9,7 @@ __BEGIN_SYS
 void Timer::init()
 {
     db<Init, Timer>(TRC) << "Timer::init()" << endl;
-    db<Init, Timer>(TRC) << "Time=" << CPU::rdtime() << endl;
+    // db<Init, Timer>(TRC) << "Time=" << CPU::rdtime() << endl; // Doesn't work in some versions of QEMU
 
     CPU::int_disable();
 
