@@ -25,39 +25,17 @@ int main()
     cout << "sseg_log_addr_reader=" << sseg_log_addr << endl;
     
     long unsigned int * a = sseg_log_addr;    
-        
-    Semaphore * writer_sem_addr = reinterpret_cast<Semaphore *>(a + sizeof(long unsigned int));
-    cout << "writer_sem_addr=" << writer_sem_addr << endl;
-    Semaphore * writer_sem = writer_sem_addr;
-    cout << "writer_sem=" << writer_sem << endl;
-    
-    ASM("SEM_WRITER2:");
-
-    // writer_sem->v();
-    // writer_sem->v();
-    // writer_sem->v();
-    // writer_sem->p();
-    // writer_sem->p();
-
-    
-    Semaphore * reader_sem_addr = reinterpret_cast<Semaphore *>(writer_sem_addr + sizeof(Semaphore));
-    cout << "reader_sem_addr=" << reader_sem_addr << endl;
-    Semaphore * reader_sem = new (reader_sem_addr) Semaphore(0);
-    
-    ASM("SEM_READER2:");
-    
-    writer_sem->v();
-    writer_sem->v();
-    writer_sem->v();
-    writer_sem->p();
-    writer_sem->p();
-    
-    
+  
     cout << "reader_a::: " << a << endl;
     cout << "reader_a: " << *a << endl;
     
+    char * letters = reinterpret_cast<char *>(a + sizeof(long unsigned int));
+    char all_letters[50] = "qwertyuiopasdfghjklzxcvbnm";
+    for(int i=0;i<26;i++){
+        letters[i] = all_letters[i];
+    }    
+    
     cout << "reader is finishing" << endl;
-    reader_sem->v();
     Task::active()->address_space()->detach(reinterpret_cast<Segment *>(sseg));
     delete sseg;
     

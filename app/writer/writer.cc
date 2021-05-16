@@ -27,25 +27,18 @@ int main()
     long unsigned int * a = sseg_log_addr;    
     *a = 12345;
     
-    Semaphore * writer_sem_addr = reinterpret_cast<Semaphore *>(a + sizeof(long unsigned int));
-    cout << "writer_sem_addr=" << writer_sem_addr << endl;
-    Semaphore * writer_sem = new (writer_sem_addr) Semaphore(0);
-    
-    ASM("SEM_WRITER1:");
-    
-    Semaphore * reader_sem_addr = reinterpret_cast<Semaphore *>(writer_sem_addr + sizeof(Semaphore));
-    cout << "reader_sem_addr=" << reader_sem_addr << endl;
-    Semaphore * reader_sem = reader_sem_addr;
-    
-    writer_sem->v();
-    writer_sem->p();
-    ASM("SEM_READER1:");
-    writer_sem->p();
-    
     cout << "writer_a::: " << a << endl;
     cout << "writer_a: " << *a << endl;
     
-    reader_sem->p();
+    Alarm::delay(500000);
+    
+    char * letters = reinterpret_cast<char *>(a + sizeof(long unsigned int));
+    cout << "letters:" << endl;
+    for(int i=0;i<26;i++){
+        cout << letters[i];
+    }
+    cout << endl;
+    
     cout << "Writer is finishing" << endl;
     Task::active()->address_space()->detach(reinterpret_cast<Segment *>(sseg));
     delete sseg;
