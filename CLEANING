@@ -1,5 +1,7 @@
 1) Join and delete at the end of loader, uncomment _fini at crt0.S
 2) Unused Task methods / Test task?
+
+
 3) Switch during dispatch instead of switch context
 4) Stop using tp
 5) Reavaliate the usage of sscratch

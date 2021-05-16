@@ -200,15 +200,13 @@ public:
         Task::_active = t;
         t->_as->activate();
     }
-    
-    static unsigned int get_active_pd() {
-        return Task::_active->_as->pd();
-    }
 
     static Task * active() {
         return const_cast<Task*>(_active);
     }
     
+    Thread * main() { return _main; }
+
     Address_Space * address_space() const { return _as; }
 
     Segment * code_segment() const { return _cs; }

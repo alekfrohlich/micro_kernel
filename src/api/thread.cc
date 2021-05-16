@@ -258,6 +258,7 @@ void Thread::sleep(Queue * q)
     _scheduler.suspend(prev);
     prev->_state = WAITING;
     prev->_waiting = q;
+    //!TODO: ???
     db<Thread>(TRC) << "Thread::sleep111("<< &prev->_link << ")" << endl;
     q->insert(&prev->_link);
 
@@ -343,28 +344,15 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
         db<Thread>(INF) << "prev={" << prev << ",ctx=" << *prev->_context << "}" << endl;
         db<Thread>(INF) << "next={" << next << ",ctx=" << *next->_context << "}" << endl;
         
-        unsigned int change_satp = 0;
-        unsigned int new_satp = 0;
-        // if(prev->_task != next->_task){
-        //     Task::activate(next->_task);
-        // }
-        
-        if(prev->_task != next->_task){
-            ASM("change_addr:");
-            change_satp = 1;
-            Task::_active = next->_task;
-            new_satp = Task::get_active_pd() >> 12; //12 or 10?
-            new_satp |= 1 << 31;
-        }
-        
-        db<Thread>(TRC) << "Thread::dispatch(change_satp=" << change_satp << ",new_satp=" << hex << new_satp << ")" << endl;
-        
+        if(prev->_task != next->_task)
+            Task::activate(next->_task);
+
         // The non-volatile pointer to volatile pointer to a non-volatile context is correct
         // and necessary because of context switches, but here, we are locked() and
         // passing the volatile to switch_constext forces it to push prev onto the stack,
         // disrupting the context (it doesn't make a difference for Intel, which already saves
         // parameters on the stack anyway).
-        CPU::switch_context(const_cast<Context **>(&prev->_context), next->_context, change_satp, new_satp);
+        CPU::switch_context(const_cast<Context **>(&prev->_context), next->_context);
     }
 }
 

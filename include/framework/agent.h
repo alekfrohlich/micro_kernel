@@ -194,9 +194,9 @@ void Agent::handle_task()
     case TASK_DATA:
         res = task->data();
         break;
-    // case TASK_MAIN:
-    //     res = reinterpret_cast<int>(task->main());
-    //     break;
+    case TASK_MAIN:
+        res = reinterpret_cast<int>(task->main());
+        break;
     case TASK_ACTIVE:
         res = reinterpret_cast<int>(Task::active());
         break;

@@ -29,3 +29,4 @@ p/x *(EPOS::S::Handle<EPOS::S::Semaphore>*)(0x88000010)
 
 
 0xffbffea8 -> message
+make APPS='loader hello hello hello hello hello hello' run

@@ -1,5 +1,6 @@
 #include <utility/ostream.h>
 #include <utility/elf.h>
+#include <utility/list.h>
 #include <architecture.h>
 #include <system.h>
 #include <time.h>
@@ -18,6 +19,7 @@ int main()
     int * extras = static_cast<int*>(MMU::align_page(end) + Application::HEAP_SIZE);
     cout << "end=" << end << endl;
     cout << "Extras is located at addr=" << extras << endl;
+    List<Task> applications;
     for (int app_size = *extras; app_size; extras += app_size/4, app_size = *reinterpret_cast<int*>(extras)) {
         ELF * app_elf = reinterpret_cast<ELF *>(++extras);
         if (!app_elf->valid()) {
@@ -66,6 +68,8 @@ int main()
         Task::active()->address_space()->detach(cs, cs_log_addr);
         
         Task * app = new Task(cs, ds, reinterpret_cast<Main *>(app_elf->entry()));
+        List<Task>::Element * app_link = new List<Task>::Element(app);
+        applications.insert(app_link);
         volatile CPU::Phy_Addr phy_cs1 = app->code_segment()->phy_address();
         volatile CPU::Phy_Addr phy_cs2 = app->address_space()->physical(Application::APP_CODE);
         volatile CPU::Phy_Addr phy_ds1 = app->data_segment()->phy_address();
@@ -78,11 +82,15 @@ int main()
     }
     cout << "Loading finished" << endl;
     
-    // P5 -> delete all threads
-    // for(int i = 0; i < apps; i++){
-    //     app[i]->main()->join();
-    //     delete app[i];    
-    // }
+    while(applications.size() > 0) {
+        //!TODO: Would we have a preference from where to remove the Task?
+        List<Task>::Element * app_link = applications.remove_tail();
+        Task * app = app_link->object();
+        app->main()->join();
+        cout << "App=" << app << " has finished and is now being deleted!" << endl;
+        delete app_link;
+        delete app;    
+    }
     
     return 0;
 }
