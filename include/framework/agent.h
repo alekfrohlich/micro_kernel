@@ -21,15 +21,20 @@ private:
 public:
     void exec() {
         //!P4: Improve messages
-        if(id().type() != UTILITY_ID)
+        if(id().type() != UTILITY_ID){
             db<Framework>(TRC) << ":=>" << *reinterpret_cast<Message *>(this) << endl;
+            db<Framework>(TRC) << ":=>" << reinterpret_cast<Message *>(this) << endl;
+        }
 
         if(id().type() < LAST_TYPE_ID) // in-kernel services
             (this->*_handlers[id().type()])();
 
-        if(id().type() != UTILITY_ID)
+        if(id().type() != UTILITY_ID){
             db<Framework>(TRC) << "<=:" << *reinterpret_cast<Message *>(this) << endl;
-    }
+            db<Framework>(TRC) << "<=:" << reinterpret_cast<Message *>(this) << endl;
+        }
+
+    }   
 
 private:
     void handle_thread();
