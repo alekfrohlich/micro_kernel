@@ -512,6 +512,7 @@ void Agent::handle_shared_segment()
             id(Id(SHARED_SEGMENT_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Shared_Segment>(port, bytes, flags))));
         } else {
             id(Id(SHARED_SEGMENT_ID, reinterpret_cast<Id::Unit_Id>( sseg )));
+            sseg->_tasks++;
         }
     } break;
     // case CREATE3: { // *** indistinguishable ***
@@ -522,22 +523,25 @@ void Agent::handle_shared_segment()
     // id(Id(SEGMENT_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Segment>(phy_addr, bytes, flags))));
     // } break;
     case DESTROY:
-        sseg->tasks--;
-        if(!sseg->tasks){
+        sseg->_tasks--;
+        if(!sseg->_tasks){
+            Shared_Segment::List::Element * ssport_link = Shared_Segment::_list.find(sseg->_port);
+            Shared_Segment::_list.remove(ssport_link);
+            delete ssport_link;
             delete sseg;
         }
         break;
-    // case SEGMENT_SIZE:
-    //     res = seg->size();
-    //     break;
-    // case SEGMENT_PHY_ADDRESS:
-    //     res = seg->phy_address();
-    //     break;
-    // case SEGMENT_RESIZE: {
-    //     int amount;
-    //     in(amount);
-    //     res = seg->resize(amount);
-    // } break;
+    case SSEG_SIZE:
+        res = sseg->size();
+        break;
+    case SSEG_PHY_ADDRESS:
+        res = sseg->phy_address();
+        break;
+    case SSEG_RESIZE: {
+        int amount;
+        in(amount);
+        res = sseg->resize(amount);
+    } break;
     default:
         res = UNDEFINED;
     }

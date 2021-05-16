@@ -98,9 +98,9 @@ public:
         CHRONOMETER_READ,
         CHRONOMETER_TICKS,
         
-        SHARED_SEG1 = COMPONENT,
-        SHARED_SEG2,
-        GET_SSEG,
+        SSEG_SIZE = COMPONENT,
+        SSEG_PHY_ADDRESS,
+        SSEG_RESIZE,
 
         PRINT = COMPONENT,
 

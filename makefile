@@ -50,6 +50,7 @@ else
 endif
 
 debug1: FORCE
+		(cd img && $(STRIP) --strip-debug  system_sifive_e)
 		(cd img && $(MKBI) $(word 1, $(APPS)).img $(addprefix $(IMG)/,$(APPS)))
 		(cd img && $(MAKE) DEBUG=1 debug)
 
