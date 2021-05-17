@@ -370,7 +370,6 @@ public:
     static bool int_enabled() { return (sstatus() & SIE) ; }
     static bool int_disabled() { return !int_enabled(); }
     
-    //!SMODE: Where is this being used?
     static void csrr31() { ASM("csrr x31, mstatus" : : : "x31"); }
     static void csrw31() { ASM("csrs mstatus, x31" : : : "cc"); }
 

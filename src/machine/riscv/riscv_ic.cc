@@ -136,10 +136,6 @@ void IC::dispatch()
 
     if(id == INT_SYS_TIMER)
         CPU::sie_clear(CPU::STI);
-
-    //!P4: Sanity check
-    if (id == 11)
-        Machine::panic();
     
     if (id == EXC_INSTR_PAGE_FAULT)
         __exit();

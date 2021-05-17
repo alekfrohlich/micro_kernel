@@ -54,10 +54,6 @@ public:
     static List _list;
     unsigned int _tasks;
     unsigned int _port;
-
-    //!TODO: Using ...
-protected:
-
 };
 
 class Address_Space: private MMU::Directory

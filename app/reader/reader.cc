@@ -15,7 +15,6 @@ int main()
     Alarm::delay(100000);
     unsigned int port = 1;
     Shared_Segment * sseg = new Shared_Segment(port, 1024, MMU::Flags::UDATA);
-    cout << sseg << endl;
     
     CPU::Phy_Addr phy_addr = sseg->phy_address();
     cout << "phy_addr_reader=" << phy_addr << endl;
@@ -26,7 +25,6 @@ int main()
     
     long unsigned int * a = sseg_log_addr;    
   
-    cout << "reader_a::: " << a << endl;
     cout << "reader_a: " << *a << endl;
     
     char * letters = reinterpret_cast<char *>(a + sizeof(long unsigned int));

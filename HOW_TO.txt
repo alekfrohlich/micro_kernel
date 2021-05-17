@@ -7,9 +7,10 @@ Mutex
 Semaphore
 Clock
 Chronometer
-Display (Shouldn't be on the API, but philosopher_dinner needs it and it is a good test)
+Display
 Task
 Segment
+Shared_Segment
 Address_Space
 
 Currently, we have the following tests available:
@@ -17,16 +18,4 @@ Currently, we have the following tests available:
 2) producer_consumer: make APPS='loader producer_consumer producer_consumer' run
 3) philosophers_dinner + hello: make APPS='loader hello philosophers_dinner' run
 4) test_switch_context: make APPS='loader test_switch_context test_switch_context' run
-
-
-remove-symbol-file /home/ngoeldner/Desktop/6semestre/so2/micro_kernel/app/loader/loader
-add-symbol-file ../app/reader/reader
-b SEM_READER1
-c
-c
-c
-p/x *(EPOS::S::Handle<EPOS::S::Semaphore>*)(0x88000010)
-
-
-0xffbffea8 -> message
-make APPS='loader hello hello hello hello hello hello' run
+5) Writer and Reader: make APPS='loader writer reader' run

@@ -21,6 +21,8 @@ public:
 
         Machine::pre_init(System::info());
 
+        // Init is not calling System's global ctors since they are stateless
+
         // Initialize the processor
         db<Init>(INF) << "Initializing the CPU: " << endl;
         CPU::init();
@@ -48,7 +50,7 @@ public:
                 Random::seed(TSC::time_stamp());
 
             if(!Traits<TSC>::enabled)
-                db<Init>(WRN) << "Due to lack of entropy, Random is a pseudo random numbers generator!" << endl;
+                db<Init>(WRN) << "Due to lack of entropy, Random is a pseudo random numbers generator!" << endl; // True random does not exist!
             db<Init>(INF) << "done!" << endl;
         }
 

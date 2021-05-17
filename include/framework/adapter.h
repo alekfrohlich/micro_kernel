@@ -97,8 +97,8 @@ public:
     static Hertz alarm_frequency() { static_enter(); Hertz res = Component::frequency(); static_leave(); return res; }
     
     // IPC
-    CPU::Log_Addr shared_seg(unsigned int port, unsigned int frames) { static_enter(); CPU::Log_Addr res = Component::shared_seg(port, frames); static_leave(); return res; }
-    CPU::Log_Addr shared_seg(unsigned int port) { static_enter(); CPU::Log_Addr res = Component::shared_seg(port); static_leave(); return res; }
+    // CPU::Log_Addr shared_seg(unsigned int port, unsigned int frames) { static_enter(); CPU::Log_Addr res = Component::shared_seg(port, frames); static_leave(); return res; }
+    // CPU::Log_Addr shared_seg(unsigned int port) { static_enter(); CPU::Log_Addr res = Component::shared_seg(port); static_leave(); return res; }
 
     // Communication
     template<typename ... Tn>

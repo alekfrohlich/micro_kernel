@@ -57,7 +57,7 @@ void Thread::init()
     // Idle thread creation does not cause rescheduling (see Thread::constructor_epilogue)
     new (SYSTEM) Thread(Thread::Configuration(Thread::READY, Thread::IDLE), Thread::idle);
 
-    //!TODO: We are actually receiving timer ints during this ctor; it seems fine
+    //!NOTE: We are actually receiving timer ints during this ctor; it seems fine
     // Thread::ctor_epilogue turned ints up, we want them down till Context::load
     CPU::int_disable();
 

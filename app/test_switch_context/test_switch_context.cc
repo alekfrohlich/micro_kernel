@@ -25,7 +25,7 @@ int consumer()
 int main()
 {
     
-    cout << "Hello world!" << endl;
+    cout << "Test Switch Context!" << endl;
     
     Thread * cons = new Thread(&consumer);
     cons->join();

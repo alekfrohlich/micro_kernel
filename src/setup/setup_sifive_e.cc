@@ -353,7 +353,6 @@ void Setup_SifiveE::setup_supervisor_environment()
     // This creates and configures the kernel page tables (which map logical==physical)
     build_page_tables();
 
-    ASM("app_loader1:");
     si = reinterpret_cast<System_Info*>(placeholder);
     build_lm();
     load_parts();

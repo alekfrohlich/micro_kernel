@@ -20,7 +20,6 @@ private:
 
 public:
     void exec() {
-        //!P4: Improve messages
         if(id().type() != UTILITY_ID){
             db<Framework>(TRC) << ":=>" << *reinterpret_cast<Message *>(this) << endl;
             db<Framework>(TRC) << ":=>" << reinterpret_cast<Message *>(this) << endl;
@@ -502,12 +501,7 @@ void Agent::handle_shared_segment()
     Result res = 0;
 
     switch(method()) {
-    // case CREATE1: {
-    //     unsigned int bytes;
-    //     in(bytes);
-    //     id(Id(SEGMENT_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Segment>(bytes))));
-    // } break;
-    case CREATE3: { // *** indistinguishable ***
+    case CREATE3: {
         unsigned int port;
         unsigned int bytes;
         Shared_Segment::Flags flags;
@@ -520,13 +514,6 @@ void Agent::handle_shared_segment()
             sseg->_tasks++;
         }
     } break;
-    // case CREATE3: { // *** indistinguishable ***
-    //     Segment::Phy_Addr phy_addr;
-    // unsigned int bytes;
-    // Segment::Flags flags;
-    // in(phy_addr, bytes, flags);
-    // id(Id(SEGMENT_ID, reinterpret_cast<Id::Unit_Id>(new Adapter<Segment>(phy_addr, bytes, flags))));
-    // } break;
     case DESTROY:
         sseg->_tasks--;
         if(!sseg->_tasks){

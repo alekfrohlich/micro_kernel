@@ -15,7 +15,6 @@ int main()
     
     unsigned int port = 1;
     Shared_Segment * sseg = new Shared_Segment(port, 1024, MMU::Flags::UDATA);
-    cout << sseg << endl;
     
     CPU::Phy_Addr phy_addr = sseg->phy_address();
     cout << "phy_addr_writer=" << phy_addr << endl;
@@ -27,7 +26,6 @@ int main()
     long unsigned int * a = sseg_log_addr;    
     *a = 12345;
     
-    cout << "writer_a::: " << a << endl;
     cout << "writer_a: " << *a << endl;
     
     Alarm::delay(500000);
@@ -41,8 +39,7 @@ int main()
     
     cout << "Writer is finishing" << endl;
     Task::active()->address_space()->detach(reinterpret_cast<Segment *>(sseg));
-    delete sseg;
-    
+    delete sseg; 
     
     return 0;
 }

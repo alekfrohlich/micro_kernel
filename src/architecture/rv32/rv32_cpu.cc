@@ -12,7 +12,7 @@ unsigned int CPU::_cpu_clock;
 unsigned int CPU::_bus_clock;
 
 // Class methods
-void CPU::Context::save() volatile //!P4: Unused, as of now
+void CPU::Context::save() volatile // Unused
 {
     ASM("       csrr     gp,  sstatus           \n"
         "       sw       gp, -120(sp)           \n"     // push sstatus
@@ -177,8 +177,8 @@ void CPU::switch_context(Context ** o, Context * n)
         "       csrw     sstatus, x31           \n"
         "       lw      x30,   -8(sp)           \n"
         
-        "        andi        x31, x31, 0x1 << 8                         \n"
-        "        bne         x31, x0, switch_in_super                         \n"
+        "        andi        x31, x31, 0x1 << 8       \n"
+        "        bne         x31, x0, switch_in_super \n"
         
         
         "       lw      x31,   -4(sp)           \n"
@@ -192,7 +192,6 @@ void CPU::switch_context(Context ** o, Context * n)
         "       sret                            \n"); 
 }
 
-//!TODO: write message to a0
 void CPU::syscall(void * message){
     ASM("  ecall  \n");
 }

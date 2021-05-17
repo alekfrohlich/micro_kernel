@@ -179,7 +179,6 @@ public:
 //     : Real_Time_Scheduler_Common(p ? p : d, d, p, c) {}
 // };
 
-//!SMODE:
 // Rate Monotonic
 class RM: public Priority
 {

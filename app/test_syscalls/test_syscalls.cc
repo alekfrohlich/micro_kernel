@@ -52,7 +52,6 @@ int main()
     cout << "Testing Syscalls!" << endl;
     
     // Test Thread
-    //!TODO: pass/yield, delete threads
     cout << "Thread:" << endl;
     Thread * t = new Thread(&test_thread);
     cout << "   t: self=" << t << ", state=" << t->state() << ", priority=" << t->priority() << endl; 
@@ -144,6 +143,8 @@ int main()
     Address_Space * addr_s = new Address_Space(MMU::current());
     
     CPU::Phy_Addr pd = addr_s->pd();
+    // App has been exported the class MMU, but its master directory has not been
+    // initialized; thus, the expected value is zero
     cout << "MMU::current=" << MMU::current() << "  pd=" << pd << endl;
     
     Address_Space * addr_s2 = new Address_Space();
@@ -151,11 +152,9 @@ int main()
     addr_s2->attach(seg2, 0xb0000000);
     
     CPU::Phy_Addr phy_addr2 = seg2->phy_address();
-    cout << "phy_add2r=" << phy_addr2 << endl;
+    cout << "phy_addr=" << phy_addr2 << endl;
     CPU::Phy_Addr physical = addr_s2->physical(0xb0000000);
     cout << "physical=" << physical << endl;
-    cout << "physical=" << physical+1 << endl;
-    cout << "physical=" << physical+4 << endl;
     
     addr_s2->detach(seg2, 0xb0000000);
     delete seg2;
